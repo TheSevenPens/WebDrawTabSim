@@ -8,7 +8,8 @@ import { Pen3DSim } from './Pen3DSim.js';
 Object.assign(Pen3DSim.prototype, {
 
     initTablet() {
-        const geometry = new THREE.BoxGeometry(16, 0.1, 9);
+        const bodyMargin = 1.5;
+        const geometry = new THREE.BoxGeometry(this.tabletWidth + bodyMargin * 2, 0.1, this.tabletDepth + bodyMargin * 2);
         const material = MaterialsFactory.createTabletMaterial();
         const tablet = new THREE.Mesh(geometry, material);
         tablet.castShadow = true;
