@@ -1,0 +1,18 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(node_modules/.bin/vite build:*)",
+      "Bash(npx vite:*)",
+      "Bash(cmd.exe /c \"npm run build 2>&1\")",
+      "Bash(cmd.exe /c \"cd C:\\\\Users\\\\seven\\\\Documents\\\\GitHub\\\\WebDrawTabSim && npm run build 2>&1\")",
+      "Bash(cmd.exe /c \"cd C:\\\\Users\\\\seven\\\\Documents\\\\GitHub\\\\WebDrawTabSim && conda run -n node1 npm run build 2>&1\")",
+      "Bash(conda run:*)",
+      "Bash(where node:*)",
+      "Bash(node -e \"const s = require\\(''./node_modules/svelte/package.json''\\); console.log\\(''svelte:'', s.version\\)\")",
+      "Bash(node -e \"const v = require\\(''./node_modules/@sveltejs/vite-plugin-svelte/package.json''\\); console.log\\(''plugin:'', v.version\\)\")",
+      "Bash(/c/Users/seven/.bun/bin/bun install:*)",
+      "Bash(pkill -f \"vite\")",
+      "Bash(tasklist)"
+    ]
+  }
+}
