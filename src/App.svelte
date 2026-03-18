@@ -2,6 +2,7 @@
   import { onMount } from 'svelte';
   import { Pen3DSim } from './lib/sim/index.js';
   import SliderControl from './lib/SliderControl.svelte';
+  import LeftPanel from './lib/LeftPanel.svelte';
   import { runParameterAnimation } from './lib/sim/animations.js';
 
   // ── DOM reference ──────────────────────────────────────────────────────────
@@ -337,46 +338,29 @@
 <!-- ═══════════════════════════════════════════════════════════════════════════
      Control panel
      ═══════════════════════════════════════════════════════════════════════════ -->
-<div id="control-panel">
-  <h1>SevenPens DrawTabSim</h1>
-
-  <SliderControl label="Z: (Hover distance)" bind:value={distance} min={0} max={1} step={0.05} decimals={2} unit=" in" oninput={onDistance} />
-
-  <SliderControl label="X" bind:value={tabletX} min={0} max={16} step={0.1} decimals={1} unit=" in" oninput={onTabletX} />
-
-  <SliderControl label="Y" bind:value={tabletY} min={0} max={9} step={0.1} decimals={1} unit=" in" oninput={onTabletY} />
-
-  <SliderControl label="Tilt altitude" bind:value={tiltAltitude} min={0} max={60} step={1} decimals={0} unit="°" oninput={onAltitude} />
-
-  <SliderControl label="Tilt azimuth" bind:value={tiltAzimuth} min={0} max={359} step={1} decimals={0} unit="°" disabled={azimuthDisabled} oninput={onAzimuth} />
-
-  <SliderControl label="Barrel rotation" bind:value={barrelRotation} min={0} max={359} step={1} decimals={0} unit="°" oninput={onBarrel} />
-
-  <div class="control-group">
-    <label>Tilt X: <span class="slider-value">{tiltXDisplay}°</span></label>
-  </div>
-
-  <div class="control-group">
-    <label>Tilt Y: <span class="slider-value">{tiltYDisplay}°</span></label>
-  </div>
-
-  <button class="action-btn" id="pointer-tracking-flyout-btn" onclick={() => toggleFlyout('pointer-tracking')}>Pointer tracking</button>
-  <button class="action-btn" id="annotations-flyout-btn" onclick={() => toggleFlyout('annotations')}>Annotations</button>
-
-  <div class="checkbox-grid">
-    <div class="control-group">
-      <label style="display:flex;align-items:center;gap:8px;">
-        <input type="checkbox" bind:checked={axonometric} onchange={onAxonometric} style="width:auto;margin:0;">
-        <span>Axonometric</span>
-      </label>
-    </div>
-  </div>
-
-  <button class="action-btn" onclick={resetPen}>Reset pen</button>
-  <button class="action-btn" id="animations-flyout-btn" onclick={() => toggleFlyout('animations')}>Animations</button>
-  <button class="action-btn" onclick={openCameraModal}>Edit View</button>
-  <button class="action-btn" onclick={() => sim?.exportAsPNG()}>Export as PNG</button>
-</div>
+<LeftPanel
+  bind:distance
+  bind:tabletX
+  bind:tabletY
+  bind:tiltAltitude
+  bind:tiltAzimuth
+  bind:barrelRotation
+  bind:axonometric
+  {azimuthDisabled}
+  {tiltXDisplay}
+  {tiltYDisplay}
+  {onDistance}
+  {onTabletX}
+  {onTabletY}
+  {onAltitude}
+  {onAzimuth}
+  {onBarrel}
+  {onAxonometric}
+  onToggleFlyout={toggleFlyout}
+  onResetPen={resetPen}
+  onOpenCameraModal={openCameraModal}
+  onExportPNG={() => sim?.exportAsPNG()}
+/>
 
 <!-- ═══════════════════════════════════════════════════════════════════════════
      3D Viewer
@@ -450,7 +434,7 @@
      Camera edit modal
      ═══════════════════════════════════════════════════════════════════════════ -->
 {#if cameraModalOpen}
-<div id="camera-edit-modal" style="display:flex;" onclick={(e) => { if (e.target === e.currentTarget) cameraModalOpen = false; }}>
+<div id="camera-edit-modal" style="display:flex;" role="presentation" onclick={(e) => { if (e.target === e.currentTarget) cameraModalOpen = false; }} onkeydown={(e) => { if (e.key === 'Escape') cameraModalOpen = false; }}>
   <div class="modal-content">
     <h2>Edit Camera Settings</h2>
     <textarea id="camera-json-editor" bind:value={cameraJsonText}></textarea>
