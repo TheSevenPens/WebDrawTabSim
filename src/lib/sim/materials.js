@@ -52,6 +52,11 @@ export class MaterialsFactory {
 
     // Specific material creators for common use cases
 
+    // Desk material
+    static createDeskMaterial() {
+        return this.createStandardMaterial(0x7B4A2D, 0.85, 0.05);
+    }
+
     // Tablet material
     static createTabletMaterial() {
         return this.createStandardMaterial(0x505050, 0.7, 0.2);
