@@ -1,11 +1,16 @@
-// Pen3DSim - 3D Pen Simulation Class
-// Encapsulates all scene building and rendering code
+// pen3dsim.js — Class skeleton: constructor, animate loop, and public API
+// All init/handle/geometry/update methods live in companion files:
+//   pen-scene.js      — scene, cameras, renderer, lighting, camera settings
+//   pen-tablet.js     — tablet mesh and grid
+//   pen-pen.js        — pen mesh, cursor arrow, updatePenTransform
+//   pen-annotations.js — annotation geometry, axis markers, math helpers
+//   pen-mouse.js      — spacebar + mouse drag control
 
 class Pen3DSim {
     constructor(viewerElement) {
         this.viewer = viewerElement;
-        
-        // Initialize state
+
+        // Simulation state
         this.tiltAltitude = 0;
         this.tiltAzimuth = 0;
         this.barrelRotation = 0;
@@ -16,28 +21,28 @@ class Pen3DSim {
         this.showBarrelAnnotations = false;
         this.showTiltXAnnotations = false;
         this.showTiltYAnnotations = false;
-        this.cursorRotation = 180; // degrees around long axis
-        this.cursorTipRotationY = 90; // degrees around Y axis at tip
-        this.cursorOffsetX = 0; // cursor X offset in inches
-        this.cursorOffsetY = 0; // cursor Y offset in inches (Z axis in 3D space)
-        this.tiltCompensationPosTiltXValue = 0; // tilt compensation value (0-1) for positive tiltX
-        this.tiltCompensationNegTiltXValue = 0; // tilt compensation value (0-1) for negative tiltX
-        this.tiltCompensationPosTiltYValue = 0; // tilt compensation value (0-1) for positive tiltY
-        this.tiltCompensationNegTiltYValue = 0; // tilt compensation value (0-1) for negative tiltY
-        this.scalingFactor = 1; // scaling factor for cursor position (0-2), 1 = no scaling
-        this.edgeAttraction = 0; // edge attraction value (-1 to 1), 0 = no effect
-        this.edgeAttractionRange = 1; // distance from edges where attraction is applied (in inches)
-        
+        this.cursorRotation = 180;       // degrees around long axis
+        this.cursorTipRotationY = 90;    // degrees around Y axis at tip
+        this.cursorOffsetX = 0;          // cursor X offset in inches
+        this.cursorOffsetY = 0;          // cursor Y offset in inches (Z axis in 3D space)
+        this.tiltCompensationPosTiltXValue = 0;
+        this.tiltCompensationNegTiltXValue = 0;
+        this.tiltCompensationPosTiltYValue = 0;
+        this.tiltCompensationNegTiltYValue = 0;
+        this.scalingFactor = 1;          // 0–2, 1 = no scaling
+        this.edgeAttraction = 0;         // -1 to 1, 0 = no effect
+        this.edgeAttractionRange = 1;    // inches from edges where attraction applies
+
         // Constants
         this.tabletWidth = 16;
         this.tabletDepth = 9;
         this.yOffset = 0.051;
         this.arcRadius = 1.5;
         this.barrelArcRadius = 1.5;
-        this.azimuthColor = 0x77dd33; // Green color for azimuth annotations
-        this.tiltAltitudeColor = 0xee33cc; // Magenta color for tilt altitude annotations
-        
-        // Initialize scene
+        this.azimuthColor = 0x77dd33;
+        this.tiltAltitudeColor = 0xee33cc;
+
+        // Build scene (methods from companion files via Object.assign)
         this.initScene();
         this.initCameras();
         this.initRenderer();
@@ -47,1589 +52,183 @@ class Pen3DSim {
         this.initPen();
         this.initAnnotations();
         this.initAxisMarkers();
-        
-        // Start animation loop
+
+        // Start render loop
         this.animate();
-        
-        // Initialize pen position
+
+        // Initial pen position
         this.updatePenTransform(this.distance, this.tiltAltitude, this.tiltAzimuth, this.barrelRotation);
-        
-        // Initialize mouse control for pen movement
+
+        // Spacebar + mouse drag
         this.initMouseControl();
     }
-    
-    initMouseControl() {
-        // Track space bar state
-        this.spaceBarPressed = false;
-        
-        // Track last mouse position for delta calculation
-        this.lastMouseX = 0;
-        this.lastMouseY = 0;
-        this.isDraggingPen = false;
-        
-        // Keyboard event handlers
-        document.addEventListener('keydown', (e) => {
-            this.handleKeyDown(e);
-        });
-        
-        document.addEventListener('keyup', (e) => {
-            this.handleKeyUp(e);
-        });
-        
-        // Mouse event handlers - use capture phase to intercept before OrbitControls
-        this.renderer.domElement.addEventListener('mousedown', (e) => {
-            this.handleMouseDown(e);
-        }, true); // Use capture phase
-        
-        this.renderer.domElement.addEventListener('mousemove', (e) => {
-            this.handleMouseMove(e);
-        }, true); // Use capture phase
-        
-        this.renderer.domElement.addEventListener('mouseup', (e) => {
-            this.handleMouseUp(e);
-        }, true); // Use capture phase
-        
-        // Also handle mouse leave to reset state
-        this.renderer.domElement.addEventListener('mouseleave', (e) => {
-            this.handleMouseUp(e);
-        });
-    }
-    
-    handleKeyDown(e) {
-        if (e.code === 'Space' && !e.repeat) {
-            e.preventDefault(); // Prevent page scrolling
-            this.spaceBarPressed = true;
-            // Disable OrbitControls immediately when space bar is pressed
-            this.controls.enabled = false;
-            // Update cursor if mouse is over the viewer
-            this.renderer.domElement.style.cursor = 'move';
-        }
-    }
-    
-    handleKeyUp(e) {
-        if (e.code === 'Space') {
-            e.preventDefault(); // Prevent page scrolling
-            this.spaceBarPressed = false;
-            this.isDraggingPen = false;
-            this.renderer.domElement.style.cursor = '';
-            // Re-enable OrbitControls
-            this.controls.enabled = true;
-        }
-    }
-    
-    handleMouseDown(e) {
-        // Start dragging if space bar is pressed
-        if (this.spaceBarPressed) {
-            e.preventDefault(); // Prevent default mouse behavior
-            e.stopPropagation(); // Prevent OrbitControls from handling this event
-            this.isDraggingPen = true;
-            const rect = this.renderer.domElement.getBoundingClientRect();
-            this.lastMouseX = e.clientX - rect.left;
-            this.lastMouseY = e.clientY - rect.top;
-            this.renderer.domElement.style.cursor = 'move';
-            // OrbitControls should already be disabled, but ensure it
-            this.controls.enabled = false;
-        }
-    }
-    
-    handleMouseMove(e) {
-        if (this.isDraggingPen && this.spaceBarPressed) {
-            e.preventDefault(); // Prevent default mouse behavior
-            e.stopPropagation(); // Prevent OrbitControls from handling this event
-            const rect = this.renderer.domElement.getBoundingClientRect();
-            const currentMouseX = e.clientX - rect.left;
-            const currentMouseY = e.clientY - rect.top;
-            
-            // Calculate delta movement
-            const deltaX = currentMouseX - this.lastMouseX;
-            const deltaY = currentMouseY - this.lastMouseY;
-            
-            // Convert screen pixel movement to tablet coordinate movement
-            // Use a scaling factor to map screen pixels to inches
-            // The tablet is 16x9 inches, so we need to estimate the screen size
-            // A reasonable approach: use a fixed scale factor (e.g., 0.01 inches per pixel)
-            const scaleFactor = 0.01; // Adjust this to make movement feel natural
-            
-            // Update tablet position
-            // Invert vertical movement: mouse down moves pen forward (positive Z)
-            const newTabletX = this.tabletOffsetX + deltaX * scaleFactor;
-            const newTabletZ = this.tabletOffsetZ + deltaY * scaleFactor;
-            
-            // Clamp to tablet bounds
-            const clampedX = THREE.MathUtils.clamp(newTabletX, 0, this.tabletWidth);
-            const clampedZ = THREE.MathUtils.clamp(newTabletZ, 0, this.tabletDepth);
-            
-            this.setTabletPositionX(clampedX);
-            this.setTabletPositionZ(clampedZ);
-            
-            // Update last mouse position
-            this.lastMouseX = currentMouseX;
-            this.lastMouseY = currentMouseY;
-        } else if (this.spaceBarPressed) {
-            // Space bar is pressed but not dragging yet - update cursor
-            this.renderer.domElement.style.cursor = 'move';
-        }
-    }
-    
-    handleMouseUp(e) {
-        // Stop dragging when mouse button is released
-        if (this.isDraggingPen && this.spaceBarPressed) {
-            e.preventDefault(); // Prevent default mouse behavior
-            e.stopPropagation(); // Prevent OrbitControls from handling this event
-        }
-        this.isDraggingPen = false;
-        if (!this.spaceBarPressed) {
-            this.renderer.domElement.style.cursor = '';
-            // Re-enable OrbitControls
-            this.controls.enabled = true;
-        }
-    }
-    
-    initScene() {
-        this.scene = new THREE.Scene();
-        this.scene.background = new THREE.Color(0x1a1a1a);
-    }
-    
-    initCameras() {
-        const cameraAspectRatio = this.viewer.clientWidth / this.viewer.clientHeight;
-        const cameraNear = 0.1;
-        const cameraFar = 1000;
-        
-        this.perspectiveCamera = new THREE.PerspectiveCamera(30, cameraAspectRatio, cameraNear, cameraFar);
-        // Set camera position rotated 30 degrees around Y axis
-        const yRotation = 50 *  Math.PI / 180;
-        const initialX = 0;
-        const initialZ = 25;
-        const rotatedX = initialX * Math.cos(yRotation) - initialZ * Math.sin(yRotation);
-        const rotatedZ = initialX * Math.sin(yRotation) + initialZ * Math.cos(yRotation);
-        this.perspectiveCamera.position.set(rotatedX, 15, rotatedZ);
-        this.perspectiveCamera.lookAt(0, 0, 0);
-        
-        const orthoSize = 20;
-        this.orthographicCamera = new THREE.OrthographicCamera(
-            -orthoSize * cameraAspectRatio,
-            orthoSize * cameraAspectRatio,
-            orthoSize,
-            -orthoSize,
-            cameraNear,
-            cameraFar
-        );
-        // Set camera position rotated 30 degrees around Y axis
-        this.orthographicCamera.position.set(rotatedX, 15, rotatedZ);
-        this.orthographicCamera.lookAt(0, 0, 0);
-        
-        this.camera = this.perspectiveCamera;
-        this.orthoSize = orthoSize;
-    }
-    
-    initRenderer() {
-        this.renderer = new THREE.WebGLRenderer({ antialias: true, preserveDrawingBuffer: true });
-        this.renderer.setSize(this.viewer.clientWidth, this.viewer.clientHeight);
-        this.renderer.shadowMap.enabled = true;
-        this.renderer.shadowMap.type = THREE.PCFSoftShadowMap;
-        this.viewer.appendChild(this.renderer.domElement);
-    }
-    
-    initControls() {
-        this.controls = new THREE.OrbitControls(this.camera, this.renderer.domElement);
-        this.controls.enableDamping = true;
-        this.controls.dampingFactor = 0.05;
-        this.controls.screenSpacePanning = false;
-        this.controls.minDistance = 1;
-        this.controls.maxDistance = 100;
-        this.controls.maxPolarAngle = Math.PI / 2;
-        // Update controls to sync with camera's initial rotation
-        this.controls.update();
-    }
-    
-    initLighting() {
-        const ambientLight = new THREE.AmbientLight(0xffffff, 0.5);
-        this.scene.add(ambientLight);
-        
-        const directionalLight = new THREE.DirectionalLight(0xffffff, 0.8);
-        directionalLight.position.set(0, 20, 0);
-        directionalLight.castShadow = true;
-        directionalLight.shadow.mapSize.width = 2048;
-        directionalLight.shadow.mapSize.height = 2048;
-        directionalLight.shadow.camera.left = -15;
-        directionalLight.shadow.camera.right = 15;
-        directionalLight.shadow.camera.top = 15;
-        directionalLight.shadow.camera.bottom = -15;
-        directionalLight.shadow.camera.near = 0.1;
-        directionalLight.shadow.camera.far = 50;
-        this.scene.add(directionalLight);
-        
-        const pointLight = new THREE.PointLight(0xffffff, 0.3);
-        pointLight.position.set(-10, 10, -10);
-        this.scene.add(pointLight);
-    }
-    
-    initTablet() {
-        const geometry = new THREE.BoxGeometry(16, 0.1, 9);
-        const material = MaterialsFactory.createTabletMaterial();
-        const tablet = new THREE.Mesh(geometry, material);
-        tablet.castShadow = true;
-        tablet.receiveShadow = true;
-        this.scene.add(tablet);
-        
-        // Store references for checkerboard pattern toggle
-        this.tabletMesh = tablet;
-        this.tabletMaterial = material;
-        this.tabletBaseColor = 0x505050;
-        this.tabletCheckerboardTexture = null;
-        
-        const wireframe = new THREE.LineSegments(
-            new THREE.EdgesGeometry(geometry),
-            MaterialsFactory.createTabletWireframeMaterial()
-        );
-        tablet.add(wireframe);
-        
-        const gridGroup = new THREE.Group();
-        const gridMaterial = MaterialsFactory.createGridMaterial();
-        const gridSpacing = 0.5;
-        
-        for (let x = -this.tabletWidth / 2; x <= this.tabletWidth / 2; x += gridSpacing) {
-            const points = [];
-            points.push(new THREE.Vector3(x, this.yOffset, -this.tabletDepth / 2));
-            points.push(new THREE.Vector3(x, this.yOffset, this.tabletDepth / 2));
-            const lineGeometry = new THREE.BufferGeometry().setFromPoints(points);
-            const line = new THREE.Line(lineGeometry, gridMaterial);
-            gridGroup.add(line);
-        }
-        
-        for (let z = -this.tabletDepth / 2; z <= this.tabletDepth / 2; z += gridSpacing) {
-            const points = [];
-            points.push(new THREE.Vector3(-this.tabletWidth / 2, this.yOffset, z));
-            points.push(new THREE.Vector3(this.tabletWidth / 2, this.yOffset, z));
-            const lineGeometry = new THREE.BufferGeometry().setFromPoints(points);
-            const line = new THREE.Line(lineGeometry, gridMaterial);
-            gridGroup.add(line);
-        }
-        
-        this.scene.add(gridGroup);
-        
-        const gridHelper = new THREE.GridHelper(50, 50, 0x444444, 0x222222);
-        gridHelper.position.y = -5;
-        this.scene.add(gridHelper);
-    }
-    
-    
-    initPen() {
-        this.penGroup = new THREE.Group();
-        
-        const checkerboardTexture = TexturesFactory.createCheckerboardTexture();
-        checkerboardTexture.wrapS = THREE.RepeatWrapping;
-        checkerboardTexture.wrapT = THREE.RepeatWrapping;
-        
-        const tipHeight = 0.5;
-        const tipGeometry = new THREE.ConeGeometry(0.1, tipHeight, 16);
-        const tipTexture = checkerboardTexture.clone();
-        tipTexture.needsUpdate = true;
-        tipTexture.repeat.set(2, 1);
-        
-        const tipMaterial = MaterialsFactory.createPenMaterial(tipTexture);
-        const penTip = new THREE.Mesh(tipGeometry, tipMaterial);
-        penTip.castShadow = true;
-        penTip.rotation.x = Math.PI;
-        penTip.position.y = -tipHeight / 2;
-        this.penGroup.add(penTip);
-        this.penTipMesh = penTip; // Store reference for shadow control
-        
-        const barrelHeight = 4;
-        const barrelGeometry = new THREE.CylinderGeometry(0.15, 0.15, barrelHeight, 16);
-        const barrelTexture = checkerboardTexture.clone();
-        barrelTexture.needsUpdate = true;
-        barrelTexture.repeat.set(2, 2);
-        
-        const barrelMaterial = MaterialsFactory.createPenMaterial(barrelTexture);
-        const penBarrel = new THREE.Mesh(barrelGeometry, barrelMaterial);
-        penBarrel.castShadow = true;
-        penBarrel.position.y = barrelHeight / 2;
-        this.penGroup.add(penBarrel);
-        this.penBarrelMesh = penBarrel; // Store reference for shadow control
-        
-        this.penGroup.position.set(0, 0, 0);
-        this.scene.add(this.penGroup);
-        
-        // Line from top of pen to tablet surface
-        this.penLinePositions = new Float32Array(6);
-        this.penLineGeometry = new THREE.BufferGeometry();
-        this.penLineGeometry.setAttribute('position', new THREE.BufferAttribute(this.penLinePositions, 3));
-        
-        const penLineMaterial = MaterialsFactory.createDashedLineMaterial(0xffff00);
-        this.penLine = new THREE.Line(this.penLineGeometry, penLineMaterial);
-        this.scene.add(this.penLine);
-        
-        // Line from pen tip to tablet surface
-        this.penTipLinePositions = new Float32Array(6);
-        this.penTipLineGeometry = new THREE.BufferGeometry();
-        this.penTipLineGeometry.setAttribute('position', new THREE.BufferAttribute(this.penTipLinePositions, 3));
-        
-        const penTipLineMaterial = MaterialsFactory.createDashedLineMaterial(0xffff00);
-        this.penTipLine = new THREE.Line(this.penTipLineGeometry, penTipLineMaterial);
-        this.scene.add(this.penTipLine);
-        
-        // White dotted line along pen's long axis from tip to tablet surface
-        this.penAxisLinePositions = new Float32Array(6);
-        this.penAxisLineGeometry = new THREE.BufferGeometry();
-        this.penAxisLineGeometry.setAttribute('position', new THREE.BufferAttribute(this.penAxisLinePositions, 3));
-        
-        const penAxisLineMaterial = MaterialsFactory.createDashedLineMaterial(0xffffff);
-        this.penAxisLine = new THREE.Line(this.penAxisLineGeometry, penAxisLineMaterial);
-        this.scene.add(this.penAxisLine);
-        
-        // Windows mouse cursor arrow on tablet surface
-        this.cursorArrow = this.createCursorArrow();
-        this.scene.add(this.cursorArrow);
-        
-        // Local positions
-        this.penTopLocal = new THREE.Vector3(0, 4, 0);
-        this.penTopWorld = new THREE.Vector3();
-        this.penLineBottom = new THREE.Vector3();
-        this.penTipLocal = new THREE.Vector3(0, -0.5, 0);
-        this.penTipWorld = new THREE.Vector3();
-        this.penTipLineBottom = new THREE.Vector3();
-        this.penAxisIntersection = new THREE.Vector3();
-    }
-    
-    createCursorArrow() {
-        // Create Windows mouse cursor arrow shape
-        // The arrow points up-left (northwest direction)
-        // Tip is at origin (0, 0) so it aligns with intersection point
-        const cursorSize = 0.6; // inches (2x bigger)
-        const shape = new THREE.Shape();
-        
-        // Arrow tip at origin (0, 0) pointing up-left
-        // The tip is at the top-left of the arrow
-        const tipX = 0;
-        const tipZ = 0;
-        
-        // Arrow shape: tip at origin, body extends down-right
-        shape.moveTo(tipX, tipZ); // Tip (top-left)
-        shape.lineTo(tipX - cursorSize * 0.2, tipZ + cursorSize * 0.3); // Left edge
-        shape.lineTo(tipX - cursorSize * 0.1, tipZ + cursorSize * 0.3); // Left body
-        shape.lineTo(tipX - cursorSize * 0.1, tipZ + cursorSize * 0.6); // Bottom-left
-        shape.lineTo(tipX + cursorSize * 0.1, tipZ + cursorSize * 0.6); // Bottom-right
-        shape.lineTo(tipX + cursorSize * 0.1, tipZ + cursorSize * 0.3); // Right body
-        shape.lineTo(tipX + cursorSize * 0.2, tipZ + cursorSize * 0.3); // Right edge
-        shape.lineTo(tipX, tipZ); // Back to tip
-        
-        const geometry = new THREE.ShapeGeometry(shape);
-        
-        // White fill with black outline
-        const material = MaterialsFactory.createCursorMaterial();
-        
-        const mesh = new THREE.Mesh(geometry, material);
-        
-        // Calculate mouse cursor rotation using quaternions
-        // The cursor should:
-        // 1. Be flat on XZ plane (tablet surface)
-        // 2. Point northwest (up-left direction)
-        // 3. Be rotated 45 degrees around its long axis
-        
-        // Step 1: Rotate from XY plane to XZ plane (flat on tablet)
-        // Rotate -90 degrees around X axis
-        const toXZPlaneQuat = new THREE.Quaternion();
-        toXZPlaneQuat.setFromAxisAngle(new THREE.Vector3(1, 0, 0), -Math.PI / 2);
-        
-        // Step 2: Rotate to point northwest (up-left)
-        // In XZ plane, northwest = -X direction + Z direction
-        // Rotate -45 degrees around Y axis, plus additional Y rotation from slider
-        const baseYRotation = -Math.PI / 4; // Base northwest direction
-        // cursorTipRotationY is already initialized to 90 in constructor
-        const pointNorthwestQuat = new THREE.Quaternion();
-        pointNorthwestQuat.setFromAxisAngle(new THREE.Vector3(0, 1, 0), baseYRotation);
-        
-        // Step 3: Rotate 45 degrees around the arrow's long axis (local X axis after above rotations)
-        // The long axis is the direction the arrow points (northwest direction in XZ plane)
-        // After the above rotations, local X axis points northwest in the XZ plane
-        // To rotate around this axis while keeping it flat, we need to:
-        // 1. Apply base rotations first
-        // 2. Get the transformed local X axis (which is the long axis in world space)
-        // 3. Rotate around that axis
-        
-        // Apply base rotations first
-        const baseQuat = new THREE.Quaternion();
-        baseQuat.multiplyQuaternions(pointNorthwestQuat, toXZPlaneQuat);
-        
-        // Get the transformed local X axis (the long axis direction in world space)
-        // Local X axis (1, 0, 0) transformed by baseQuat gives us the long axis direction
-        const localXAxis = new THREE.Vector3(1, 0, 0);
-        const longAxisDir = localXAxis.applyQuaternion(baseQuat).normalize();
-        
-        // Store base quaternion and long axis direction for later updates
-        this.cursorBaseQuat = baseQuat.clone();
-        this.cursorLongAxisDir = longAxisDir.clone();
-        
-        // Store reference to mesh for rotation updates
-        this.cursorArrowMesh = mesh;
-        
-        // Apply initial rotation
-        this.updateCursorRotation();
-        
-        // Position will be updated in updatePenTransform
-        // Y position is set to yOffset to be exactly on tablet surface
-        mesh.position.set(0, this.yOffset, 0);
-        
-        // Add black outline
-        const edges = new THREE.EdgesGeometry(geometry);
-        const lineMaterial = MaterialsFactory.createCursorOutlineMaterial();
-        const wireframe = new THREE.LineSegments(edges, lineMaterial);
-        mesh.add(wireframe);
-        
-        return mesh;
-    }
-    
-    initAnnotations() {
-        // Arc annotation group (azimuth)
-        this.arcAnnotationGroup = new THREE.Group();
-        const arcMaterial = MaterialsFactory.createArcMaterial(this.azimuthColor);
-        const arcThickness = 0.02;
-        
-        const arcGeometry = new THREE.BufferGeometry();
-        this.arcLine = new THREE.Mesh(arcGeometry, arcMaterial);
-        this.arcAnnotationGroup.add(this.arcLine);
-        
-        const arrowMaterial = MaterialsFactory.createArrowMaterial(this.azimuthColor);
-        const arrowGeometry = new THREE.BufferGeometry();
-        const arrowLine = new THREE.Line(arrowGeometry, arrowMaterial);
-        arrowLine.visible = false;
-        this.arcAnnotationGroup.add(arrowLine);
-        
-        const dottedArcMaterial = MaterialsFactory.createDottedCircleMaterial(this.azimuthColor);
-        const dottedArcGeometry = new THREE.BufferGeometry();
-        this.dottedArcLine = new THREE.Line(dottedArcGeometry, dottedArcMaterial);
-        this.arcAnnotationGroup.add(this.dottedArcLine);
-        
-        this.arcPieMaterial = MaterialsFactory.createPieMaterial(this.azimuthColor);
-        this.arcPieMesh = null;
-        
-        this.scene.add(this.arcAnnotationGroup);
-        
-        // Surface line
-        this.surfaceLineGeometry = new THREE.BufferGeometry();
-        const surfaceLineMaterial = MaterialsFactory.createSurfaceLineMaterial(this.azimuthColor);
-        this.surfaceLine = new THREE.Line(this.surfaceLineGeometry, surfaceLineMaterial);
-        this.scene.add(this.surfaceLine);
-        
-        const surfaceArrowGeometry = new THREE.BufferGeometry();
-        const surfaceArrowLine = new THREE.Line(surfaceArrowGeometry, surfaceLineMaterial);
-        surfaceArrowLine.visible = false;
-        this.scene.add(surfaceArrowLine);
-        
-        // Barrel rotation annotations
-        this.barrelAnnotationGroup = new THREE.Group();
-        const barrelArcThickness = 0.02;
-        const barrelAnnotationMaterial = MaterialsFactory.createArcMaterial(0xff8800);
-        const barrelArrowMaterial = MaterialsFactory.createArrowMaterial(0xff8800);
-        
-        const barrelArcGeometry = new THREE.BufferGeometry();
-        this.barrelArcLine = new THREE.Mesh(barrelArcGeometry, barrelAnnotationMaterial);
-        this.barrelAnnotationGroup.add(this.barrelArcLine);
-        
-        const barrelArrowGeometry = new THREE.BufferGeometry();
-        const barrelArrowLine = new THREE.Line(barrelArrowGeometry, barrelArrowMaterial);
-        barrelArrowLine.visible = false;
-        this.barrelAnnotationGroup.add(barrelArrowLine);
-        
-        const barrelSurfaceLineGeometry = new THREE.BufferGeometry();
-        this.barrelSurfaceLine = new THREE.Line(barrelSurfaceLineGeometry, barrelArrowMaterial);
-        this.barrelAnnotationGroup.add(this.barrelSurfaceLine);
-        
-        const barrelSurfaceArrowGeometry = new THREE.BufferGeometry();
-        const barrelSurfaceArrowLine = new THREE.Line(barrelSurfaceArrowGeometry, barrelArrowMaterial);
-        barrelSurfaceArrowLine.visible = false;
-        this.barrelAnnotationGroup.add(barrelSurfaceArrowLine);
-        
-        const barrelDottedCircleMaterial = MaterialsFactory.createDottedCircleMaterial(0xff8800);
-        const barrelDottedCircleGeometry = new THREE.BufferGeometry();
-        this.barrelDottedCircleLine = new THREE.Line(barrelDottedCircleGeometry, barrelDottedCircleMaterial);
-        this.barrelAnnotationGroup.add(this.barrelDottedCircleLine);
-        
-        this.barrelPieMaterial = MaterialsFactory.createPieMaterial(0xff8800);
-        this.barrelPieMesh = null;
-        
-        this.scene.add(this.barrelAnnotationGroup);
-        
-        // Tilt altitude arc annotation
-        const tiltAltitudeArcThickness = 0.02;
-        const tiltAltitudeArcMaterial = MaterialsFactory.createArcMaterial(this.tiltAltitudeColor);
-        const tiltAltitudeArcGeometry = new THREE.BufferGeometry();
-        this.tiltAltitudeArcLine = new THREE.Mesh(tiltAltitudeArcGeometry, tiltAltitudeArcMaterial);
-        this.scene.add(this.tiltAltitudeArcLine);
-        
-        this.tiltAltitudePieMaterial = MaterialsFactory.createPieMaterial(this.tiltAltitudeColor);
-        this.tiltAltitudePieMesh = null;
-        
-        const tiltAltitudeVerticalLineMaterial = MaterialsFactory.createVerticalLineMaterial(this.tiltAltitudeColor);
-        const tiltAltitudeVerticalLineGeometry = new THREE.BufferGeometry();
-        this.tiltAltitudeVerticalLine = new THREE.Line(tiltAltitudeVerticalLineGeometry, tiltAltitudeVerticalLineMaterial);
-        this.scene.add(this.tiltAltitudeVerticalLine);
-        
-        const tiltAltitudeSemicircleMaterial = MaterialsFactory.createDottedCircleMaterial(this.tiltAltitudeColor);
-        const tiltAltitudeSemicircleGeometry = new THREE.BufferGeometry();
-        this.tiltAltitudeSemicircleLine = new THREE.Line(tiltAltitudeSemicircleGeometry, tiltAltitudeSemicircleMaterial);
-        this.scene.add(this.tiltAltitudeSemicircleLine);
-        
-        // Tilt X annotation
-        const tiltXArcThickness = 0.02;
-        const tiltXArcMaterial = MaterialsFactory.createArcMaterial(0x88ccff);
-        const tiltXArcGeometry = new THREE.BufferGeometry();
-        this.tiltXArcLine = new THREE.Mesh(tiltXArcGeometry, tiltXArcMaterial);
-        this.scene.add(this.tiltXArcLine);
-        
-        this.tiltXPieMaterial = MaterialsFactory.createPieMaterial(0x88ccff);
-        this.tiltXPieMesh = null;
-        
-        const tiltXVerticalLineMaterial = MaterialsFactory.createVerticalLineMaterial(0x88ccff);
-        const tiltXVerticalLineGeometry = new THREE.BufferGeometry();
-        this.tiltXVerticalLine = new THREE.Line(tiltXVerticalLineGeometry, tiltXVerticalLineMaterial);
-        this.scene.add(this.tiltXVerticalLine);
-        
-        const tiltXDottedCircleMaterial = MaterialsFactory.createDottedCircleMaterial(0x88ccff);
-        const tiltXDottedCircleGeometry = new THREE.BufferGeometry();
-        this.tiltXDottedCircleLine = new THREE.Line(tiltXDottedCircleGeometry, tiltXDottedCircleMaterial);
-        this.scene.add(this.tiltXDottedCircleLine);
-        
-        // Tilt Y annotation
-        const tiltYArcThickness = 0.02;
-        const tiltYArcMaterial = MaterialsFactory.createArcMaterial(0xff88cc);
-        const tiltYArcGeometry = new THREE.BufferGeometry();
-        this.tiltYArcLine = new THREE.Mesh(tiltYArcGeometry, tiltYArcMaterial);
-        this.scene.add(this.tiltYArcLine);
-        
-        this.tiltYPieMaterial = MaterialsFactory.createPieMaterial(0xff88cc);
-        this.tiltYPieMesh = null;
-        
-        const tiltYVerticalLineMaterial = MaterialsFactory.createVerticalLineMaterial(0xff88cc);
-        const tiltYVerticalLineGeometry = new THREE.BufferGeometry();
-        this.tiltYVerticalLine = new THREE.Line(tiltYVerticalLineGeometry, tiltYVerticalLineMaterial);
-        this.scene.add(this.tiltYVerticalLine);
-        
-        const tiltYDottedCircleMaterial = MaterialsFactory.createDottedCircleMaterial(0xff88cc);
-        const tiltYDottedCircleGeometry = new THREE.BufferGeometry();
-        this.tiltYDottedCircleLine = new THREE.Line(tiltYDottedCircleGeometry, tiltYDottedCircleMaterial);
-        this.scene.add(this.tiltYDottedCircleLine);
-    }
-    
-    initAxisMarkers() {
-        const createTextLabel = (text, color, position) => {
-            const texture = TexturesFactory.createTextLabelTexture(text, color);
-            const spriteMaterial = MaterialsFactory.createSpriteMaterial(texture);
-            const sprite = new THREE.Sprite(spriteMaterial);
-            sprite.position.copy(position);
-            sprite.scale.set(2, 2, 1);
-            
-            return sprite;
-        };
-        
-        const xLabelUser = 'X';
-        const yLabelUser = 'Z';
-        const zLabelUser = 'Y';
-        
-        const tabletTopY = 0.05;
-        const arrowOffset = 0.5;
-        const arrowPos = new THREE.Vector3(
-            -this.tabletWidth / 2 - arrowOffset,
-            tabletTopY,
-            -this.tabletDepth / 2 - arrowOffset
-        );
-        
-        const xLabelDistance = 3;
-        const yLabelDistance = 3;
-        const zLabelDistance = 3;
-        
-        const xAxisColor = '#cc0055';
-        const yAxisColor = '#00cc66';
-        const zAxisColor = '#0055cc';
-        
-        this.xLabel = createTextLabel(xLabelUser, xAxisColor, arrowPos.clone().add(new THREE.Vector3(xLabelDistance, 0, 0)));
-        this.yLabel = createTextLabel(yLabelUser, yAxisColor, arrowPos.clone().add(new THREE.Vector3(0, yLabelDistance, 0)));
-        this.zLabel = createTextLabel(zLabelUser, zAxisColor, arrowPos.clone().add(new THREE.Vector3(0, 0, zLabelDistance)));
-        
-        this.scene.add(this.xLabel);
-        this.scene.add(this.yLabel);
-        this.scene.add(this.zLabel);
-        
-        const arrowGap = 0.5;
-        this.xArrow = new THREE.ArrowHelper(
-            new THREE.Vector3(1, 0, 0),
-            arrowPos,
-            xLabelDistance - arrowGap,
-            xAxisColor
-        );
-        
-        this.yArrow = new THREE.ArrowHelper(
-            new THREE.Vector3(0, 1, 0),
-            arrowPos,
-            yLabelDistance - arrowGap,
-            yAxisColor
-        );
-        
-        this.zArrow = new THREE.ArrowHelper(
-            new THREE.Vector3(0, 0, 1),
-            arrowPos,
-            zLabelDistance - arrowGap,
-            zAxisColor
-        );
-        
-        this.scene.add(this.xArrow);
-        this.scene.add(this.yArrow);
-        this.scene.add(this.zArrow);
-    }
-    
-    // Helper functions
-    createCurveFromPoints(points) {
-        return new THREE.CatmullRomCurve3(points);
-    }
-    
-    createCircularArcInPlane(center, u, v, radius, startAngle, endAngle, segments) {
-        const points = [];
-        for (let i = 0; i <= segments; i++) {
-            const angle = startAngle + (endAngle - startAngle) * (i / segments);
-            const cosA = Math.cos(angle);
-            const sinA = Math.sin(angle);
-            const point = center.clone().add(
-                u.clone().multiplyScalar(radius * cosA)
-            ).add(
-                v.clone().multiplyScalar(radius * sinA)
-            );
-            points.push(point);
-        }
-        return points;
-    }
-    
-    createBarrelArcPoints(center, axis, u, v, radius, startAngle, endAngle, segments) {
-        const points = [];
-        for (let i = 0; i <= segments; i++) {
-            const angle = startAngle + (endAngle - startAngle) * (i / segments);
-            const cosA = Math.cos(angle);
-            const sinA = Math.sin(angle);
-            const point = center.clone().add(
-                u.clone().multiplyScalar(radius * cosA)
-            ).add(
-                v.clone().multiplyScalar(radius * sinA)
-            );
-            points.push(point);
-        }
-        return points;
-    }
-    
-    createSurfaceArrow(startX, startZ, endX, endZ) {
-        const arrowHeadLength = 0.3;
-        const arrowWidth = 0.15;
-        
-        const dx = endX - startX;
-        const dz = endZ - startZ;
-        const length = Math.sqrt(dx * dx + dz * dz);
-        
-        if (length < 0.001) {
-            return [];
-        }
-        
-        const dirX = dx / length;
-        const dirZ = dz / length;
-        const perpX = -dirZ;
-        const perpZ = dirX;
-        
-        return [
-            new THREE.Vector3(endX, this.yOffset, endZ),
-            new THREE.Vector3(
-                endX - arrowHeadLength * dirX - arrowWidth * perpX,
-                this.yOffset,
-                endZ - arrowHeadLength * dirZ - arrowWidth * perpZ
-            ),
-            new THREE.Vector3(
-                endX - arrowHeadLength * dirX + arrowWidth * perpX,
-                this.yOffset,
-                endZ - arrowHeadLength * dirZ + arrowWidth * perpZ
-            ),
-            new THREE.Vector3(endX, this.yOffset, endZ)
-        ];
-    }
-    
-    createBarrelArrow(center, axis, u, v, radius, angle) {
-        const arrowHeadLength = 0.3;
-        const arrowWidth = 0.15;
-        
-        const cosA = Math.cos(angle);
-        const sinA = Math.sin(angle);
-        const endPoint = center.clone().add(
-            u.clone().multiplyScalar(radius * cosA)
-        ).add(
-            v.clone().multiplyScalar(radius * sinA)
-        );
-        
-        const tangent = u.clone().multiplyScalar(sinA).add(v.clone().multiplyScalar(-cosA));
-        tangent.normalize();
-        
-        const perp = u.clone().multiplyScalar(cosA).add(v.clone().multiplyScalar(sinA));
-        perp.normalize();
-        
-        return [
-            endPoint.clone(),
-            endPoint.clone().add(tangent.clone().multiplyScalar(-arrowHeadLength)).add(perp.clone().multiplyScalar(-arrowWidth)),
-            endPoint.clone().add(tangent.clone().multiplyScalar(-arrowHeadLength)).add(perp.clone().multiplyScalar(arrowWidth)),
-            endPoint.clone()
-        ];
-    }
-    
-    createBarrelSurfaceArrow(center, direction, axis) {
-        const arrowHeadLength = 0.3;
-        const arrowWidth = 0.15;
-        
-        const length = direction.length();
-        if (length < 0.001) {
-            return [];
-        }
-        
-        const endPoint = center.clone().add(direction);
-        const dir = direction.clone().normalize();
-        const perp = new THREE.Vector3().crossVectors(dir, axis).normalize();
-        
-        return [
-            endPoint.clone(),
-            endPoint.clone().add(dir.clone().multiplyScalar(-arrowHeadLength)).add(perp.clone().multiplyScalar(-arrowWidth)),
-            endPoint.clone().add(dir.clone().multiplyScalar(-arrowHeadLength)).add(perp.clone().multiplyScalar(arrowWidth)),
-            endPoint.clone()
-        ];
-    }
-    
-    createArrow(centerX, centerZ, radius, angle) {
-        const arrowHeadLength = 0.3;
-        const arrowWidth = 0.15;
-        
-        const endX = centerX + radius * Math.cos(angle);
-        const endZ = centerZ + radius * Math.sin(angle);
-        
-        const dirX = Math.sin(angle);
-        const dirZ = -Math.cos(angle);
-        const perpX = Math.cos(angle);
-        const perpZ = Math.sin(angle);
-        
-        return [
-            new THREE.Vector3(endX, this.yOffset, endZ),
-            new THREE.Vector3(
-                endX - arrowHeadLength * dirX - arrowWidth * perpX,
-                this.yOffset,
-                endZ - arrowHeadLength * dirZ - arrowWidth * perpZ
-            ),
-            new THREE.Vector3(
-                endX - arrowHeadLength * dirX + arrowWidth * perpX,
-                this.yOffset,
-                endZ - arrowHeadLength * dirZ + arrowWidth * perpZ
-            ),
-            new THREE.Vector3(endX, this.yOffset, endZ)
-        ];
-    }
-    
-    createPieShapeInPlane(center, u, v, radius, startAngle, endAngle, segments = 32) {
-        const shape = new THREE.Shape();
-        shape.moveTo(0, 0);
-        for (let i = 0; i <= segments; i++) {
-            const angle = startAngle + (endAngle - startAngle) * (i / segments);
-            const cosA = Math.cos(angle);
-            const sinA = Math.sin(angle);
-            const x = radius * cosA;
-            const y = radius * sinA;
-            shape.lineTo(x, y);
-        }
-        shape.lineTo(0, 0);
-        
-        const geometry = new THREE.ShapeGeometry(shape);
-        const mesh = new THREE.Mesh(geometry);
-        mesh.position.copy(center);
-        
-        const uNorm = u.clone().normalize();
-        const vNorm = v.clone().normalize();
-        const normal = new THREE.Vector3().crossVectors(uNorm, vNorm).normalize();
-        
-        const rotationMatrix = new THREE.Matrix4();
-        rotationMatrix.makeBasis(uNorm, vNorm, normal);
-        rotationMatrix.transpose();
-        const quaternion = new THREE.Quaternion();
-        quaternion.setFromRotationMatrix(rotationMatrix);
-        mesh.setRotationFromQuaternion(quaternion);
-        
-        return mesh;
-    }
-    
-    calculateTiltX(altitude, azimuth) {
-        const altRad = (altitude * Math.PI) / 180;
-        const azRad = (azimuth * Math.PI) / 180;
-        const tiltXRad = Math.atan(Math.tan(altRad) * Math.sin(azRad));
-        return (tiltXRad * 180) / Math.PI;
-    }
-    
-    calculateTiltY(altitude, azimuth) {
-        const altRad = (altitude * Math.PI) / 180;
-        const azRad = (azimuth * Math.PI) / 180;
-        const tiltYRad = Math.atan(Math.tan(altRad) * Math.cos(azRad));
-        return (tiltYRad * 180) / Math.PI;
-    }
-    
-    // Shared code helper methods
-    createDashedLineMaterial(color, linewidth = 2) {
-        return MaterialsFactory.createDashedLineMaterial(color, linewidth);
-    }
-    
-    calculatePieRotationQuaternion(u, v) {
-        const uNorm = u.clone().normalize();
-        const vNorm = v.clone().normalize();
-        const normal = new THREE.Vector3().crossVectors(uNorm, vNorm).normalize();
-        
-        const xAxis = new THREE.Vector3(1, 0, 0);
-        const zAxis = new THREE.Vector3(0, 0, 1);
-        
-        const zToNormalQuat = new THREE.Quaternion();
-        zToNormalQuat.setFromUnitVectors(zAxis, normal);
-        
-        const xAfterZRot = xAxis.clone().applyQuaternion(zToNormalQuat);
-        const xInPlane = xAfterZRot.clone().sub(normal.clone().multiplyScalar(xAfterZRot.dot(normal))).normalize();
-        const angleToU = Math.acos(Math.max(-1, Math.min(1, xInPlane.dot(uNorm))));
-        const cross = new THREE.Vector3().crossVectors(xInPlane, uNorm);
-        const sign = cross.dot(normal) >= 0 ? 1 : -1;
-        const alignQuat = new THREE.Quaternion().setFromAxisAngle(normal, sign * angleToU);
-        
-        const pieRotationQuat = new THREE.Quaternion();
-        pieRotationQuat.multiplyQuaternions(alignQuat, zToNormalQuat);
-        return pieRotationQuat;
-    }
-    
-    updateVerticalLine(line, startPoint, endPoint) {
-        line.geometry.setFromPoints([startPoint, endPoint]);
-        line.geometry.attributes.position.needsUpdate = true;
-        line.visible = true;
-    }
-    
-    updateArcWithTube(arcLine, center, u, v, radius, startAngle, endAngle, segments = 32) {
-        const points = this.createCircularArcInPlane(center, u, v, radius, startAngle, endAngle, segments);
-        const curve = this.createCurveFromPoints(points);
-        const tubeGeometry = new THREE.TubeGeometry(curve, segments, 0.02, 8, false);
-        if (arcLine.geometry) {
-            arcLine.geometry.dispose();
-        }
-        arcLine.geometry = tubeGeometry;
-        arcLine.visible = true;
-    }
-    
-    cleanupPieMesh(pieMesh, parent) {
-        if (pieMesh) {
-            parent.remove(pieMesh);
-            if (pieMesh.geometry) pieMesh.geometry.dispose();
-            return null;
-        }
-        return null;
-    }
-    
-    updateDottedCircle(line, center, u, v, radius, segments = 64) {
-        const points = this.createCircularArcInPlane(center, u, v, radius, 0, 2 * Math.PI, segments);
-        line.geometry.setFromPoints(points);
-        line.geometry.attributes.position.needsUpdate = true;
-        line.computeLineDistances();
-        line.visible = true;
-    }
-    
-    // Main update function - this is the core of the simulation
-    updatePenTransform(distance, altitude, azimuth, barrel) {
-        const tabletTopY = 0.05;
-        const tipLength = 0.5;
-        
-        const altitudeRad = (altitude * Math.PI) / 180;
-        const azimuthRad = (azimuth * Math.PI) / 180;
-        const barrelRad = (barrel * Math.PI) / 180;
-        
-        const tipContactX = THREE.MathUtils.clamp(this.tabletOffsetX - this.tabletWidth / 2, -this.tabletWidth / 2, this.tabletWidth / 2);
-        const tipContactY = tabletTopY + distance;
-        const tipContactZ = THREE.MathUtils.clamp(this.tabletOffsetZ - this.tabletDepth / 2, -this.tabletDepth / 2, this.tabletDepth / 2);
-        
-        const azimuthQuat = new THREE.Quaternion();
-        azimuthQuat.setFromAxisAngle(new THREE.Vector3(0, 1, 0), azimuthRad);
-        
-        const altitudeQuat = new THREE.Quaternion();
-        altitudeQuat.setFromAxisAngle(new THREE.Vector3(1, 0, 0), altitudeRad);
-        
-        const barrelQuat = new THREE.Quaternion();
-        barrelQuat.setFromAxisAngle(new THREE.Vector3(0, 1, 0), barrelRad);
-        
-        const quaternion = new THREE.Quaternion();
-        quaternion.multiplyQuaternions(altitudeQuat, barrelQuat);
-        quaternion.premultiply(azimuthQuat);
-        
-        this.penGroup.setRotationFromQuaternion(quaternion);
-        
-        const tipOffsetLocal = new THREE.Vector3(0, -tipLength, 0);
-        const tipOffsetWorld = tipOffsetLocal.clone().applyQuaternion(quaternion);
-        
-        this.penGroup.position.set(
-            tipContactX - tipOffsetWorld.x,
-            tipContactY - tipOffsetWorld.y,
-            tipContactZ - tipOffsetWorld.z
-        );
-        this.penGroup.updateMatrixWorld(true);
-        
-        this.penTopWorld.copy(this.penTopLocal).applyMatrix4(this.penGroup.matrixWorld);
-        this.penLineBottom.set(this.penTopWorld.x, tabletTopY, this.penTopWorld.z);
-        
-        this.penLinePositions[0] = this.penTopWorld.x;
-        this.penLinePositions[1] = this.penTopWorld.y;
-        this.penLinePositions[2] = this.penTopWorld.z;
-        this.penLinePositions[3] = this.penLineBottom.x;
-        this.penLinePositions[4] = this.penLineBottom.y;
-        this.penLinePositions[5] = this.penLineBottom.z;
-        
-        this.penLine.visible = (altitude !== 0);
-        
-        this.penTipWorld.copy(this.penTipLocal).applyMatrix4(this.penGroup.matrixWorld);
-        this.penTipLineBottom.set(this.penTipWorld.x, tabletTopY, this.penTipWorld.z);
-        
-        // Calculate intersection of pen's long axis with tablet surface
-        // Pen's long axis is the Y axis in pen's local space (0, 1, 0) transformed to world space
-        const penAxisDir = new THREE.Vector3(0, 1, 0).applyQuaternion(quaternion).normalize();
-        
-        // Find where the ray from pen tip along pen axis intersects the tablet surface (y = tabletTopY)
-        // Ray equation: penTipWorld + t * penAxisDir
-        // We want: penTipWorld.y + t * penAxisDir.y = tabletTopY
-        // So: t = (tabletTopY - penTipWorld.y) / penAxisDir.y
-        const penAxisDirY = penAxisDir.y;
-        if (Math.abs(penAxisDirY) > 0.001) {
-            // Pen axis is not horizontal, so it will intersect the tablet surface
-            const t = (tabletTopY - this.penTipWorld.y) / penAxisDirY;
-            this.penAxisIntersection.copy(this.penTipWorld).add(penAxisDir.clone().multiplyScalar(t));
-        } else {
-            // Pen is horizontal, extend the line a long distance in the pen axis direction
-            const extendDistance = 20; // inches
-            this.penAxisIntersection.copy(this.penTipWorld).add(penAxisDir.clone().multiplyScalar(extendDistance));
-            // Project to tablet surface
-            this.penAxisIntersection.y = tabletTopY;
-        }
-        
-        // Update white dotted line along pen axis
-        this.penAxisLinePositions[0] = this.penTipWorld.x;
-        this.penAxisLinePositions[1] = this.penTipWorld.y;
-        this.penAxisLinePositions[2] = this.penTipWorld.z;
-        this.penAxisLinePositions[3] = this.penAxisIntersection.x;
-        this.penAxisLinePositions[4] = this.penAxisIntersection.y;
-        this.penAxisLinePositions[5] = this.penAxisIntersection.z;
-        
-        this.penAxisLineGeometry.attributes.position.needsUpdate = true;
-        this.penAxisLine.computeLineDistances();
-        
-        // Calculate tilt compensation offset if value is non-zero
-        let tiltCompensationOffsetX = 0;
-        let tiltCompensationOffsetZ = 0;
-        // Calculate tiltX and tiltY once for compensation calculation
-        const tiltXForCompensation = this.calculateTiltX(altitude, azimuth);
-        const tiltYForCompensation = this.calculateTiltY(altitude, azimuth);
-        // tiltX and tiltY are in degrees, compensation value (0-1) scales the effect
-        // Use a scale factor to convert degrees to inches (0.01 inches per degree per unit compensation)
-        if (tiltXForCompensation > 0 && this.tiltCompensationPosTiltXValue > 0) {
-            // Offset to the right based on positive tiltX
-            tiltCompensationOffsetX = tiltXForCompensation * this.tiltCompensationPosTiltXValue * 0.01;
-        } else if (tiltXForCompensation < 0 && this.tiltCompensationNegTiltXValue > 0) {
-            // Offset to the left based on negative tiltX (negative offset)
-            tiltCompensationOffsetX = tiltXForCompensation * this.tiltCompensationNegTiltXValue * 0.01;
-        }
-        if (tiltYForCompensation > 0 && this.tiltCompensationPosTiltYValue > 0) {
-            // Offset based on positive tiltY (affects Z axis)
-            tiltCompensationOffsetZ = tiltYForCompensation * this.tiltCompensationPosTiltYValue * 0.01;
-        } else if (tiltYForCompensation < 0 && this.tiltCompensationNegTiltYValue > 0) {
-            // Offset based on negative tiltY (affects Z axis, negative offset)
-            tiltCompensationOffsetZ = tiltYForCompensation * this.tiltCompensationNegTiltYValue * 0.01;
-        }
-        
-        // Calculate cursor position with scaling factor
-        // Tablet center is at (0, 0) in world coordinates
-        // Scaling factor scales the distance from center
-        let cursorX, cursorZ;
-        if (this.scalingFactor > 0) {
-            // Scale position away from center (0, 0)
-            cursorX = this.penTipLineBottom.x * this.scalingFactor + this.cursorOffsetX + tiltCompensationOffsetX;
-            cursorZ = this.penTipLineBottom.z * this.scalingFactor + this.cursorOffsetY + tiltCompensationOffsetZ;
-        } else {
-            // When scaling factor is 0, cursor stays at center
-            cursorX = this.cursorOffsetX + tiltCompensationOffsetX;
-            cursorZ = this.cursorOffsetY + tiltCompensationOffsetZ;
-        }
-        
-        // Apply edge attraction if enabled
-        if (this.edgeAttraction !== 0 && this.edgeAttractionRange > 0) {
-            // Tablet edges: left = -8, right = 8, bottom = -4.5, top = 4.5
-            const leftEdge = -this.tabletWidth / 2;
-            const rightEdge = this.tabletWidth / 2;
-            const bottomEdge = -this.tabletDepth / 2;
-            const topEdge = this.tabletDepth / 2;
-            
-            // Calculate distances from each edge
-            const distFromLeft = cursorX - leftEdge;
-            const distFromRight = rightEdge - cursorX;
-            const distFromBottom = cursorZ - bottomEdge;
-            const distFromTop = topEdge - cursorZ;
-            
-            // Calculate attraction forces for each edge (only within range)
-            let edgeAttractionX = 0;
-            let edgeAttractionZ = 0;
-            
-            // Left edge attraction
-            if (distFromLeft <= this.edgeAttractionRange && distFromLeft >= 0) {
-                const strength = 1 - (distFromLeft / this.edgeAttractionRange); // 1 at edge, 0 at range
-                edgeAttractionX += this.edgeAttraction * strength; // positive = attract to right (away from left edge)
-            }
-            
-            // Right edge attraction
-            if (distFromRight <= this.edgeAttractionRange && distFromRight >= 0) {
-                const strength = 1 - (distFromRight / this.edgeAttractionRange); // 1 at edge, 0 at range
-                edgeAttractionX -= this.edgeAttraction * strength; // negative = attract to left (away from right edge)
-            }
-            
-            // Bottom edge attraction
-            if (distFromBottom <= this.edgeAttractionRange && distFromBottom >= 0) {
-                const strength = 1 - (distFromBottom / this.edgeAttractionRange); // 1 at edge, 0 at range
-                edgeAttractionZ += this.edgeAttraction * strength; // positive = attract up (away from bottom edge)
-            }
-            
-            // Top edge attraction
-            if (distFromTop <= this.edgeAttractionRange && distFromTop >= 0) {
-                const strength = 1 - (distFromTop / this.edgeAttractionRange); // 1 at edge, 0 at range
-                edgeAttractionZ -= this.edgeAttraction * strength; // negative = attract down (away from top edge)
-            }
-            
-            // Apply edge attraction
-            cursorX += edgeAttractionX;
-            cursorZ += edgeAttractionZ;
-        }
-        
-        // Update cursor arrow position to point directly below pen tip, with offset
-        this.cursorArrow.position.set(
-            cursorX,
-            this.yOffset,
-            cursorZ
-        );
-        
-        // Update tilt altitude arc annotation
-        const arcCenter = this.penTipWorld.clone();
-        const arcRadius = 2.0;
-        
-        const verticalDir = new THREE.Vector3(0, 1, 0);
-        // Reuse penAxisDir calculated above
-        
-        const tiltAltitudeU = verticalDir.clone().normalize();
-        const penAxisProjected = penAxisDir.clone().sub(tiltAltitudeU.clone().multiplyScalar(penAxisDir.dot(tiltAltitudeU)));
-        
-        // Calculate tiltAltitudeV based on pen axis projection when altitude is non-zero,
-        // or based on azimuth direction when altitude is zero (to maintain consistent orientation)
-        let tiltAltitudeV;
-        if (penAxisProjected.length() > 0.001) {
-            tiltAltitudeV = penAxisProjected.normalize();
-        } else {
-            // When altitude is 0, use azimuth direction to maintain consistent circle orientation
-            // azimuthRad is already calculated at the start of this function
-            tiltAltitudeV = new THREE.Vector3(Math.sin(azimuthRad), 0, Math.cos(azimuthRad)).normalize();
-        }
-        
-        const tiltAltitudeStartAngle = 0;
-        const tiltAltitudeEndAngle = Math.atan2(penAxisDir.dot(tiltAltitudeV), penAxisDir.dot(tiltAltitudeU));
-        
-        // Always show dotted circle when annotations are enabled
-        if (this.showAltitudeAnnotations) {
-            this.updateDottedCircle(this.tiltAltitudeSemicircleLine, arcCenter, tiltAltitudeU, tiltAltitudeV, arcRadius, 64);
-        } else {
-            this.tiltAltitudeSemicircleLine.visible = false;
-        }
-        
-        // Show other annotation elements only when altitude is non-zero
-        if (altitude !== 0 && this.showAltitudeAnnotations) {
-            const arcStartPoint = arcCenter.clone().add(tiltAltitudeU.clone().multiplyScalar(arcRadius));
-            this.updateVerticalLine(this.tiltAltitudeVerticalLine, this.penTipWorld.clone(), arcStartPoint);
-            
-            this.updateArcWithTube(this.tiltAltitudeArcLine, arcCenter, tiltAltitudeU, tiltAltitudeV, arcRadius, tiltAltitudeStartAngle, tiltAltitudeEndAngle, 32);
-            
-            this.tiltAltitudePieMesh = this.cleanupPieMesh(this.tiltAltitudePieMesh, this.scene);
-            const tiltAltitudePieShape = new THREE.Shape();
-            tiltAltitudePieShape.moveTo(0, 0);
-            const tiltAltitudePieSegments = 32;
-            for (let i = 0; i <= tiltAltitudePieSegments; i++) {
-                const angle = tiltAltitudeStartAngle + (tiltAltitudeEndAngle - tiltAltitudeStartAngle) * (i / tiltAltitudePieSegments);
-                const cosA = Math.cos(angle);
-                const sinA = Math.sin(angle);
-                tiltAltitudePieShape.lineTo(arcRadius * cosA, arcRadius * sinA);
-            }
-            tiltAltitudePieShape.lineTo(0, 0);
-            const tiltAltitudePieGeometry = new THREE.ShapeGeometry(tiltAltitudePieShape);
-            this.tiltAltitudePieMesh = new THREE.Mesh(tiltAltitudePieGeometry, this.tiltAltitudePieMaterial);
-            this.tiltAltitudePieMesh.position.copy(arcCenter);
-            
-            this.tiltAltitudePieMesh.setRotationFromQuaternion(this.calculatePieRotationQuaternion(tiltAltitudeU, tiltAltitudeV));
-            this.scene.add(this.tiltAltitudePieMesh);
-        } else {
-            this.tiltAltitudeVerticalLine.visible = false;
-            this.tiltAltitudeArcLine.visible = false;
-            this.tiltAltitudePieMesh = this.cleanupPieMesh(this.tiltAltitudePieMesh, this.scene);
-        }
-        
-        const tiltX = this.calculateTiltX(altitude, azimuth);
-        const tiltY = this.calculateTiltY(altitude, azimuth);
-        
-        // Update tilt X annotation
-        if (this.showTiltXAnnotations) {
-            const tiltXArcCenter = this.penTipWorld.clone();
-            const tiltXArcRadius = 2.0;
-            const tiltXU = new THREE.Vector3(0, 1, 0);
-            const tiltXV = new THREE.Vector3(1, 0, 0);
-            
-            const tiltXStartAngle = 0;
-            const tiltXEndAngle = (tiltX * Math.PI) / 180;
-            
-            // Always show dotted circle when annotations are enabled
-            this.updateDottedCircle(this.tiltXDottedCircleLine, tiltXArcCenter, tiltXU, tiltXV, tiltXArcRadius, 64);
-            
-            // Show other annotation elements only when tiltX is non-zero
-            if (tiltX !== 0) {
-                const tiltXArcStartPoint = tiltXArcCenter.clone().add(tiltXU.clone().multiplyScalar(tiltXArcRadius));
-                this.updateVerticalLine(this.tiltXVerticalLine, this.penTipWorld.clone(), tiltXArcStartPoint);
-                
-                this.updateArcWithTube(this.tiltXArcLine, tiltXArcCenter, tiltXU, tiltXV, tiltXArcRadius, tiltXStartAngle, tiltXEndAngle, 32);
-                
-                this.tiltXPieMesh = this.cleanupPieMesh(this.tiltXPieMesh, this.scene);
-                this.tiltXPieMesh = this.createPieShapeInPlane(tiltXArcCenter, tiltXU, tiltXV, tiltXArcRadius, tiltXStartAngle, tiltXEndAngle, 32);
-                this.tiltXPieMesh.material = this.tiltXPieMaterial;
-                this.scene.add(this.tiltXPieMesh);
-            } else {
-                this.tiltXVerticalLine.visible = false;
-                this.tiltXArcLine.visible = false;
-                this.tiltXPieMesh = this.cleanupPieMesh(this.tiltXPieMesh, this.scene);
-            }
-        } else {
-            this.tiltXVerticalLine.visible = false;
-            this.tiltXArcLine.visible = false;
-            this.tiltXDottedCircleLine.visible = false;
-            this.tiltXPieMesh = this.cleanupPieMesh(this.tiltXPieMesh, this.scene);
-        }
-        
-        // Update tilt Y annotation
-        if (this.showTiltYAnnotations) {
-            const tiltYArcCenter = this.penTipWorld.clone();
-            const tiltYArcRadius = 2.0;
-            const tiltYU = new THREE.Vector3(0, 1, 0);
-            const tiltYV = new THREE.Vector3(0, 0, 1);
-            
-            const tiltYStartAngle = 0;
-            const tiltYEndAngle = (tiltY * Math.PI) / 180;
-            
-            // Always show dotted circle when annotations are enabled
-            this.updateDottedCircle(this.tiltYDottedCircleLine, tiltYArcCenter, tiltYU, tiltYV, tiltYArcRadius, 64);
-            
-            // Show other annotation elements only when tiltY is non-zero
-            if (tiltY !== 0) {
-                const tiltYArcStartPoint = tiltYArcCenter.clone().add(tiltYU.clone().multiplyScalar(tiltYArcRadius));
-                this.updateVerticalLine(this.tiltYVerticalLine, this.penTipWorld.clone(), tiltYArcStartPoint);
-                
-                this.updateArcWithTube(this.tiltYArcLine, tiltYArcCenter, tiltYU, tiltYV, tiltYArcRadius, tiltYStartAngle, tiltYEndAngle, 32);
-                
-                this.tiltYPieMesh = this.cleanupPieMesh(this.tiltYPieMesh, this.scene);
-                const tiltYPieShape = new THREE.Shape();
-                tiltYPieShape.moveTo(0, 0);
-                const tiltYPieSegments = 32;
-                for (let i = 0; i <= tiltYPieSegments; i++) {
-                    const angle = tiltYStartAngle + (tiltYEndAngle - tiltYStartAngle) * (i / tiltYPieSegments);
-                    const cosA = Math.cos(angle);
-                    const sinA = Math.sin(angle);
-                    tiltYPieShape.lineTo(tiltYArcRadius * cosA, tiltYArcRadius * sinA);
-                }
-                tiltYPieShape.lineTo(0, 0);
-                const tiltYPieGeometry = new THREE.ShapeGeometry(tiltYPieShape);
-                this.tiltYPieMesh = new THREE.Mesh(tiltYPieGeometry, this.tiltYPieMaterial);
-                this.tiltYPieMesh.position.copy(tiltYArcCenter);
-                
-                this.tiltYPieMesh.setRotationFromQuaternion(this.calculatePieRotationQuaternion(tiltYU, tiltYV));
-                this.scene.add(this.tiltYPieMesh);
-            } else {
-                this.tiltYVerticalLine.visible = false;
-                this.tiltYArcLine.visible = false;
-                this.tiltYPieMesh = this.cleanupPieMesh(this.tiltYPieMesh, this.scene);
-            }
-        } else {
-            this.tiltYVerticalLine.visible = false;
-            this.tiltYArcLine.visible = false;
-            this.tiltYDottedCircleLine.visible = false;
-            this.tiltYPieMesh = this.cleanupPieMesh(this.tiltYPieMesh, this.scene);
-        }
-        
-        this.penTipLinePositions[0] = this.penTipWorld.x;
-        this.penTipLinePositions[1] = this.penTipWorld.y;
-        this.penTipLinePositions[2] = this.penTipWorld.z;
-        this.penTipLinePositions[3] = this.penTipLineBottom.x;
-        this.penTipLinePositions[4] = this.penTipLineBottom.y;
-        this.penTipLinePositions[5] = this.penTipLineBottom.z;
-        
-        this.penLineGeometry.attributes.position.needsUpdate = true;
-        this.penLine.computeLineDistances();
-        this.penTipLineGeometry.attributes.position.needsUpdate = true;
-        this.penTipLine.computeLineDistances();
-        
-        // Update surface line
-        const fixedLineLength = 2.0;
-        const dx = this.penLineBottom.x - this.penTipLineBottom.x;
-        const dz = this.penLineBottom.z - this.penTipLineBottom.z;
-        const length = Math.sqrt(dx * dx + dz * dz);
-        
-        let extendedEndX = this.penTipLineBottom.x;
-        let extendedEndZ = this.penTipLineBottom.z;
-        
-        if (length > 0.001) {
-            const dirX = dx / length;
-            const dirZ = dz / length;
-            extendedEndX = this.penTipLineBottom.x + dirX * fixedLineLength;
-            extendedEndZ = this.penTipLineBottom.z + dirZ * fixedLineLength;
-        }
-        
-        const surfaceLinePoints = [
-            new THREE.Vector3(this.penTipLineBottom.x, this.yOffset, this.penTipLineBottom.z),
-            new THREE.Vector3(extendedEndX, this.yOffset, extendedEndZ)
-        ];
-        this.surfaceLineGeometry.setFromPoints(surfaceLinePoints);
-        this.surfaceLineGeometry.attributes.position.needsUpdate = true;
-        
-        // Update arc annotation
-        const arcCenterX = this.penTipLineBottom.x;
-        const arcCenterZ = this.penTipLineBottom.z;
-        
-        let surfaceLineAngle = Math.PI / 2;
-        if (length > 0.001) {
-            surfaceLineAngle = Math.atan2(dz, dx);
-        }
-        
-        const startAngle = Math.PI / 2 - Math.PI;
-        const endAngle = startAngle + (azimuth * Math.PI) / 180;
-        const arcLength = Math.abs(azimuth);
-        const arcSegments = Math.max(8, Math.floor(arcLength / 5));
-        
-        const dottedCircleSegments = 64;
-        const azimuthArcCenter = new THREE.Vector3(arcCenterX, this.yOffset, arcCenterZ);
-        const dottedCirclePoints = [];
-        
-        const xzPlaneQuat = new THREE.Quaternion();
-        xzPlaneQuat.setFromAxisAngle(new THREE.Vector3(1, 0, 0), -Math.PI / 2);
-        
-        for (let i = 0; i <= dottedCircleSegments; i++) {
-            const angle = (2 * Math.PI * i) / dottedCircleSegments;
-            const cosA = Math.cos(angle);
-            const sinA = Math.sin(angle);
-            const localPoint = new THREE.Vector3(this.arcRadius * cosA, this.arcRadius * sinA, 0);
-            const worldPoint = localPoint.clone().applyQuaternion(xzPlaneQuat);
-            worldPoint.add(azimuthArcCenter);
-            dottedCirclePoints.push(worldPoint);
-        }
-        
-        this.dottedArcLine.geometry.setFromPoints(dottedCirclePoints);
-        this.dottedArcLine.geometry.attributes.position.needsUpdate = true;
-        this.dottedArcLine.computeLineDistances();
-        this.dottedArcLine.visible = true;
-        
-        if (arcLength > 0.1) {
-            const arcPoints = [];
-            for (let i = 0; i <= arcSegments; i++) {
-                const angle = endAngle + (startAngle - endAngle) * (i / arcSegments);
-                const cosA = Math.cos(angle);
-                const sinA = Math.sin(angle);
-                const localPoint = new THREE.Vector3(this.arcRadius * cosA, this.arcRadius * sinA, 0);
-                const worldPoint = localPoint.clone().applyQuaternion(xzPlaneQuat);
-                worldPoint.add(azimuthArcCenter);
-                arcPoints.push(worldPoint);
-            }
-            
-            const arcCurve = this.createCurveFromPoints(arcPoints);
-            const tubeGeometry = new THREE.TubeGeometry(arcCurve, arcSegments, 0.02, 8, false);
-            if (this.arcLine.geometry) {
-                this.arcLine.geometry.dispose();
-            }
-            this.arcLine.geometry = tubeGeometry;
-            this.arcLine.visible = true;
-            
-            this.arcPieMesh = this.cleanupPieMesh(this.arcPieMesh, this.arcAnnotationGroup);
-            const pieStartAngle = startAngle;
-            const pieEndAngle = endAngle;
-            const azimuthPieShape = new THREE.Shape();
-            azimuthPieShape.moveTo(0, 0);
-            for (let i = 0; i <= arcSegments; i++) {
-                const angle = pieStartAngle + (pieEndAngle - pieStartAngle) * (i / arcSegments);
-                const x = this.arcRadius * Math.cos(angle);
-                const z = this.arcRadius * Math.sin(angle);
-                azimuthPieShape.lineTo(x, z);
-            }
-            azimuthPieShape.lineTo(0, 0);
-            const azimuthPieGeometry = new THREE.ShapeGeometry(azimuthPieShape);
-            this.arcPieMesh = new THREE.Mesh(azimuthPieGeometry, this.arcPieMaterial);
-            this.arcPieMesh.position.set(arcCenterX, this.yOffset, arcCenterZ);
-            this.arcPieMesh.setRotationFromQuaternion(xzPlaneQuat);
-            this.arcAnnotationGroup.add(this.arcPieMesh);
-        } else {
-            this.arcLine.visible = false;
-            this.arcPieMesh = this.cleanupPieMesh(this.arcPieMesh, this.arcAnnotationGroup);
-        }
-        
-        // Update barrel rotation annotations
-        const barrelCenter = this.penTopWorld.clone();
-        const penAxis = new THREE.Vector3(0, 1, 0).applyQuaternion(quaternion).normalize();
-        
-        const orientationQuat = new THREE.Quaternion();
-        orientationQuat.multiplyQuaternions(altitudeQuat, new THREE.Quaternion());
-        orientationQuat.premultiply(azimuthQuat);
-        
-        const u = new THREE.Vector3(1, 0, 0).applyQuaternion(orientationQuat).normalize();
-        const v = new THREE.Vector3(0, 0, 1).applyQuaternion(orientationQuat).normalize();
-        
-        const barrelStartAngle = Math.PI / 2;
-        const barrelEndAngle = Math.PI / 2 - (barrel * Math.PI) / 180;
-        const barrelArcLength = Math.abs(barrel);
-        const barrelArcSegments = Math.max(8, Math.floor(barrelArcLength / 5));
-        
-        if (this.showBarrelAnnotations) {
-            if (barrelArcLength > 0.1) {
-                const barrelArcPoints = this.createBarrelArcPoints(barrelCenter, penAxis, u, v, this.barrelArcRadius, barrelStartAngle, barrelEndAngle, barrelArcSegments);
-                const barrelArcCurve = this.createCurveFromPoints(barrelArcPoints);
-                const barrelTubeGeometry = new THREE.TubeGeometry(barrelArcCurve, barrelArcSegments, 0.02, 8, false);
-                if (this.barrelArcLine.geometry) {
-                    this.barrelArcLine.geometry.dispose();
-                }
-                this.barrelArcLine.geometry = barrelTubeGeometry;
-                this.barrelArcLine.visible = true;
-                
-                this.barrelPieMesh = this.cleanupPieMesh(this.barrelPieMesh, this.barrelAnnotationGroup);
-                const pieStartAngle = (barrelStartAngle - Math.PI) - Math.PI;
-                const pieEndAngle = (barrelEndAngle - Math.PI) - Math.PI;
-                const pieShape = new THREE.Shape();
-                pieShape.moveTo(0, 0);
-                const pieSegments = 32;
-                for (let i = 0; i <= pieSegments; i++) {
-                    const angle = pieStartAngle + (pieEndAngle - pieStartAngle) * (i / pieSegments);
-                    const cosA = Math.cos(angle);
-                    const sinA = Math.sin(angle);
-                    pieShape.lineTo(this.barrelArcRadius * cosA, this.barrelArcRadius * sinA);
-                }
-                pieShape.lineTo(0, 0);
-                const pieGeometry = new THREE.ShapeGeometry(pieShape);
-                this.barrelPieMesh = new THREE.Mesh(pieGeometry, this.barrelPieMaterial);
-                this.barrelPieMesh.position.copy(barrelCenter);
-                
-                this.barrelPieMesh.setRotationFromQuaternion(this.calculatePieRotationQuaternion(u, v));
-                this.barrelAnnotationGroup.add(this.barrelPieMesh);
-            } else {
-                this.barrelArcLine.visible = false;
-                this.barrelPieMesh = this.cleanupPieMesh(this.barrelPieMesh, this.barrelAnnotationGroup);
-            }
-            
-            const barrelDottedCircleSegments = 64;
-            const barrelDottedCirclePoints = this.createBarrelArcPoints(barrelCenter, penAxis, u, v, this.barrelArcRadius, 0, 2 * Math.PI, barrelDottedCircleSegments);
-            this.barrelDottedCircleLine.geometry.setFromPoints(barrelDottedCirclePoints);
-            this.barrelDottedCircleLine.geometry.attributes.position.needsUpdate = true;
-            this.barrelDottedCircleLine.computeLineDistances();
-            this.barrelDottedCircleLine.visible = true;
-            
-            const barrelFixedLineLength = 1.5;
-            const barrelDir = u.clone().multiplyScalar(Math.cos(barrelEndAngle)).add(v.clone().multiplyScalar(Math.sin(barrelEndAngle)));
-            barrelDir.normalize();
-            const barrelDirection = barrelDir.multiplyScalar(barrelFixedLineLength);
-            
-            const barrelSurfaceLinePoints = [
-                barrelCenter.clone(),
-                barrelCenter.clone().add(barrelDirection)
-            ];
-            this.barrelSurfaceLine.geometry.setFromPoints(barrelSurfaceLinePoints);
-            this.barrelSurfaceLine.geometry.attributes.position.needsUpdate = true;
-            this.barrelSurfaceLine.visible = true;
-        } else {
-            this.barrelArcLine.visible = false;
-            this.barrelDottedCircleLine.visible = false;
-            this.barrelSurfaceLine.visible = false;
-            this.barrelPieMesh = this.cleanupPieMesh(this.barrelPieMesh, this.barrelAnnotationGroup);
-        }
-    }
-    
+
     animate() {
-        const animateLoop = () => {
-            requestAnimationFrame(animateLoop);
+        const loop = () => {
+            requestAnimationFrame(loop);
             this.controls.update();
             this.renderer.render(this.scene, this.camera);
         };
-        animateLoop();
+        loop();
     }
-    
-    // Public API methods
+
+    // ── Pen parameters ────────────────────────────────────────────────────────
+
     setDistance(value) {
         this.distance = value;
         this.updatePenTransform(this.distance, this.tiltAltitude, this.tiltAzimuth, this.barrelRotation);
     }
-    
+
     setTiltAltitude(value) {
         this.tiltAltitude = value;
         this.updatePenTransform(this.distance, this.tiltAltitude, this.tiltAzimuth, this.barrelRotation);
-        const tiltX = this.calculateTiltX(this.tiltAltitude, this.tiltAzimuth);
-        const tiltY = this.calculateTiltY(this.tiltAltitude, this.tiltAzimuth);
         return {
             shouldEnableAzimuth: this.tiltAltitude !== 0,
-            tiltX: tiltX,
-            tiltY: tiltY
+            tiltX: this.calculateTiltX(this.tiltAltitude, this.tiltAzimuth),
+            tiltY: this.calculateTiltY(this.tiltAltitude, this.tiltAzimuth),
         };
     }
-    
+
     setTiltAzimuth(value) {
         this.tiltAzimuth = value;
         this.updatePenTransform(this.distance, this.tiltAltitude, this.tiltAzimuth, this.barrelRotation);
-        const tiltX = this.calculateTiltX(this.tiltAltitude, this.tiltAzimuth);
-        const tiltY = this.calculateTiltY(this.tiltAltitude, this.tiltAzimuth);
         return {
-            tiltX: tiltX,
-            tiltY: tiltY
+            tiltX: this.calculateTiltX(this.tiltAltitude, this.tiltAzimuth),
+            tiltY: this.calculateTiltY(this.tiltAltitude, this.tiltAzimuth),
         };
     }
-    
+
     setBarrelRotation(value) {
         this.barrelRotation = value;
         this.updatePenTransform(this.distance, this.tiltAltitude, this.tiltAzimuth, this.barrelRotation);
     }
-    
+
+    // ── Tablet / cursor position ───────────────────────────────────────────────
+
     setTabletPositionX(value) {
         this.tabletOffsetX = value;
         this.updatePenTransform(this.distance, this.tiltAltitude, this.tiltAzimuth, this.barrelRotation);
-        // Trigger custom event to update UI sliders
         if (this.viewer) {
-            const event = new CustomEvent('tabletPositionChanged', { 
-                detail: { x: value, z: this.tabletOffsetZ } 
-            });
-            this.viewer.dispatchEvent(event);
+            this.viewer.dispatchEvent(new CustomEvent('tabletPositionChanged', {
+                detail: { x: value, z: this.tabletOffsetZ }
+            }));
         }
     }
-    
+
     setTabletPositionZ(value) {
         this.tabletOffsetZ = value;
         this.updatePenTransform(this.distance, this.tiltAltitude, this.tiltAzimuth, this.barrelRotation);
-        // Trigger custom event to update UI sliders
         if (this.viewer) {
-            const event = new CustomEvent('tabletPositionChanged', { 
-                detail: { x: this.tabletOffsetX, z: value } 
-            });
-            this.viewer.dispatchEvent(event);
+            this.viewer.dispatchEvent(new CustomEvent('tabletPositionChanged', {
+                detail: { x: this.tabletOffsetX, z: value }
+            }));
         }
     }
-    
+
     setCursorOffsetX(value) {
         this.cursorOffsetX = value;
-        // Recalculate pen transform to apply tilt compensation
         this.updatePenTransform(this.distance, this.tiltAltitude, this.tiltAzimuth, this.barrelRotation);
     }
-    
+
     setCursorOffsetY(value) {
         this.cursorOffsetY = value;
-        // Recalculate pen transform to apply tilt compensation
         this.updatePenTransform(this.distance, this.tiltAltitude, this.tiltAzimuth, this.barrelRotation);
     }
-    
+
+    // ── Tilt compensation ─────────────────────────────────────────────────────
+
     setTiltCompensationPosTiltXValue(value) {
         this.tiltCompensationPosTiltXValue = value;
-        // Recalculate pen transform to apply tilt compensation
         this.updatePenTransform(this.distance, this.tiltAltitude, this.tiltAzimuth, this.barrelRotation);
     }
-    
+
     setTiltCompensationNegTiltXValue(value) {
         this.tiltCompensationNegTiltXValue = value;
-        // Recalculate pen transform to apply tilt compensation
         this.updatePenTransform(this.distance, this.tiltAltitude, this.tiltAzimuth, this.barrelRotation);
     }
-    
+
     setTiltCompensationPosTiltYValue(value) {
         this.tiltCompensationPosTiltYValue = value;
-        // Recalculate pen transform to apply tilt compensation
         this.updatePenTransform(this.distance, this.tiltAltitude, this.tiltAzimuth, this.barrelRotation);
     }
-    
+
     setTiltCompensationNegTiltYValue(value) {
         this.tiltCompensationNegTiltYValue = value;
-        // Recalculate pen transform to apply tilt compensation
         this.updatePenTransform(this.distance, this.tiltAltitude, this.tiltAzimuth, this.barrelRotation);
     }
-    
+
+    // ── Cursor scaling / edge attraction ──────────────────────────────────────
+
     setScalingFactor(value) {
         this.scalingFactor = value;
-        // Recalculate pen transform to apply scaling
         this.updatePenTransform(this.distance, this.tiltAltitude, this.tiltAzimuth, this.barrelRotation);
     }
-    
+
     setEdgeAttraction(value) {
         this.edgeAttraction = value;
-        // Recalculate pen transform to apply edge attraction
         this.updatePenTransform(this.distance, this.tiltAltitude, this.tiltAzimuth, this.barrelRotation);
     }
-    
+
     setEdgeAttractionRange(value) {
         this.edgeAttractionRange = value;
-        // Recalculate pen transform to apply edge attraction
         this.updatePenTransform(this.distance, this.tiltAltitude, this.tiltAzimuth, this.barrelRotation);
     }
-    
+
+    // ── Visibility toggles ────────────────────────────────────────────────────
+
     setAzimuthAnnotationsVisible(visible) {
         this.arcAnnotationGroup.visible = visible;
         this.surfaceLine.visible = visible;
     }
-    
+
     setAltitudeAnnotationsVisible(visible) {
         this.showAltitudeAnnotations = visible;
         this.updatePenTransform(this.distance, this.tiltAltitude, this.tiltAzimuth, this.barrelRotation);
     }
-    
+
     setBarrelAnnotationsVisible(visible) {
         this.showBarrelAnnotations = visible;
         this.updatePenTransform(this.distance, this.tiltAltitude, this.tiltAzimuth, this.barrelRotation);
     }
-    
+
     setTiltXAnnotationsVisible(visible) {
         this.showTiltXAnnotations = visible;
         this.updatePenTransform(this.distance, this.tiltAltitude, this.tiltAzimuth, this.barrelRotation);
     }
-    
+
     setTiltYAnnotationsVisible(visible) {
         this.showTiltYAnnotations = visible;
         this.updatePenTransform(this.distance, this.tiltAltitude, this.tiltAzimuth, this.barrelRotation);
     }
-    
+
     setCursorVisible(visible) {
-        if (this.cursorArrow) {
-            this.cursorArrow.visible = visible;
-        }
+        if (this.cursorArrow) this.cursorArrow.visible = visible;
     }
-    
+
     setPenShadowVisible(visible) {
-        if (this.penTipMesh) {
-            this.penTipMesh.castShadow = visible;
-        }
-        if (this.penBarrelMesh) {
-            this.penBarrelMesh.castShadow = visible;
-        }
+        if (this.penTipMesh)    this.penTipMesh.castShadow    = visible;
+        if (this.penBarrelMesh) this.penBarrelMesh.castShadow = visible;
     }
-    
+
     setTabletCheckerboardVisible(visible) {
         if (!this.tabletMaterial) return;
-        
         if (visible) {
             if (!this.tabletCheckerboardTexture) {
                 this.tabletCheckerboardTexture = TexturesFactory.createTabletCheckerboardTexture(this.tabletWidth, this.tabletDepth);
             }
             this.tabletMaterial.map = this.tabletCheckerboardTexture;
-            // Keep original roughness to avoid shininess, but use white base color for brightness
             this.tabletMaterial.roughness = 0.7;
             this.tabletMaterial.metalness = 0.2;
-            this.tabletMaterial.color.setHex(0xffffff); // White base to make colors appear brighter
-            this.tabletMaterial.needsUpdate = true;
+            this.tabletMaterial.color.setHex(0xffffff);
         } else {
             this.tabletMaterial.map = null;
             this.tabletMaterial.color.setHex(this.tabletBaseColor);
-            // Restore original material properties
             this.tabletMaterial.roughness = 0.7;
             this.tabletMaterial.metalness = 0.2;
-            this.tabletMaterial.needsUpdate = true;
         }
+        this.tabletMaterial.needsUpdate = true;
     }
-    
+
     setAxisMarkersVisible(visible) {
         this.xArrow.visible = visible;
         this.yArrow.visible = visible;
@@ -1638,7 +237,9 @@ class Pen3DSim {
         this.yLabel.visible = visible;
         this.zLabel.visible = visible;
     }
-    
+
+    // ── Camera ────────────────────────────────────────────────────────────────
+
     setAxonometricView(enabled) {
         if (enabled) {
             this.orthographicCamera.position.copy(this.perspectiveCamera.position);
@@ -1652,7 +253,21 @@ class Pen3DSim {
         this.controls.object = this.camera;
         this.controls.update();
     }
-    
+
+    // ── Cursor orientation ────────────────────────────────────────────────────
+
+    setCursorRotation(angle) {
+        this.cursorRotation = angle;
+        this.updateCursorRotation();
+    }
+
+    setCursorTipRotationY(angle) {
+        this.cursorTipRotationY = angle;
+        this.updateCursorRotation();
+    }
+
+    // ── Utility ───────────────────────────────────────────────────────────────
+
     reset() {
         return {
             distance: 0,
@@ -1660,344 +275,77 @@ class Pen3DSim {
             tiltAzimuth: 0,
             barrelRotation: 0,
             tabletX: 8,
-            tabletZ: 4.5
+            tabletZ: 4.5,
         };
     }
-    
+
     exportAsPNG() {
         this.renderer.render(this.scene, this.camera);
-        const dataURL = this.renderer.domElement.toDataURL('image/png');
-        
         const link = document.createElement('a');
         link.download = 'Pen3DSim-render.png';
-        link.href = dataURL;
+        link.href = this.renderer.domElement.toDataURL('image/png');
         link.click();
     }
-    
+
     onResize() {
         const aspect = this.viewer.clientWidth / this.viewer.clientHeight;
-        
         this.perspectiveCamera.aspect = aspect;
         this.perspectiveCamera.updateProjectionMatrix();
-        
-        this.orthographicCamera.left = -this.orthoSize * aspect;
-        this.orthographicCamera.right = this.orthoSize * aspect;
+        this.orthographicCamera.left   = -this.orthoSize * aspect;
+        this.orthographicCamera.right  =  this.orthoSize * aspect;
         this.orthographicCamera.updateProjectionMatrix();
-        
         this.renderer.setSize(this.viewer.clientWidth, this.viewer.clientHeight);
     }
-    
-    updateCursorRotation() {
-        if (!this.cursorArrowMesh || !this.cursorBaseQuat) {
-            return;
-        }
-        
-        // Step 1: Apply Y-axis rotation at tip (around vertical axis)
-        const tipYRotQuat = new THREE.Quaternion();
-        tipYRotQuat.setFromAxisAngle(new THREE.Vector3(0, 1, 0), (this.cursorTipRotationY * Math.PI) / 180);
-        
-        // Step 2: Combine base rotation with Y-axis rotation
-        // The Y rotation should be applied after the base rotation (to rotate the already-oriented cursor)
-        const baseWithYRot = new THREE.Quaternion();
-        baseWithYRot.multiplyQuaternions(tipYRotQuat, this.cursorBaseQuat);
-        
-        // Step 3: Rotate around the long axis by cursorRotation degrees
-        // Need to recalculate long axis direction after Y rotation
-        const localXAxis = new THREE.Vector3(1, 0, 0);
-        const longAxisDir = localXAxis.applyQuaternion(baseWithYRot).normalize();
-        
-        const longAxisRotQuat = new THREE.Quaternion();
-        longAxisRotQuat.setFromAxisAngle(longAxisDir, (this.cursorRotation * Math.PI) / 180);
-        
-        // Combine: first apply base rotation with Y rotation, then rotate around long axis
-        // For quaternions: final = longAxisRot * (tipYRot * baseQuat)
-        const finalQuat = new THREE.Quaternion();
-        finalQuat.multiplyQuaternions(longAxisRotQuat, baseWithYRot);
-        
-        this.cursorArrowMesh.setRotationFromQuaternion(finalQuat);
-    }
-    
-    setCursorRotation(angle) {
-        this.cursorRotation = angle;
-        this.updateCursorRotation();
-    }
-    
-    setCursorTipRotationY(angle) {
-        this.cursorTipRotationY = angle;
-        this.updateCursorRotation();
-    }
-    
-    // Easing function for smooth animation (ease-in-out)
+
+    // ── Animation helpers ─────────────────────────────────────────────────────
+
     easeInOutCubic(t) {
         return t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
     }
-    
-    // Animate from default position to demo position
-    animateToDemo(onProgress) {
-        // Default values (start)
-        const start = {
-            distance: 0,
-            tiltAltitude: 0,
-            tiltAzimuth: 0,
-            barrelRotation: 0,
-            tabletX: 8,
-            tabletZ: 4.5
-        };
-        
-        // Demo values (end)
-        const end = {
-            distance: 0,
-            tiltAltitude: 45,
-            tiltAzimuth: 242,
-            barrelRotation: 318,
-            tabletX: 8,
-            tabletZ: 4.5
-        };
-        
-        const duration = 8000; // 8 seconds
-        const startTime = performance.now();
-        let animationFrameId = null;
-        
-        const animate = (currentTime) => {
-            const elapsed = currentTime - startTime;
-            const progress = Math.min(elapsed / duration, 1);
-            
-            // Apply easing
-            const easedProgress = this.easeInOutCubic(progress);
-            
-            // Interpolate values
-            const current = {
-                distance: start.distance + (end.distance - start.distance) * easedProgress,
-                tiltAltitude: start.tiltAltitude + (end.tiltAltitude - start.tiltAltitude) * easedProgress,
-                tiltAzimuth: this.interpolateAngle(start.tiltAzimuth, end.tiltAzimuth, easedProgress),
-                barrelRotation: this.interpolateAngle(start.barrelRotation, end.barrelRotation, easedProgress),
-                tabletX: start.tabletX + (end.tabletX - start.tabletX) * easedProgress,
-                tabletZ: start.tabletZ + (end.tabletZ - start.tabletZ) * easedProgress
-            };
-            
-            // Update internal state
-            this.distance = current.distance;
-            this.tiltAltitude = current.tiltAltitude;
-            this.tiltAzimuth = current.tiltAzimuth;
-            this.barrelRotation = current.barrelRotation;
-            this.tabletOffsetX = current.tabletX;
-            this.tabletOffsetZ = current.tabletZ;
-            
-            // Update pen transform
-            this.updatePenTransform(current.distance, current.tiltAltitude, current.tiltAzimuth, current.barrelRotation);
-            
-            // Call progress callback to update UI
-            if (onProgress) {
-                onProgress(current, progress);
-            }
-            
-            if (progress < 1) {
-                animationFrameId = requestAnimationFrame(animate);
-            } else {
-                // Animation complete
-                animationFrameId = null;
-            }
-        };
-        
-        animationFrameId = requestAnimationFrame(animate);
-        
-        // Return a function to cancel the animation
-        return () => {
-            if (animationFrameId !== null) {
-                cancelAnimationFrame(animationFrameId);
-                animationFrameId = null;
-            }
-        };
-    }
-    
-    // Helper to interpolate angles (handles wrapping around 360)
+
     interpolateAngle(start, end, t) {
-        // Normalize angles to 0-360 range
         start = ((start % 360) + 360) % 360;
-        end = ((end % 360) + 360) % 360;
-        
-        // Calculate difference
+        end   = ((end   % 360) + 360) % 360;
         let diff = end - start;
-        
-        // Always go forward (increasing angle) if end > start
-        // Only wrap if going forward would be more than 360 degrees
-        if (diff < 0) {
-            // end < start, so we need to wrap forward
-            diff += 360;
-        }
-        // If diff > 0 and < 360, just use it as is (forward direction)
-        // If diff >= 360, that shouldn't happen with normalized angles, but handle it
-        if (diff >= 360) {
-            diff = diff % 360;
-        }
-        
-        let result = start + diff * t;
-        
-        // Normalize result to 0-360 range
-        result = ((result % 360) + 360) % 360;
-        
-        return result;
+        if (diff < 0)    diff += 360;
+        if (diff >= 360) diff %= 360;
+        return ((( start + diff * t) % 360) + 360) % 360;
     }
-    
-    // Get current camera settings as a formatted string
-    getCameraSettings() {
-        try {
-            const cam = this.camera;
-            const pos = cam.position;
-            const rot = cam.rotation;
-            const isPerspective = cam === this.perspectiveCamera;
-            
-            // Calculate distance from camera to target (controls.target, default is 0,0,0)
-            const target = this.controls.target || new THREE.Vector3(0, 0, 0);
-            const distance = pos.distanceTo(target);
-            
-            let settings = `Type: ${isPerspective ? 'Perspective' : 'Orthographic'}\n`;
-            settings += `Position: (${pos.x.toFixed(2)}, ${pos.y.toFixed(2)}, ${pos.z.toFixed(2)})\n`;
-            settings += `Rotation: (${(rot.x * 180 / Math.PI).toFixed(2)}°, ${(rot.y * 180 / Math.PI).toFixed(2)}°, ${(rot.z * 180 / Math.PI).toFixed(2)}°)\n`;
-            
-            if (isPerspective) {
-                settings += `FOV: ${cam.fov.toFixed(1)}°\n`;
-                settings += `Aspect: ${cam.aspect.toFixed(3)}\n`;
-            } else {
-                settings += `Size: ${this.orthoSize.toFixed(2)}\n`;
-                settings += `Aspect: ${cam.aspect.toFixed(3)}\n`;
-            }
-            
-            settings += `Near: ${cam.near.toFixed(2)}, Far: ${cam.far.toFixed(0)}\n`;
-            settings += `Distance: ${distance.toFixed(2)}\n`;
-            settings += `Target: (${target.x.toFixed(2)}, ${target.y.toFixed(2)}, ${target.z.toFixed(2)})`;
-            
-            return settings;
-        } catch (error) {
-            return `Error getting camera settings: ${error.message}`;
-        }
-    }
-    
-    // Get current camera settings as JSON
-    getCameraSettingsJSON() {
-        try {
-            const cam = this.camera;
-            const pos = cam.position;
-            const rot = cam.rotation;
-            const isPerspective = cam === this.perspectiveCamera;
-            const target = this.controls.target || new THREE.Vector3(0, 0, 0);
-            
-            const settings = {
-                type: isPerspective ? 'perspective' : 'orthographic',
-                position: {
-                    x: pos.x,
-                    y: pos.y,
-                    z: pos.z
-                },
-                rotation: {
-                    x: rot.x,
-                    y: rot.y,
-                    z: rot.z
-                },
-                target: {
-                    x: target.x,
-                    y: target.y,
-                    z: target.z
-                },
-                near: cam.near,
-                far: cam.far,
-                aspect: cam.aspect
+
+    animateToDemo(onProgress) {
+        const start = { distance: 0, tiltAltitude:   0, tiltAzimuth:   0, barrelRotation:   0, tabletX: 8, tabletZ: 4.5 };
+        const end   = { distance: 0, tiltAltitude:  45, tiltAzimuth: 242, barrelRotation: 318, tabletX: 8, tabletZ: 4.5 };
+        const duration = 8000;
+        const startTime = performance.now();
+        let frameId = null;
+
+        const tick = (now) => {
+            const progress    = Math.min((now - startTime) / duration, 1);
+            const eased       = this.easeInOutCubic(progress);
+            const current = {
+                distance:       start.distance       + (end.distance       - start.distance)       * eased,
+                tiltAltitude:   start.tiltAltitude   + (end.tiltAltitude   - start.tiltAltitude)   * eased,
+                tiltAzimuth:    this.interpolateAngle(start.tiltAzimuth,    end.tiltAzimuth,    eased),
+                barrelRotation: this.interpolateAngle(start.barrelRotation, end.barrelRotation, eased),
+                tabletX:        start.tabletX        + (end.tabletX        - start.tabletX)        * eased,
+                tabletZ:        start.tabletZ        + (end.tabletZ        - start.tabletZ)        * eased,
             };
-            
-            if (isPerspective) {
-                settings.fov = cam.fov;
-            } else {
-                settings.size = this.orthoSize;
-            }
-            
-            return JSON.stringify(settings, null, 2);
-        } catch (error) {
-            throw new Error(`Error getting camera settings: ${error.message}`);
-        }
-    }
-    
-    // Apply camera settings from JSON
-    setCameraSettingsJSON(jsonString) {
-        try {
-            const settings = JSON.parse(jsonString);
-            
-            // Validate required fields
-            if (!settings.position || !settings.rotation || !settings.target) {
-                throw new Error('Missing required fields: position, rotation, or target');
-            }
-            
-            // Determine which camera to use
-            const usePerspective = settings.type === 'perspective' || (settings.type !== 'orthographic' && this.camera === this.perspectiveCamera);
-            
-            // Switch camera type if needed
-            if (usePerspective && this.camera !== this.perspectiveCamera) {
-                this.perspectiveCamera.position.copy(this.orthographicCamera.position);
-                this.perspectiveCamera.rotation.copy(this.orthographicCamera.rotation);
-                this.camera = this.perspectiveCamera;
-                this.controls.object = this.camera;
-            } else if (!usePerspective && this.camera !== this.orthographicCamera) {
-                this.orthographicCamera.position.copy(this.perspectiveCamera.position);
-                this.orthographicCamera.rotation.copy(this.perspectiveCamera.rotation);
-                this.camera = this.orthographicCamera;
-                this.controls.object = this.camera;
-            }
-            
-            // Apply position
-            this.camera.position.set(
-                settings.position.x,
-                settings.position.y,
-                settings.position.z
-            );
-            
-            // Apply rotation
-            this.camera.rotation.set(
-                settings.rotation.x,
-                settings.rotation.y,
-                settings.rotation.z
-            );
-            
-            // Apply target
-            if (settings.target) {
-                this.controls.target.set(
-                    settings.target.x,
-                    settings.target.y,
-                    settings.target.z
-                );
-            }
-            
-            // Apply camera-specific settings
-            if (usePerspective && settings.fov !== undefined) {
-                this.perspectiveCamera.fov = settings.fov;
-                this.perspectiveCamera.updateProjectionMatrix();
-            } else if (!usePerspective && settings.size !== undefined) {
-                this.orthoSize = settings.size;
-                const aspect = this.camera.aspect;
-                this.orthographicCamera.left = -this.orthoSize * aspect;
-                this.orthographicCamera.right = this.orthoSize * aspect;
-                this.orthographicCamera.top = this.orthoSize;
-                this.orthographicCamera.bottom = -this.orthoSize;
-                this.orthographicCamera.updateProjectionMatrix();
-            }
-            
-            // Apply near/far if provided
-            if (settings.near !== undefined) {
-                this.camera.near = settings.near;
-            }
-            if (settings.far !== undefined) {
-                this.camera.far = settings.far;
-            }
-            if (settings.aspect !== undefined) {
-                this.camera.aspect = settings.aspect;
-            }
-            this.camera.updateProjectionMatrix();
-            
-            // Update controls
-            this.controls.update();
-            
-            return true;
-        } catch (error) {
-            throw new Error(`Error applying camera settings: ${error.message}`);
-        }
+
+            this.distance       = current.distance;
+            this.tiltAltitude   = current.tiltAltitude;
+            this.tiltAzimuth    = current.tiltAzimuth;
+            this.barrelRotation = current.barrelRotation;
+            this.tabletOffsetX  = current.tabletX;
+            this.tabletOffsetZ  = current.tabletZ;
+
+            this.updatePenTransform(current.distance, current.tiltAltitude, current.tiltAzimuth, current.barrelRotation);
+            if (onProgress) onProgress(current, progress);
+
+            if (progress < 1) frameId = requestAnimationFrame(tick);
+            else frameId = null;
+        };
+
+        frameId = requestAnimationFrame(tick);
+        return () => { if (frameId !== null) { cancelAnimationFrame(frameId); frameId = null; } };
     }
 }
-
