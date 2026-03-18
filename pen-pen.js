@@ -42,21 +42,21 @@ Object.assign(Pen3DSim.prototype, {
         this.penGroup.position.set(0, 0, 0);
         this.scene.add(this.penGroup);
 
-        // Dashed line: top of pen → tablet surface
+        // Dashed line: top of pen → tablet surface (world coords)
         this.penLinePositions = new Float32Array(6);
         this.penLineGeometry = new THREE.BufferGeometry();
         this.penLineGeometry.setAttribute('position', new THREE.BufferAttribute(this.penLinePositions, 3));
         this.penLine = new THREE.Line(this.penLineGeometry, MaterialsFactory.createDashedLineMaterial(0xffff00));
         this.scene.add(this.penLine);
 
-        // Dashed line: pen tip → tablet surface
+        // Dashed line: pen tip → tablet surface (world coords)
         this.penTipLinePositions = new Float32Array(6);
         this.penTipLineGeometry = new THREE.BufferGeometry();
         this.penTipLineGeometry.setAttribute('position', new THREE.BufferAttribute(this.penTipLinePositions, 3));
         this.penTipLine = new THREE.Line(this.penTipLineGeometry, MaterialsFactory.createDashedLineMaterial(0xffff00));
         this.scene.add(this.penTipLine);
 
-        // Dashed white line: pen axis → tablet surface
+        // Dashed white line: pen axis → tablet surface (world coords)
         this.penAxisLinePositions = new Float32Array(6);
         this.penAxisLineGeometry = new THREE.BufferGeometry();
         this.penAxisLineGeometry.setAttribute('position', new THREE.BufferAttribute(this.penAxisLinePositions, 3));
@@ -67,19 +67,20 @@ Object.assign(Pen3DSim.prototype, {
         this.cursorArrow = this.createCursorArrow();
         this.scene.add(this.cursorArrow);
 
-        // Reusable world-space vectors
-        this.penTopLocal         = new THREE.Vector3(0,  4, 0);
-        this.penTopWorld         = new THREE.Vector3();
-        this.penLineBottom       = new THREE.Vector3();
-        this.penTipLocal         = new THREE.Vector3(0, -0.5, 0);
-        this.penTipWorld         = new THREE.Vector3();
-        this.penTipLineBottom    = new THREE.Vector3();
-        this.penAxisIntersection = new THREE.Vector3();
+        // Reusable world-space vectors (all in Three.js world coordinates)
+        this.penTopLocal         = new THREE.Vector3(0,  4, 0); // pen-local space
+        this.penTopWorld         = new THREE.Vector3();          // world space
+        this.penTopSurfaceBelow  = new THREE.Vector3();          // world space: point directly below penTopWorld on tablet surface
+        this.penTipLocal         = new THREE.Vector3(0, -0.5, 0); // pen-local space
+        this.penTipWorld         = new THREE.Vector3();           // world space
+        this.penTipSurfaceBelow  = new THREE.Vector3();           // world space: point directly below penTipWorld on tablet surface
+        this.penAxisIntersection = new THREE.Vector3();           // world space: where pen axis meets tablet surface
     },
 
     createCursorArrow() {
         const cursorSize = 0.6;
         const shape = new THREE.Shape();
+        // Shape defined in local 2D space; will be rotated to lie flat on tablet surface
         const tipX = 0, tipZ = 0;
         shape.moveTo(tipX, tipZ);
         shape.lineTo(tipX - cursorSize * 0.2, tipZ + cursorSize * 0.3);
@@ -93,7 +94,7 @@ Object.assign(Pen3DSim.prototype, {
         const geometry = new THREE.ShapeGeometry(shape);
         const mesh = new THREE.Mesh(geometry, MaterialsFactory.createCursorMaterial());
 
-        // Rotate flat onto XZ plane then orient northwest
+        // Rotate flat onto world XZ plane (tablet surface), then orient northwest
         const toXZPlaneQuat = new THREE.Quaternion();
         toXZPlaneQuat.setFromAxisAngle(new THREE.Vector3(1, 0, 0), -Math.PI / 2);
 
@@ -112,7 +113,7 @@ Object.assign(Pen3DSim.prototype, {
 
         this.updateCursorRotation();
 
-        mesh.position.set(0, this.yOffset, 0);
+        mesh.position.set(0, this.yOffset, 0); // yOffset = world Y of tablet surface
 
         // Black outline
         const wireframe = new THREE.LineSegments(
@@ -147,20 +148,43 @@ Object.assign(Pen3DSim.prototype, {
 
     // -------------------------------------------------------------------------
     // Core simulation update
+    //
+    // Parameters are in tablet coordinate space:
+    //   distance  — tablet Z: pen tip height above surface (inches, ≥0)
+    //   altitude  — tilt angle from vertical (degrees)
+    //   azimuth   — rotation of tilt direction around tablet surface (degrees)
+    //   barrel    — spin around pen's own long axis (degrees)
+    //
+    // Internally converts tablet coords → world coords for Three.js positioning.
+    // Tablet→world mapping:
+    //   worldX = tabletOffsetX − tabletWidth/2
+    //   worldY = yOffset (tablet surface) + distance
+    //   worldZ = tabletOffsetY − tabletDepth/2
     // -------------------------------------------------------------------------
 
     updatePenTransform(distance, altitude, azimuth, barrel) {
-        const tabletTopY = 0.05;
-        const tipLength  = 0.5;
+        const worldSurfaceY = 0.05;  // world Y of the tablet surface
+        const tipLength     = 0.5;   // length of pen tip cone (inches)
 
         const altitudeRad = (altitude * Math.PI) / 180;
         const azimuthRad  = (azimuth  * Math.PI) / 180;
         const barrelRad   = (barrel   * Math.PI) / 180;
 
-        const tipContactX = THREE.MathUtils.clamp(this.tabletOffsetX - this.tabletWidth  / 2, -this.tabletWidth  / 2, this.tabletWidth  / 2);
-        const tipContactY = tabletTopY + distance;
-        const tipContactZ = THREE.MathUtils.clamp(this.tabletOffsetZ - this.tabletDepth / 2, -this.tabletDepth / 2, this.tabletDepth / 2);
+        // ── Tablet → world coordinate conversion ────────────────────────────
+        // tabletOffsetX (tablet X, 0–tabletWidth)  → worldX (centered, ±tabletWidth/2)
+        // tabletOffsetY (tablet Y, 0–tabletDepth)  → worldZ (centered, ±tabletDepth/2)
+        // distance      (tablet Z, height ≥0)      → worldY (above tablet surface)
+        const worldTipX = THREE.MathUtils.clamp(
+            this.tabletOffsetX - this.tabletWidth  / 2,
+            -this.tabletWidth  / 2, this.tabletWidth  / 2
+        );
+        const worldTipY = worldSurfaceY + distance;
+        const worldTipZ = THREE.MathUtils.clamp(
+            this.tabletOffsetY - this.tabletDepth / 2,
+            -this.tabletDepth / 2, this.tabletDepth / 2
+        );
 
+        // ── Pen orientation quaternion ───────────────────────────────────────
         const azimuthQuat  = new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0, 1, 0), azimuthRad);
         const altitudeQuat = new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(1, 0, 0), altitudeRad);
         const barrelQuat   = new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0, 1, 0), barrelRad);
@@ -171,37 +195,39 @@ Object.assign(Pen3DSim.prototype, {
 
         this.penGroup.setRotationFromQuaternion(quaternion);
 
+        // Position pen group so that the tip sits at (worldTipX, worldTipY, worldTipZ)
         const tipOffsetWorld = new THREE.Vector3(0, -tipLength, 0).applyQuaternion(quaternion);
         this.penGroup.position.set(
-            tipContactX - tipOffsetWorld.x,
-            tipContactY - tipOffsetWorld.y,
-            tipContactZ - tipOffsetWorld.z
+            worldTipX - tipOffsetWorld.x,
+            worldTipY - tipOffsetWorld.y,
+            worldTipZ - tipOffsetWorld.z
         );
         this.penGroup.updateMatrixWorld(true);
 
-        // Top-of-pen drop line
+        // ── Top-of-pen drop line (world coords) ─────────────────────────────
         this.penTopWorld.copy(this.penTopLocal).applyMatrix4(this.penGroup.matrixWorld);
-        this.penLineBottom.set(this.penTopWorld.x, tabletTopY, this.penTopWorld.z);
+        this.penTopSurfaceBelow.set(this.penTopWorld.x, worldSurfaceY, this.penTopWorld.z);
         this.penLinePositions[0] = this.penTopWorld.x;
         this.penLinePositions[1] = this.penTopWorld.y;
         this.penLinePositions[2] = this.penTopWorld.z;
-        this.penLinePositions[3] = this.penLineBottom.x;
-        this.penLinePositions[4] = this.penLineBottom.y;
-        this.penLinePositions[5] = this.penLineBottom.z;
+        this.penLinePositions[3] = this.penTopSurfaceBelow.x;
+        this.penLinePositions[4] = this.penTopSurfaceBelow.y;
+        this.penLinePositions[5] = this.penTopSurfaceBelow.z;
         this.penLine.visible = (altitude !== 0);
 
-        // Pen-tip world position
+        // ── Pen tip world position ───────────────────────────────────────────
         this.penTipWorld.copy(this.penTipLocal).applyMatrix4(this.penGroup.matrixWorld);
-        this.penTipLineBottom.set(this.penTipWorld.x, tabletTopY, this.penTipWorld.z);
+        this.penTipSurfaceBelow.set(this.penTipWorld.x, worldSurfaceY, this.penTipWorld.z);
 
-        // Pen axis → tablet surface intersection
+        // ── Pen axis → tablet surface intersection (world coords) ────────────
         const penAxisDir = new THREE.Vector3(0, 1, 0).applyQuaternion(quaternion).normalize();
         if (Math.abs(penAxisDir.y) > 0.001) {
-            const t = (tabletTopY - this.penTipWorld.y) / penAxisDir.y;
+            const t = (worldSurfaceY - this.penTipWorld.y) / penAxisDir.y;
             this.penAxisIntersection.copy(this.penTipWorld).add(penAxisDir.clone().multiplyScalar(t));
         } else {
+            // Pen is nearly horizontal — extend 20 inches along axis and project to surface
             this.penAxisIntersection.copy(this.penTipWorld).add(penAxisDir.clone().multiplyScalar(20));
-            this.penAxisIntersection.y = tabletTopY;
+            this.penAxisIntersection.y = worldSurfaceY;
         }
         this.penAxisLinePositions[0] = this.penTipWorld.x;
         this.penAxisLinePositions[1] = this.penTipWorld.y;
@@ -212,73 +238,82 @@ Object.assign(Pen3DSim.prototype, {
         this.penAxisLineGeometry.attributes.position.needsUpdate = true;
         this.penAxisLine.computeLineDistances();
 
-        // Tilt compensation offset
-        let tiltCompensationOffsetX = 0;
-        let tiltCompensationOffsetZ = 0;
-        const tiltXForCompensation = this.calculateTiltX(altitude, azimuth);
-        const tiltYForCompensation = this.calculateTiltY(altitude, azimuth);
-        if (tiltXForCompensation > 0 && this.tiltCompensationPosTiltXValue > 0) {
-            tiltCompensationOffsetX = tiltXForCompensation * this.tiltCompensationPosTiltXValue * 0.01;
-        } else if (tiltXForCompensation < 0 && this.tiltCompensationNegTiltXValue > 0) {
-            tiltCompensationOffsetX = tiltXForCompensation * this.tiltCompensationNegTiltXValue * 0.01;
+        // ── Tilt compensation offsets (world coords, applied to cursor position) ──
+        // tiltX and tiltY are in degrees; compensation values (0–1) scale the effect.
+        // The result is a world-space offset (inches) along worldX and worldZ.
+        let worldCompOffsetX = 0;
+        let worldCompOffsetZ = 0;
+        const tiltXDeg = this.calculateTiltX(altitude, azimuth);
+        const tiltYDeg = this.calculateTiltY(altitude, azimuth);
+        if (tiltXDeg > 0 && this.tiltCompensationPosTiltXValue > 0) {
+            worldCompOffsetX = tiltXDeg * this.tiltCompensationPosTiltXValue * 0.01;
+        } else if (tiltXDeg < 0 && this.tiltCompensationNegTiltXValue > 0) {
+            worldCompOffsetX = tiltXDeg * this.tiltCompensationNegTiltXValue * 0.01;
         }
-        if (tiltYForCompensation > 0 && this.tiltCompensationPosTiltYValue > 0) {
-            tiltCompensationOffsetZ = tiltYForCompensation * this.tiltCompensationPosTiltYValue * 0.01;
-        } else if (tiltYForCompensation < 0 && this.tiltCompensationNegTiltYValue > 0) {
-            tiltCompensationOffsetZ = tiltYForCompensation * this.tiltCompensationNegTiltYValue * 0.01;
+        if (tiltYDeg > 0 && this.tiltCompensationPosTiltYValue > 0) {
+            worldCompOffsetZ = tiltYDeg * this.tiltCompensationPosTiltYValue * 0.01;
+        } else if (tiltYDeg < 0 && this.tiltCompensationNegTiltYValue > 0) {
+            worldCompOffsetZ = tiltYDeg * this.tiltCompensationNegTiltYValue * 0.01;
         }
 
-        // Cursor position with scaling factor
-        let cursorX, cursorZ;
+        // ── Cursor world position ────────────────────────────────────────────
+        // penTipSurfaceBelow.x/.z are world X/Z directly below the pen tip.
+        // cursorOffsetX/Y are tablet-direction offsets (tabletX→worldX, tabletY→worldZ).
+        let worldCursorX, worldCursorZ;
         if (this.scalingFactor > 0) {
-            cursorX = this.penTipLineBottom.x * this.scalingFactor + this.cursorOffsetX + tiltCompensationOffsetX;
-            cursorZ = this.penTipLineBottom.z * this.scalingFactor + this.cursorOffsetY + tiltCompensationOffsetZ;
+            worldCursorX = this.penTipSurfaceBelow.x * this.scalingFactor + this.cursorOffsetX + worldCompOffsetX;
+            worldCursorZ = this.penTipSurfaceBelow.z * this.scalingFactor + this.cursorOffsetY + worldCompOffsetZ;
         } else {
-            cursorX = this.cursorOffsetX + tiltCompensationOffsetX;
-            cursorZ = this.cursorOffsetY + tiltCompensationOffsetZ;
+            // scalingFactor=0: cursor stays at world origin regardless of pen position
+            worldCursorX = this.cursorOffsetX + worldCompOffsetX;
+            worldCursorZ = this.cursorOffsetY + worldCompOffsetZ;
         }
 
-        // Edge attraction
+        // ── Edge attraction (world coords) ───────────────────────────────────
         if (this.edgeAttraction !== 0 && this.edgeAttractionRange > 0) {
-            const leftEdge   = -this.tabletWidth  / 2;
-            const rightEdge  =  this.tabletWidth  / 2;
-            const bottomEdge = -this.tabletDepth / 2;
-            const topEdge    =  this.tabletDepth / 2;
+            const leftEdge   = -this.tabletWidth  / 2;  // world X
+            const rightEdge  =  this.tabletWidth  / 2;  // world X
+            const frontEdge  = -this.tabletDepth  / 2;  // world Z
+            const backEdge   =  this.tabletDepth  / 2;  // world Z
 
-            const distFromLeft   = cursorX - leftEdge;
-            const distFromRight  = rightEdge  - cursorX;
-            const distFromBottom = cursorZ - bottomEdge;
-            const distFromTop    = topEdge - cursorZ;
+            const distFromLeft  = worldCursorX - leftEdge;
+            const distFromRight = rightEdge    - worldCursorX;
+            const distFromFront = worldCursorZ - frontEdge;
+            const distFromBack  = backEdge     - worldCursorZ;
 
-            let edgeAttractionX = 0;
-            let edgeAttractionZ = 0;
+            let attractX = 0;
+            let attractZ = 0;
 
-            if (distFromLeft   <= this.edgeAttractionRange && distFromLeft   >= 0)
-                edgeAttractionX += this.edgeAttraction * (1 - distFromLeft   / this.edgeAttractionRange);
-            if (distFromRight  <= this.edgeAttractionRange && distFromRight  >= 0)
-                edgeAttractionX -= this.edgeAttraction * (1 - distFromRight  / this.edgeAttractionRange);
-            if (distFromBottom <= this.edgeAttractionRange && distFromBottom >= 0)
-                edgeAttractionZ += this.edgeAttraction * (1 - distFromBottom / this.edgeAttractionRange);
-            if (distFromTop    <= this.edgeAttractionRange && distFromTop    >= 0)
-                edgeAttractionZ -= this.edgeAttraction * (1 - distFromTop    / this.edgeAttractionRange);
+            // Positive attraction pushes cursor away from the nearest edge
+            if (distFromLeft  <= this.edgeAttractionRange && distFromLeft  >= 0)
+                attractX += this.edgeAttraction * (1 - distFromLeft  / this.edgeAttractionRange);
+            if (distFromRight <= this.edgeAttractionRange && distFromRight >= 0)
+                attractX -= this.edgeAttraction * (1 - distFromRight / this.edgeAttractionRange);
+            if (distFromFront <= this.edgeAttractionRange && distFromFront >= 0)
+                attractZ += this.edgeAttraction * (1 - distFromFront / this.edgeAttractionRange);
+            if (distFromBack  <= this.edgeAttractionRange && distFromBack  >= 0)
+                attractZ -= this.edgeAttraction * (1 - distFromBack  / this.edgeAttractionRange);
 
-            cursorX += edgeAttractionX;
-            cursorZ += edgeAttractionZ;
+            worldCursorX += attractX;
+            worldCursorZ += attractZ;
         }
 
-        this.cursorArrow.position.set(cursorX, this.yOffset, cursorZ);
+        // Place cursor arrow at computed world position on tablet surface
+        this.cursorArrow.position.set(worldCursorX, this.yOffset, worldCursorZ);
 
-        // ---- Tilt altitude annotation ----
-        const arcCenter  = this.penTipWorld.clone();
+        // ── Tilt altitude annotation ─────────────────────────────────────────
+        const arcCenter  = this.penTipWorld.clone();  // world coords
         const arcRadius  = 2.0;
-        const verticalDir = new THREE.Vector3(0, 1, 0);
-        const tiltAltitudeU = verticalDir.clone().normalize();
-        const penAxisProjected = penAxisDir.clone().sub(tiltAltitudeU.clone().multiplyScalar(penAxisDir.dot(tiltAltitudeU)));
+        const tiltAltitudeU = new THREE.Vector3(0, 1, 0); // world up
+        const penAxisProjected = penAxisDir.clone().sub(
+            tiltAltitudeU.clone().multiplyScalar(penAxisDir.dot(tiltAltitudeU))
+        );
 
         let tiltAltitudeV;
         if (penAxisProjected.length() > 0.001) {
             tiltAltitudeV = penAxisProjected.normalize();
         } else {
+            // Altitude=0: use azimuth direction to maintain consistent circle orientation
             tiltAltitudeV = new THREE.Vector3(Math.sin(azimuthRad), 0, Math.cos(azimuthRad)).normalize();
         }
 
@@ -318,7 +353,7 @@ Object.assign(Pen3DSim.prototype, {
         const tiltX = this.calculateTiltX(altitude, azimuth);
         const tiltY = this.calculateTiltY(altitude, azimuth);
 
-        // ---- Tilt X annotation ----
+        // ── Tilt X annotation ────────────────────────────────────────────────
         if (this.showTiltXAnnotations) {
             const tiltXArcCenter = this.penTipWorld.clone();
             const tiltXArcRadius = 2.0;
@@ -349,7 +384,7 @@ Object.assign(Pen3DSim.prototype, {
             this.tiltXPieMesh = this.cleanupPieMesh(this.tiltXPieMesh, this.scene);
         }
 
-        // ---- Tilt Y annotation ----
+        // ── Tilt Y annotation ────────────────────────────────────────────────
         if (this.showTiltYAnnotations) {
             const tiltYArcCenter = this.penTipWorld.clone();
             const tiltYArcRadius = 2.0;
@@ -390,45 +425,43 @@ Object.assign(Pen3DSim.prototype, {
             this.tiltYPieMesh = this.cleanupPieMesh(this.tiltYPieMesh, this.scene);
         }
 
-        // Update tip line buffer
+        // ── Update tip drop-line buffer ──────────────────────────────────────
         this.penTipLinePositions[0] = this.penTipWorld.x;
         this.penTipLinePositions[1] = this.penTipWorld.y;
         this.penTipLinePositions[2] = this.penTipWorld.z;
-        this.penTipLinePositions[3] = this.penTipLineBottom.x;
-        this.penTipLinePositions[4] = this.penTipLineBottom.y;
-        this.penTipLinePositions[5] = this.penTipLineBottom.z;
+        this.penTipLinePositions[3] = this.penTipSurfaceBelow.x;
+        this.penTipLinePositions[4] = this.penTipSurfaceBelow.y;
+        this.penTipLinePositions[5] = this.penTipSurfaceBelow.z;
         this.penLineGeometry.attributes.position.needsUpdate    = true;
         this.penLine.computeLineDistances();
         this.penTipLineGeometry.attributes.position.needsUpdate = true;
         this.penTipLine.computeLineDistances();
 
-        // ---- Azimuth surface line ----
+        // ── Azimuth surface line (world coords, on tablet surface plane) ─────
         const fixedLineLength = 2.0;
-        const dx = this.penLineBottom.x - this.penTipLineBottom.x;
-        const dz = this.penLineBottom.z - this.penTipLineBottom.z;
-        const length = Math.sqrt(dx * dx + dz * dz);
-        let extendedEndX = this.penTipLineBottom.x;
-        let extendedEndZ = this.penTipLineBottom.z;
-        if (length > 0.001) {
-            extendedEndX = this.penTipLineBottom.x + (dx / length) * fixedLineLength;
-            extendedEndZ = this.penTipLineBottom.z + (dz / length) * fixedLineLength;
+        const dx = this.penTopSurfaceBelow.x - this.penTipSurfaceBelow.x;
+        const dz = this.penTopSurfaceBelow.z - this.penTipSurfaceBelow.z;
+        const horizLen = Math.sqrt(dx * dx + dz * dz);
+        let extendedEndX = this.penTipSurfaceBelow.x;
+        let extendedEndZ = this.penTipSurfaceBelow.z;
+        if (horizLen > 0.001) {
+            extendedEndX = this.penTipSurfaceBelow.x + (dx / horizLen) * fixedLineLength;
+            extendedEndZ = this.penTipSurfaceBelow.z + (dz / horizLen) * fixedLineLength;
         }
         this.surfaceLineGeometry.setFromPoints([
-            new THREE.Vector3(this.penTipLineBottom.x, this.yOffset, this.penTipLineBottom.z),
+            new THREE.Vector3(this.penTipSurfaceBelow.x, this.yOffset, this.penTipSurfaceBelow.z),
             new THREE.Vector3(extendedEndX, this.yOffset, extendedEndZ)
         ]);
         this.surfaceLineGeometry.attributes.position.needsUpdate = true;
 
-        // ---- Azimuth arc ----
-        const arcCenterX = this.penTipLineBottom.x;
-        const arcCenterZ = this.penTipLineBottom.z;
-        const startAngle  = Math.PI / 2 - Math.PI;
-        const endAngle    = startAngle + (azimuth * Math.PI) / 180;
-        const arcLength   = Math.abs(azimuth);
-        const arcSegments = Math.max(8, Math.floor(arcLength / 5));
-
-        const azimuthArcCenter = new THREE.Vector3(arcCenterX, this.yOffset, arcCenterZ);
-        const xzPlaneQuat = new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(1, 0, 0), -Math.PI / 2);
+        // ── Azimuth arc (world coords, on tablet surface plane) ──────────────
+        const azimuthArcCenter = new THREE.Vector3(this.penTipSurfaceBelow.x, this.yOffset, this.penTipSurfaceBelow.z);
+        // Rotate arc from XY plane to world XZ plane (flat on tablet surface)
+        const xzPlaneQuat  = new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(1, 0, 0), -Math.PI / 2);
+        const startAngle   = Math.PI / 2 - Math.PI;
+        const endAngle     = startAngle + (azimuth * Math.PI) / 180;
+        const arcLength    = Math.abs(azimuth);
+        const arcSegments  = Math.max(8, Math.floor(arcLength / 5));
 
         const dottedCirclePoints = [];
         for (let i = 0; i <= 64; i++) {
@@ -463,7 +496,7 @@ Object.assign(Pen3DSim.prototype, {
             }
             azimuthPieShape.lineTo(0, 0);
             this.arcPieMesh = new THREE.Mesh(new THREE.ShapeGeometry(azimuthPieShape), this.arcPieMaterial);
-            this.arcPieMesh.position.set(arcCenterX, this.yOffset, arcCenterZ);
+            this.arcPieMesh.position.set(this.penTipSurfaceBelow.x, this.yOffset, this.penTipSurfaceBelow.z);
             this.arcPieMesh.setRotationFromQuaternion(xzPlaneQuat);
             this.arcAnnotationGroup.add(this.arcPieMesh);
         } else {
@@ -471,7 +504,7 @@ Object.assign(Pen3DSim.prototype, {
             this.arcPieMesh = this.cleanupPieMesh(this.arcPieMesh, this.arcAnnotationGroup);
         }
 
-        // ---- Barrel rotation annotation ----
+        // ── Barrel rotation annotation (world coords, around pen axis) ───────
         const barrelCenter = this.penTopWorld.clone();
         const penAxis = new THREE.Vector3(0, 1, 0).applyQuaternion(quaternion).normalize();
 

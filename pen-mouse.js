@@ -62,13 +62,14 @@ Object.assign(Pen3DSim.prototype, {
             const deltaX = currentMouseX - this.lastMouseX;
             const deltaY = currentMouseY - this.lastMouseY;
 
-            // 0.01 inches per pixel — adjust to taste
-            const scaleFactor = 0.01;
-            const newTabletX = this.tabletOffsetX + deltaX * scaleFactor;
-            const newTabletZ = this.tabletOffsetZ + deltaY * scaleFactor;
+            // Map screen pixels to tablet coordinate inches (0.01 in/px — adjust to taste)
+            const pixelsPerInch = 0.01;
+            // Mouse X → tablet X; mouse Y → tablet Y (depth, front-to-back)
+            const newTabletX = this.tabletOffsetX + deltaX * pixelsPerInch;
+            const newTabletY = this.tabletOffsetY + deltaY * pixelsPerInch;
 
             this.setTabletPositionX(THREE.MathUtils.clamp(newTabletX, 0, this.tabletWidth));
-            this.setTabletPositionZ(THREE.MathUtils.clamp(newTabletZ, 0, this.tabletDepth));
+            this.setTabletPositionY(THREE.MathUtils.clamp(newTabletY, 0, this.tabletDepth));
 
             this.lastMouseX = currentMouseX;
             this.lastMouseY = currentMouseY;

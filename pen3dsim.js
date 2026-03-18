@@ -5,38 +5,48 @@
 //   pen-pen.js        — pen mesh, cursor arrow, updatePenTransform
 //   pen-annotations.js — annotation geometry, axis markers, math helpers
 //   pen-mouse.js      — spacebar + mouse drag control
+//
+// Coordinate systems used throughout this codebase:
+//   Tablet coords  — the logical pen/tablet API space (inches):
+//                    tabletX  0–16  left → right
+//                    tabletY  0–9   front → back (depth)
+//                    tabletZ  ≥0    height of pen tip above surface (distance)
+//   World coords   — Three.js scene space (inches):
+//                    worldX   ±8    = tabletX − tabletWidth/2
+//                    worldY   ≥0.05 = tabletSurfaceY + tabletZ   (Y is up)
+//                    worldZ   ±4.5  = tabletY − tabletDepth/2
 
 class Pen3DSim {
     constructor(viewerElement) {
         this.viewer = viewerElement;
 
-        // Simulation state
-        this.tiltAltitude = 0;
-        this.tiltAzimuth = 0;
-        this.barrelRotation = 0;
-        this.tabletOffsetX = 8;
-        this.tabletOffsetZ = 4.5;
-        this.distance = 0;
+        // Pen state — all values in tablet coordinates
+        this.tiltAltitude = 0;          // degrees from vertical (0 = upright)
+        this.tiltAzimuth = 0;           // degrees around tablet surface plane
+        this.barrelRotation = 0;        // degrees of barrel spin around pen axis
+        this.tabletOffsetX = 8;         // tablet X: 0–tabletWidth inches
+        this.tabletOffsetY = 4.5;       // tablet Y: 0–tabletDepth inches (front-to-back)
+        this.distance = 0;              // tablet Z: pen tip height above surface in inches
         this.showAltitudeAnnotations = false;
         this.showBarrelAnnotations = false;
         this.showTiltXAnnotations = false;
         this.showTiltYAnnotations = false;
-        this.cursorRotation = 180;       // degrees around long axis
-        this.cursorTipRotationY = 90;    // degrees around Y axis at tip
-        this.cursorOffsetX = 0;          // cursor X offset in inches
-        this.cursorOffsetY = 0;          // cursor Y offset in inches (Z axis in 3D space)
+        this.cursorRotation = 180;       // degrees around cursor long axis
+        this.cursorTipRotationY = 90;    // degrees around world Y axis at tip
+        this.cursorOffsetX = 0;          // cursor offset in tablet X direction (inches)
+        this.cursorOffsetY = 0;          // cursor offset in tablet Y direction (inches)
         this.tiltCompensationPosTiltXValue = 0;
         this.tiltCompensationNegTiltXValue = 0;
         this.tiltCompensationPosTiltYValue = 0;
         this.tiltCompensationNegTiltYValue = 0;
         this.scalingFactor = 1;          // 0–2, 1 = no scaling
         this.edgeAttraction = 0;         // -1 to 1, 0 = no effect
-        this.edgeAttractionRange = 1;    // inches from edges where attraction applies
+        this.edgeAttractionRange = 1;    // tablet inches from edges where attraction applies
 
-        // Constants
-        this.tabletWidth = 16;
-        this.tabletDepth = 9;
-        this.yOffset = 0.051;
+        // Constants (tablet coordinate dimensions)
+        this.tabletWidth = 16;           // tablet X extent in inches
+        this.tabletDepth = 9;            // tablet Y extent in inches
+        this.yOffset = 0.051;            // world Y of tablet surface
         this.arcRadius = 1.5;
         this.barrelArcRadius = 1.5;
         this.azimuthColor = 0x77dd33;
@@ -103,33 +113,37 @@ class Pen3DSim {
         this.updatePenTransform(this.distance, this.tiltAltitude, this.tiltAzimuth, this.barrelRotation);
     }
 
-    // ── Tablet / cursor position ───────────────────────────────────────────────
+    // ── Tablet / cursor position (all values in tablet coordinates) ────────────
 
+    // value: tablet X, 0–tabletWidth inches (left → right)
     setTabletPositionX(value) {
         this.tabletOffsetX = value;
         this.updatePenTransform(this.distance, this.tiltAltitude, this.tiltAzimuth, this.barrelRotation);
         if (this.viewer) {
             this.viewer.dispatchEvent(new CustomEvent('tabletPositionChanged', {
-                detail: { x: value, z: this.tabletOffsetZ }
+                detail: { x: value, y: this.tabletOffsetY }
             }));
         }
     }
 
-    setTabletPositionZ(value) {
-        this.tabletOffsetZ = value;
+    // value: tablet Y, 0–tabletDepth inches (front → back)
+    setTabletPositionY(value) {
+        this.tabletOffsetY = value;
         this.updatePenTransform(this.distance, this.tiltAltitude, this.tiltAzimuth, this.barrelRotation);
         if (this.viewer) {
             this.viewer.dispatchEvent(new CustomEvent('tabletPositionChanged', {
-                detail: { x: this.tabletOffsetX, z: value }
+                detail: { x: this.tabletOffsetX, y: value }
             }));
         }
     }
 
+    // value: cursor offset in tablet X direction (inches)
     setCursorOffsetX(value) {
         this.cursorOffsetX = value;
         this.updatePenTransform(this.distance, this.tiltAltitude, this.tiltAzimuth, this.barrelRotation);
     }
 
+    // value: cursor offset in tablet Y direction (inches)
     setCursorOffsetY(value) {
         this.cursorOffsetY = value;
         this.updatePenTransform(this.distance, this.tiltAltitude, this.tiltAzimuth, this.barrelRotation);
@@ -268,14 +282,15 @@ class Pen3DSim {
 
     // ── Utility ───────────────────────────────────────────────────────────────
 
+    // Returns default tablet-coordinate values for all pen parameters.
     reset() {
         return {
             distance: 0,
             tiltAltitude: 0,
             tiltAzimuth: 0,
             barrelRotation: 0,
-            tabletX: 8,
-            tabletZ: 4.5,
+            tabletX: 8,    // tablet X (inches)
+            tabletY: 4.5,  // tablet Y (inches)
         };
     }
 
@@ -312,31 +327,35 @@ class Pen3DSim {
         return ((( start + diff * t) % 360) + 360) % 360;
     }
 
+    // Animates from default position to a demo position.
+    // onProgress receives (current, progress) where current uses tablet coordinates.
     animateToDemo(onProgress) {
-        const start = { distance: 0, tiltAltitude:   0, tiltAzimuth:   0, barrelRotation:   0, tabletX: 8, tabletZ: 4.5 };
-        const end   = { distance: 0, tiltAltitude:  45, tiltAzimuth: 242, barrelRotation: 318, tabletX: 8, tabletZ: 4.5 };
+        // All positions in tablet coordinates
+        const start = { distance: 0, tiltAltitude:   0, tiltAzimuth:   0, barrelRotation:   0, tabletX: 8, tabletY: 4.5 };
+        const end   = { distance: 0, tiltAltitude:  45, tiltAzimuth: 242, barrelRotation: 318, tabletX: 8, tabletY: 4.5 };
         const duration = 8000;
         const startTime = performance.now();
         let frameId = null;
 
         const tick = (now) => {
-            const progress    = Math.min((now - startTime) / duration, 1);
-            const eased       = this.easeInOutCubic(progress);
+            const progress = Math.min((now - startTime) / duration, 1);
+            const eased    = this.easeInOutCubic(progress);
             const current = {
                 distance:       start.distance       + (end.distance       - start.distance)       * eased,
                 tiltAltitude:   start.tiltAltitude   + (end.tiltAltitude   - start.tiltAltitude)   * eased,
                 tiltAzimuth:    this.interpolateAngle(start.tiltAzimuth,    end.tiltAzimuth,    eased),
                 barrelRotation: this.interpolateAngle(start.barrelRotation, end.barrelRotation, eased),
-                tabletX:        start.tabletX        + (end.tabletX        - start.tabletX)        * eased,
-                tabletZ:        start.tabletZ        + (end.tabletZ        - start.tabletZ)        * eased,
+                tabletX:        start.tabletX + (end.tabletX - start.tabletX) * eased,
+                tabletY:        start.tabletY + (end.tabletY - start.tabletY) * eased,
             };
 
+            // Update internal tablet-coordinate state
             this.distance       = current.distance;
             this.tiltAltitude   = current.tiltAltitude;
             this.tiltAzimuth    = current.tiltAzimuth;
             this.barrelRotation = current.barrelRotation;
             this.tabletOffsetX  = current.tabletX;
-            this.tabletOffsetZ  = current.tabletZ;
+            this.tabletOffsetY  = current.tabletY;
 
             this.updatePenTransform(current.distance, current.tiltAltitude, current.tiltAzimuth, current.barrelRotation);
             if (onProgress) onProgress(current, progress);

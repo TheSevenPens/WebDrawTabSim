@@ -59,8 +59,8 @@ const { slider: barrelRotationSlider, display: barrelRotationValueDisplay } =
 const { slider: tabletPositionXSlider, display: tabletPositionXValueDisplay } =
     bindSlider('tablet-position-x', 'tablet-position-x-value', 1, v => sim.setTabletPositionX(v));
 
-const { slider: tabletPositionZSlider, display: tabletPositionZValueDisplay } =
-    bindSlider('tablet-position-z', 'tablet-position-z-value', 1, v => sim.setTabletPositionZ(v));
+const { slider: tabletPositionYSlider, display: tabletPositionYValueDisplay } =
+    bindSlider('tablet-position-y', 'tablet-position-y-value', 1, v => sim.setTabletPositionY(v));
 
 bindSlider('cursor-offset-x', 'cursor-offset-x-value', 2, v => sim.setCursorOffsetX(v));
 bindSlider('cursor-offset-y', 'cursor-offset-y-value', 2, v => sim.setCursorOffsetY(v));
@@ -77,9 +77,9 @@ updateAzimuthSliderState();
 // --- Event handlers ---
 
 viewer.addEventListener('tabletPositionChanged', (e) => {
-    const { x, z } = e.detail;
+    const { x, y } = e.detail;
     setSliderAndDisplay(tabletPositionXSlider, tabletPositionXValueDisplay, x, 1);
-    setSliderAndDisplay(tabletPositionZSlider, tabletPositionZValueDisplay, z, 1);
+    setSliderAndDisplay(tabletPositionYSlider, tabletPositionYValueDisplay, y, 1);
 });
 
 window.addEventListener('resize', () => sim.onResize());
@@ -172,7 +172,7 @@ document.getElementById('reset-btn').addEventListener('click', () => {
     setSliderAndDisplay(tiltAzimuthSlider, azimuthValueDisplay, defaults.tiltAzimuth, 0);
     setSliderAndDisplay(barrelRotationSlider, barrelRotationValueDisplay, defaults.barrelRotation, 0);
     setSliderAndDisplay(tabletPositionXSlider, tabletPositionXValueDisplay, defaults.tabletX, 1);
-    setSliderAndDisplay(tabletPositionZSlider, tabletPositionZValueDisplay, defaults.tabletZ, 1);
+    setSliderAndDisplay(tabletPositionYSlider, tabletPositionYValueDisplay, defaults.tabletY, 1);
     updateAzimuthSliderState();
 
     sim.setDistance(defaults.distance);
@@ -180,7 +180,7 @@ document.getElementById('reset-btn').addEventListener('click', () => {
     sim.setTiltAzimuth(defaults.tiltAzimuth);
     sim.setBarrelRotation(defaults.barrelRotation);
     sim.setTabletPositionX(defaults.tabletX);
-    sim.setTabletPositionZ(defaults.tabletZ);
+    sim.setTabletPositionY(defaults.tabletY);
 });
 
 // --- Animations flyout reference (needed by button handlers and initializeAnimations) ---
@@ -193,14 +193,14 @@ const animationsFlyout = document.getElementById('animations-flyout');
 document.getElementById('demo-btn').addEventListener('click', () => {
     if (animationsFlyout.classList.contains('open')) animationsFlyout.classList.remove('open');
 
-    const demo = { distance: 0, tiltAltitude: 45, tiltAzimuth: 242, barrelRotation: 318, tabletX: 8.6, tabletZ: 5.3 };
+    const demo = { distance: 0, tiltAltitude: 45, tiltAzimuth: 242, barrelRotation: 318, tabletX: 8.6, tabletY: 5.3 };
 
     setSliderAndDisplay(penDistanceSlider, distanceValueDisplay, demo.distance, 2);
     setSliderAndDisplay(tiltAltitudeSlider, altitudeValueDisplay, demo.tiltAltitude, 0);
     setSliderAndDisplay(tiltAzimuthSlider, azimuthValueDisplay, demo.tiltAzimuth, 0);
     setSliderAndDisplay(barrelRotationSlider, barrelRotationValueDisplay, demo.barrelRotation, 0);
     setSliderAndDisplay(tabletPositionXSlider, tabletPositionXValueDisplay, demo.tabletX, 1);
-    setSliderAndDisplay(tabletPositionZSlider, tabletPositionZValueDisplay, demo.tabletZ, 1);
+    setSliderAndDisplay(tabletPositionYSlider, tabletPositionYValueDisplay, demo.tabletY, 1);
     updateAzimuthSliderState();
 
     altitudeAnnotationsCheckbox.checked = true;
@@ -213,7 +213,7 @@ document.getElementById('demo-btn').addEventListener('click', () => {
     sim.setTiltAltitude(demo.tiltAltitude);
     sim.setBarrelRotation(demo.barrelRotation);
     sim.setTabletPositionX(demo.tabletX);
-    sim.setTabletPositionZ(demo.tabletZ);
+    sim.setTabletPositionY(demo.tabletY);
     sim.setAltitudeAnnotationsVisible(true);
     sim.setAzimuthAnnotationsVisible(true);
     sim.setTiltXAnnotationsVisible(true);
@@ -246,7 +246,7 @@ document.getElementById('anim-btn').addEventListener('click', () => {
         setSliderAndDisplay(tiltAzimuthSlider, azimuthValueDisplay, defaults.tiltAzimuth, 0);
         setSliderAndDisplay(barrelRotationSlider, barrelRotationValueDisplay, defaults.barrelRotation, 0);
         setSliderAndDisplay(tabletPositionXSlider, tabletPositionXValueDisplay, defaults.tabletX, 1);
-        setSliderAndDisplay(tabletPositionZSlider, tabletPositionZValueDisplay, defaults.tabletZ, 1);
+        setSliderAndDisplay(tabletPositionYSlider, tabletPositionYValueDisplay, defaults.tabletY, 1);
         updateAzimuthSliderState();
 
         sim.setDistance(defaults.distance);
@@ -254,7 +254,7 @@ document.getElementById('anim-btn').addEventListener('click', () => {
         sim.setTiltAzimuth(defaults.tiltAzimuth);
         sim.setBarrelRotation(defaults.barrelRotation);
         sim.setTabletPositionX(defaults.tabletX);
-        sim.setTabletPositionZ(defaults.tabletZ);
+        sim.setTabletPositionY(defaults.tabletY);
 
         cancelAnimation = sim.animateToDemo((current, progress) => {
             setSliderAndDisplay(penDistanceSlider, distanceValueDisplay, current.distance, 2);
@@ -262,7 +262,7 @@ document.getElementById('anim-btn').addEventListener('click', () => {
             setSliderAndDisplay(tiltAzimuthSlider, azimuthValueDisplay, current.tiltAzimuth, 0);
             setSliderAndDisplay(barrelRotationSlider, barrelRotationValueDisplay, current.barrelRotation, 0);
             setSliderAndDisplay(tabletPositionXSlider, tabletPositionXValueDisplay, current.tabletX, 1);
-            setSliderAndDisplay(tabletPositionZSlider, tabletPositionZValueDisplay, current.tabletZ, 1);
+            setSliderAndDisplay(tabletPositionYSlider, tabletPositionYValueDisplay, current.tabletY, 1);
 
             const tiltResult = sim.setTiltAzimuth(current.tiltAzimuth);
             updateTiltXYDisplay(tiltResult);
