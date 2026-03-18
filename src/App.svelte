@@ -423,8 +423,8 @@
     <div class="control-group"><label style="display:flex;align-items:center;gap:8px;"><input type="checkbox" bind:checked={showTiltY}        on:change={onShowTiltY}        style="width:auto;margin:0;"><span>Tilt Y</span></label></div>
     <div class="control-group"><label style="display:flex;align-items:center;gap:8px;"><input type="checkbox" bind:checked={showBarrel}       on:change={onShowBarrel}       style="width:auto;margin:0;"><span>Barrel rotation</span></label></div>
     <div class="control-group"><label style="display:flex;align-items:center;gap:8px;"><input type="checkbox" bind:checked={showAxis}         on:change={onShowAxis}         style="width:auto;margin:0;"><span>Axis</span></label></div>
-    <div class="control-group"><label style="display:flex;align-items:center;gap:8px;"><input type="checkbox" bind:checked={showCursor}       on:change={onShowCursor}       style="width:auto;margin:0;" checked><span>Mouse cursor</span></label></div>
-    <div class="control-group"><label style="display:flex;align-items:center;gap:8px;"><input type="checkbox" bind:checked={showPenShadow}    on:change={onShowPenShadow}    style="width:auto;margin:0;" checked><span>Pen shadow</span></label></div>
+    <div class="control-group"><label style="display:flex;align-items:center;gap:8px;"><input type="checkbox" bind:checked={showCursor}       on:change={onShowCursor}       style="width:auto;margin:0;"><span>Mouse cursor</span></label></div>
+    <div class="control-group"><label style="display:flex;align-items:center;gap:8px;"><input type="checkbox" bind:checked={showPenShadow}    on:change={onShowPenShadow}    style="width:auto;margin:0;"><span>Pen shadow</span></label></div>
     <div class="control-group"><label style="display:flex;align-items:center;gap:8px;"><input type="checkbox" bind:checked={showCheckerboard} on:change={onShowCheckerboard} style="width:auto;margin:0;"><span>Tablet checkerboard</span></label></div>
   </div>
 </div>
