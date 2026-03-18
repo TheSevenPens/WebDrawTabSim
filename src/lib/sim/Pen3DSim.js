@@ -1,4 +1,6 @@
-// pen3dsim.js — Class skeleton: constructor, animate loop, and public API
+import * as THREE from 'three';
+
+// Pen3DSim.js — Class skeleton: constructor, animate loop, and public API
 // All init/handle/geometry/update methods live in companion files:
 //   pen-scene.js      — scene, cameras, renderer, lighting, camera settings
 //   pen-tablet.js     — tablet mesh and grid
@@ -16,7 +18,7 @@
 //                    worldY   ≥0.05 = tabletSurfaceY + tabletZ   (Y is up)
 //                    worldZ   ±4.5  = tabletY − tabletDepth/2
 
-class Pen3DSim {
+export class Pen3DSim {
     constructor(viewerElement) {
         this.viewer = viewerElement;
 

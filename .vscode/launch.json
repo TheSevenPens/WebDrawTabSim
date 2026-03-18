@@ -1,0 +1,13 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "Launch Chrome (Vite dev server)",
+      "type": "chrome",
+      "request": "launch",
+      "url": "http://localhost:5173/WebDrawTabSim/",
+      "webRoot": "${workspaceFolder}/src",
+      "preLaunchTask": "vite: dev"
+    }
+  ]
+}

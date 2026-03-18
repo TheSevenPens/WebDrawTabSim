@@ -6,10 +6,15 @@
 
 body {
     font-family: Arial, sans-serif;
-    display: flex;
     height: 100vh;
     overflow: hidden;
     background: #1a1a1a;
+}
+
+#app {
+    display: flex;
+    height: 100vh;
+    overflow: hidden;
 }
 
 h1 {
