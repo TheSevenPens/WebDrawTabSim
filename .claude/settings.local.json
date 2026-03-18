@@ -12,7 +12,9 @@
       "Bash(node -e \"const v = require\\(''./node_modules/@sveltejs/vite-plugin-svelte/package.json''\\); console.log\\(''plugin:'', v.version\\)\")",
       "Bash(/c/Users/seven/.bun/bin/bun install:*)",
       "Bash(pkill -f \"vite\")",
-      "Bash(tasklist)"
+      "Bash(tasklist)",
+      "Bash(ls \"/c/Users/seven/Documents/GitHub/WebDrawTabSim/\"*lock*)",
+      "Bash(ls \"/c/Users/seven/Documents/GitHub/WebDrawTabSim/bun.lock\"*)"
     ]
   }
 }
