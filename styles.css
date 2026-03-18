@@ -61,7 +61,7 @@ input[type="range"] {
     margin-bottom: 0;
 }
 
-#export-btn, #reset-btn, #demo-btn, #anim-btn, #edit-view-btn, #anim-tilt-altitude-btn, #anim-tilt-azimuth-btn, #anim-barrel-btn {
+.action-btn {
     padding: 6px 6px;
     background: #4CAF50;
     color: white;
@@ -72,13 +72,14 @@ input[type="range"] {
     font-weight: bold;
     transition: background 0.3s;
     margin-top: 4px;
+    width: 100%;
 }
 
-#export-btn:hover, #reset-btn:hover, #demo-btn:hover, #anim-btn:hover, #edit-view-btn:hover, #anim-tilt-altitude-btn:hover, #anim-tilt-azimuth-btn:hover, #anim-barrel-btn:hover {
+.action-btn:hover {
     background: #45a049;
 }
 
-#export-btn:active, #reset-btn:active, #demo-btn:active, #anim-btn:active, #edit-view-btn:active, #anim-tilt-altitude-btn:active, #anim-tilt-azimuth-btn:active, #anim-barrel-btn:active {
+.action-btn:active {
     background: #3d8b40;
 }
 
@@ -115,29 +116,6 @@ input[type="checkbox"] {
 
 .checkbox-grid .control-group {
     margin: 0;
-}
-
-.flyout-trigger-btn {
-    padding: 6px 6px;
-    background: #4CAF50;
-    color: white;
-    border: none;
-    border-radius: 8px;
-    cursor: pointer;
-    font-size: 12px;
-    font-weight: bold;
-    transition: background 0.3s;
-    margin-top: 4px;
-    margin-bottom: 4px;
-    width: 100%;
-}
-
-.flyout-trigger-btn:hover {
-    background: #45a049;
-}
-
-.flyout-trigger-btn:active {
-    background: #3d8b40;
 }
 
 .flyout-panel {
@@ -214,26 +192,90 @@ input[type="checkbox"] {
     margin-bottom: 12px;
 }
 
-.flyout-button {
-    padding: 6px 6px;
+/* Camera edit modal */
+
+#camera-edit-modal {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.7);
+    z-index: 1000;
+    justify-content: center;
+    align-items: center;
+    flex-direction: column;
+}
+
+#camera-edit-modal .modal-content {
+    background: #2d2d2d;
+    padding: 20px;
+    border-radius: 8px;
+    width: 600px;
+    max-width: 90%;
+    max-height: 90%;
+    display: flex;
+    flex-direction: column;
+    box-sizing: border-box;
+}
+
+#camera-edit-modal h2 {
+    color: #fff;
+    margin-top: 0;
+    margin-bottom: 15px;
+}
+
+#camera-json-editor {
+    width: 100%;
+    height: 400px;
+    min-height: 300px;
+    flex: 1;
+    font-family: monospace;
+    font-size: 12px;
+    background: #1a1a1a;
+    color: #fff;
+    border: 1px solid #444;
+    padding: 10px;
+    border-radius: 4px;
+    resize: vertical;
+    box-sizing: border-box;
+}
+
+.modal-actions {
+    display: flex;
+    gap: 10px;
+    margin-top: 15px;
+    justify-content: flex-end;
+}
+
+#camera-edit-cancel {
+    padding: 8px 20px;
+    background: #666;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 12px;
+}
+
+#camera-edit-cancel:hover {
+    background: #777;
+}
+
+#camera-edit-ok {
+    padding: 8px 20px;
     background: #4CAF50;
     color: white;
     border: none;
-    border-radius: 8px;
+    border-radius: 4px;
     cursor: pointer;
     font-size: 12px;
     font-weight: bold;
-    transition: background 0.3s;
-    margin-top: 4px;
-    margin-bottom: 4px;
-    width: 100%;
 }
 
-.flyout-button:hover {
+#camera-edit-ok:hover {
     background: #45a049;
 }
 
-.flyout-button:active {
-    background: #3d8b40;
-}
 

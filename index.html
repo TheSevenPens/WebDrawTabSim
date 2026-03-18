@@ -49,8 +49,8 @@
 
 
 
-    <button id="pointer-tracking-flyout-btn" class="flyout-trigger-btn">Pointer tracking</button>
-    <button id="annotations-flyout-btn" class="flyout-trigger-btn">Annotations</button>
+    <button id="pointer-tracking-flyout-btn" class="action-btn">Pointer tracking</button>
+    <button id="annotations-flyout-btn" class="action-btn">Annotations</button>
     
     <div class="checkbox-grid">
         <div class="control-group">
@@ -69,8 +69,8 @@
         </div>
         <div class="flyout-content">
             <div style="display: flex; gap: 8px; margin-bottom: 12px;">
-                <button id="annotations-all-on-btn" class="flyout-button" style="flex: 1;">All On</button>
-                <button id="annotations-all-off-btn" class="flyout-button" style="flex: 1;">All Off</button>
+                <button id="annotations-all-on-btn" class="action-btn" style="flex: 1;">All On</button>
+                <button id="annotations-all-off-btn" class="action-btn" style="flex: 1;">All Off</button>
             </div>
             
             <div class="control-group">
@@ -192,10 +192,10 @@
         </div>
     </div>
 
-    <button id="reset-btn">Reset pen</button>
-    <button id="animations-flyout-btn" class="flyout-trigger-btn">Animations</button>
-    <button id="edit-view-btn">Edit View</button>
-    <button id="export-btn">Export as PNG</button>
+    <button id="reset-btn" class="action-btn">Reset pen</button>
+    <button id="animations-flyout-btn" class="action-btn">Animations</button>
+    <button id="edit-view-btn" class="action-btn">Edit View</button>
+    <button id="export-btn" class="action-btn">Export as PNG</button>
 
     <!-- Animations Flyout -->
     <div id="animations-flyout" class="flyout-panel">
@@ -204,11 +204,11 @@
             <button id="animations-flyout-close" class="flyout-close-btn">×</button>
         </div>
         <div class="flyout-content">
-            <button id="demo-btn" class="flyout-button">Demo</button>
-            <button id="anim-btn" class="flyout-button">Anim Rot all</button>
-            <button id="anim-tilt-altitude-btn" class="flyout-button">Anim Tilt Altitude</button>
-            <button id="anim-tilt-azimuth-btn" class="flyout-button">Anim Tilt Azimuth</button>
-            <button id="anim-barrel-btn" class="flyout-button">Anim Barrel</button>
+            <button id="demo-btn" class="action-btn">Demo</button>
+            <button id="anim-btn" class="action-btn">Anim Rot all</button>
+            <button id="anim-tilt-altitude-btn" class="action-btn">Anim Tilt Altitude</button>
+            <button id="anim-tilt-azimuth-btn" class="action-btn">Anim Tilt Azimuth</button>
+            <button id="anim-barrel-btn" class="action-btn">Anim Barrel</button>
         </div>
     </div>
 </div>
@@ -216,13 +216,13 @@
 </div>
 
 <!-- Modal for editing camera settings -->
-<div id="camera-edit-modal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.7); z-index: 1000; justify-content: center; align-items: center; flex-direction: column;">
-    <div style="background: #2d2d2d; padding: 20px; border-radius: 8px; width: 600px; max-width: 90%; max-height: 90%; display: flex; flex-direction: column; box-sizing: border-box;">
-        <h2 style="color: #fff; margin-bottom: 15px; margin-top: 0;">Edit Camera Settings</h2>
-        <textarea id="camera-json-editor" style="width: 100%; height: 400px; font-family: monospace; font-size: 12px; background: #1a1a1a; color: #fff; border: 1px solid #444; padding: 10px; border-radius: 4px; resize: vertical; flex: 1; min-height: 300px; box-sizing: border-box;"></textarea>
-        <div style="display: flex; gap: 10px; margin-top: 15px; justify-content: flex-end;">
-            <button id="camera-edit-cancel" style="padding: 8px 20px; background: #666; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 12px;">CANCEL</button>
-            <button id="camera-edit-ok" style="padding: 8px 20px; background: #4CAF50; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 12px; font-weight: bold;">OK</button>
+<div id="camera-edit-modal">
+    <div class="modal-content">
+        <h2>Edit Camera Settings</h2>
+        <textarea id="camera-json-editor"></textarea>
+        <div class="modal-actions">
+            <button id="camera-edit-cancel">CANCEL</button>
+            <button id="camera-edit-ok">OK</button>
         </div>
     </div>
 </div>

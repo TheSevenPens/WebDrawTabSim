@@ -184,6 +184,7 @@ document.getElementById('reset-btn').addEventListener('click', () => {
 });
 
 // --- Animations flyout reference (needed by button handlers and initializeAnimations) ---
+// Resolved here before the flyouts array is built; initializeAnimations also receives it.
 
 const animationsFlyout = document.getElementById('animations-flyout');
 
@@ -320,39 +321,25 @@ document.getElementById('camera-edit-ok').addEventListener('click', () => {
     }
 });
 
-// --- Flyout toggles ---
+// --- Flyout toggles (data-driven) ---
 
-const pointerTrackingFlyoutBtn = document.getElementById('pointer-tracking-flyout-btn');
-const pointerTrackingFlyout = document.getElementById('pointer-tracking-flyout');
-const annotationsFlyoutBtn = document.getElementById('annotations-flyout-btn');
-const annotationsFlyout = document.getElementById('annotations-flyout');
-const animationsFlyoutBtn = document.getElementById('animations-flyout-btn');
+const flyouts = [
+    { id: 'pointer-tracking', btnId: 'pointer-tracking-flyout-btn' },
+    { id: 'annotations',      btnId: 'annotations-flyout-btn' },
+    { id: 'animations',       btnId: 'animations-flyout-btn' },
+].map(({ id, btnId }) => ({
+    panel: document.getElementById(`${id}-flyout`),
+    btn:   document.getElementById(btnId),
+    close: document.getElementById(`${id}-flyout-close`),
+}));
 
-pointerTrackingFlyoutBtn.addEventListener('click', () => {
-    if (annotationsFlyout.classList.contains('open')) annotationsFlyout.classList.remove('open');
-    if (animationsFlyout.classList.contains('open')) animationsFlyout.classList.remove('open');
-    pointerTrackingFlyout.classList.toggle('open');
-});
-document.getElementById('pointer-tracking-flyout-close').addEventListener('click', () => {
-    pointerTrackingFlyout.classList.remove('open');
-});
-
-annotationsFlyoutBtn.addEventListener('click', () => {
-    if (pointerTrackingFlyout.classList.contains('open')) pointerTrackingFlyout.classList.remove('open');
-    if (animationsFlyout.classList.contains('open')) animationsFlyout.classList.remove('open');
-    annotationsFlyout.classList.toggle('open');
-});
-document.getElementById('annotations-flyout-close').addEventListener('click', () => {
-    annotationsFlyout.classList.remove('open');
-});
-
-animationsFlyoutBtn.addEventListener('click', () => {
-    if (pointerTrackingFlyout.classList.contains('open')) pointerTrackingFlyout.classList.remove('open');
-    if (annotationsFlyout.classList.contains('open')) annotationsFlyout.classList.remove('open');
-    animationsFlyout.classList.toggle('open');
-});
-document.getElementById('animations-flyout-close').addEventListener('click', () => {
-    animationsFlyout.classList.remove('open');
+flyouts.forEach(({ panel, btn, close }) => {
+    btn.addEventListener('click', () => {
+        const isOpen = panel.classList.contains('open');
+        flyouts.forEach(f => f.panel.classList.remove('open'));
+        if (!isOpen) panel.classList.add('open');
+    });
+    close.addEventListener('click', () => panel.classList.remove('open'));
 });
 
 // --- Keyboard and click-outside handlers ---
@@ -360,20 +347,16 @@ document.getElementById('animations-flyout-close').addEventListener('click', () 
 document.addEventListener('keydown', (e) => {
     if (e.key === 'Escape') {
         if (cameraEditModal.style.display === 'flex') cameraEditModal.style.display = 'none';
-        if (annotationsFlyout.classList.contains('open')) annotationsFlyout.classList.remove('open');
-        if (animationsFlyout.classList.contains('open')) animationsFlyout.classList.remove('open');
+        flyouts.forEach(f => f.panel.classList.remove('open'));
     }
 });
 
 document.addEventListener('click', (e) => {
-    if (annotationsFlyout.classList.contains('open') &&
-        !annotationsFlyout.contains(e.target) &&
-        e.target !== annotationsFlyoutBtn) {
-        annotationsFlyout.classList.remove('open');
-    }
-    if (animationsFlyout.classList.contains('open') &&
-        !animationsFlyout.contains(e.target) &&
-        e.target !== animationsFlyoutBtn) {
-        animationsFlyout.classList.remove('open');
-    }
+    flyouts.forEach(({ panel, btn }) => {
+        if (panel.classList.contains('open') &&
+            !panel.contains(e.target) &&
+            e.target !== btn) {
+            panel.classList.remove('open');
+        }
+    });
 });
