@@ -48,7 +48,8 @@ export class Pen3DSim {
         // Constants (tablet coordinate dimensions)
         this.tabletWidth = 16;           // tablet X extent in inches
         this.tabletDepth = 9;            // tablet Y extent in inches
-        this.yOffset = 0.051;            // world Y of tablet surface
+        this.tabletThickness = 0.35;     // tablet body height in inches
+        this.yOffset = this.tabletThickness / 2; // world Y of tablet surface
         this.arcRadius = 1.5;
         this.barrelArcRadius = 1.5;
         this.azimuthColor = 0x77dd33;
