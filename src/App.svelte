@@ -1,7 +1,9 @@
 <script>
   import { onMount } from 'svelte';
   import { Pen3DSim } from './lib/sim/index.js';
-  import SliderControl from './lib/SliderControl.svelte';
+  import LeftPanel from './lib/LeftPanel.svelte';
+  import AnnotationSettings from './lib/AnnotationSettings.svelte';
+  import PointerTrackingSettings from './lib/PointerTrackingSettings.svelte';
   import { runParameterAnimation } from './lib/sim/animations.js';
 
   // ── DOM reference ──────────────────────────────────────────────────────────
@@ -337,46 +339,29 @@
 <!-- ═══════════════════════════════════════════════════════════════════════════
      Control panel
      ═══════════════════════════════════════════════════════════════════════════ -->
-<div id="control-panel">
-  <h1>SevenPens DrawTabSim</h1>
-
-  <SliderControl label="Z: (Hover distance)" bind:value={distance} min={0} max={1} step={0.05} decimals={2} unit=" in" oninput={onDistance} />
-
-  <SliderControl label="X" bind:value={tabletX} min={0} max={16} step={0.1} decimals={1} unit=" in" oninput={onTabletX} />
-
-  <SliderControl label="Y" bind:value={tabletY} min={0} max={9} step={0.1} decimals={1} unit=" in" oninput={onTabletY} />
-
-  <SliderControl label="Tilt altitude" bind:value={tiltAltitude} min={0} max={60} step={1} decimals={0} unit="°" oninput={onAltitude} />
-
-  <SliderControl label="Tilt azimuth" bind:value={tiltAzimuth} min={0} max={359} step={1} decimals={0} unit="°" disabled={azimuthDisabled} oninput={onAzimuth} />
-
-  <SliderControl label="Barrel rotation" bind:value={barrelRotation} min={0} max={359} step={1} decimals={0} unit="°" oninput={onBarrel} />
-
-  <div class="control-group">
-    <label>Tilt X: <span class="slider-value">{tiltXDisplay}°</span></label>
-  </div>
-
-  <div class="control-group">
-    <label>Tilt Y: <span class="slider-value">{tiltYDisplay}°</span></label>
-  </div>
-
-  <button class="action-btn" id="pointer-tracking-flyout-btn" onclick={() => toggleFlyout('pointer-tracking')}>Pointer tracking</button>
-  <button class="action-btn" id="annotations-flyout-btn" onclick={() => toggleFlyout('annotations')}>Annotations</button>
-
-  <div class="checkbox-grid">
-    <div class="control-group">
-      <label style="display:flex;align-items:center;gap:8px;">
-        <input type="checkbox" bind:checked={axonometric} onchange={onAxonometric} style="width:auto;margin:0;">
-        <span>Axonometric</span>
-      </label>
-    </div>
-  </div>
-
-  <button class="action-btn" onclick={resetPen}>Reset pen</button>
-  <button class="action-btn" id="animations-flyout-btn" onclick={() => toggleFlyout('animations')}>Animations</button>
-  <button class="action-btn" onclick={openCameraModal}>Edit View</button>
-  <button class="action-btn" onclick={() => sim?.exportAsPNG()}>Export as PNG</button>
-</div>
+<LeftPanel
+  bind:distance
+  bind:tabletX
+  bind:tabletY
+  bind:tiltAltitude
+  bind:tiltAzimuth
+  bind:barrelRotation
+  bind:axonometric
+  {azimuthDisabled}
+  {tiltXDisplay}
+  {tiltYDisplay}
+  {onDistance}
+  {onTabletX}
+  {onTabletY}
+  {onAltitude}
+  {onAzimuth}
+  {onBarrel}
+  {onAxonometric}
+  onToggleFlyout={toggleFlyout}
+  onResetPen={resetPen}
+  onOpenCameraModal={openCameraModal}
+  onExportPNG={() => sim?.exportAsPNG()}
+/>
 
 <!-- ═══════════════════════════════════════════════════════════════════════════
      3D Viewer
@@ -392,19 +377,28 @@
     <button class="flyout-close-btn" onclick={() => openFlyout = null}>×</button>
   </div>
   <div class="flyout-content">
-    <div style="display:flex;gap:8px;margin-bottom:12px;">
-      <button class="action-btn" style="flex:1;" onclick={allAnnotationsOn}>All On</button>
-      <button class="action-btn" style="flex:1;" onclick={allAnnotationsOff}>All Off</button>
-    </div>
-    <div class="control-group"><label style="display:flex;align-items:center;gap:8px;"><input type="checkbox" bind:checked={showAltitude}     onchange={onShowAltitude}     style="width:auto;margin:0;"><span>Tilt altitude</span></label></div>
-    <div class="control-group"><label style="display:flex;align-items:center;gap:8px;"><input type="checkbox" bind:checked={showAzimuth}      onchange={onShowAzimuth}      style="width:auto;margin:0;"><span>Tilt azimuth</span></label></div>
-    <div class="control-group"><label style="display:flex;align-items:center;gap:8px;"><input type="checkbox" bind:checked={showTiltX}        onchange={onShowTiltX}        style="width:auto;margin:0;"><span>Tilt X</span></label></div>
-    <div class="control-group"><label style="display:flex;align-items:center;gap:8px;"><input type="checkbox" bind:checked={showTiltY}        onchange={onShowTiltY}        style="width:auto;margin:0;"><span>Tilt Y</span></label></div>
-    <div class="control-group"><label style="display:flex;align-items:center;gap:8px;"><input type="checkbox" bind:checked={showBarrel}       onchange={onShowBarrel}       style="width:auto;margin:0;"><span>Barrel rotation</span></label></div>
-    <div class="control-group"><label style="display:flex;align-items:center;gap:8px;"><input type="checkbox" bind:checked={showAxis}         onchange={onShowAxis}         style="width:auto;margin:0;"><span>Axis</span></label></div>
-    <div class="control-group"><label style="display:flex;align-items:center;gap:8px;"><input type="checkbox" bind:checked={showCursor}       onchange={onShowCursor}       style="width:auto;margin:0;"><span>Mouse cursor</span></label></div>
-    <div class="control-group"><label style="display:flex;align-items:center;gap:8px;"><input type="checkbox" bind:checked={showPenShadow}    onchange={onShowPenShadow}    style="width:auto;margin:0;"><span>Pen shadow</span></label></div>
-    <div class="control-group"><label style="display:flex;align-items:center;gap:8px;"><input type="checkbox" bind:checked={showCheckerboard} onchange={onShowCheckerboard} style="width:auto;margin:0;"><span>Tablet checkerboard</span></label></div>
+    <AnnotationSettings
+      bind:showAltitude
+      bind:showAzimuth
+      bind:showTiltX
+      bind:showTiltY
+      bind:showBarrel
+      bind:showAxis
+      bind:showCursor
+      bind:showPenShadow
+      bind:showCheckerboard
+      {onShowAltitude}
+      {onShowAzimuth}
+      {onShowTiltX}
+      {onShowTiltY}
+      {onShowBarrel}
+      {onShowAxis}
+      {onShowCursor}
+      {onShowPenShadow}
+      {onShowCheckerboard}
+      onAllOn={allAnnotationsOn}
+      onAllOff={allAnnotationsOff}
+    />
   </div>
 </div>
 
@@ -417,15 +411,26 @@
     <button class="flyout-close-btn" onclick={() => openFlyout = null}>×</button>
   </div>
   <div class="flyout-content">
-    <SliderControl label="Cursor X offset" bind:value={cursorOffsetX} min={-5} max={5} step={0.05} decimals={2} unit=" in" oninput={onCursorOffsetX} />
-    <SliderControl label="Cursor Y offset" bind:value={cursorOffsetY} min={-5} max={5} step={0.05} decimals={2} unit=" in" oninput={onCursorOffsetY} />
-    <SliderControl label="Tilt Compensation PosTiltX" bind:value={compPosTiltX} min={0} max={1} step={0.05} decimals={2} oninput={onCompPosTiltX} />
-    <SliderControl label="Tilt Compensation NegTiltX" bind:value={compNegTiltX} min={0} max={1} step={0.05} decimals={2} oninput={onCompNegTiltX} />
-    <SliderControl label="Tilt Compensation PosTiltY" bind:value={compPosTiltY} min={0} max={1} step={0.05} decimals={2} oninput={onCompPosTiltY} />
-    <SliderControl label="Tilt Compensation NegTiltY" bind:value={compNegTiltY} min={0} max={1} step={0.05} decimals={2} oninput={onCompNegTiltY} />
-    <SliderControl label="Scaling factor" bind:value={scalingFactor} min={0} max={2} step={0.05} decimals={2} oninput={onScalingFactor} />
-    <SliderControl label="Edge attraction" bind:value={edgeAttraction} min={-1} max={1} step={0.05} decimals={2} oninput={onEdgeAttraction} />
-    <SliderControl label="Edge attraction range" bind:value={edgeAttractionRange} min={0} max={5} step={0.1} decimals={2} unit=" in" oninput={onEdgeAttractionRange} />
+    <PointerTrackingSettings
+      bind:cursorOffsetX
+      bind:cursorOffsetY
+      bind:compPosTiltX
+      bind:compNegTiltX
+      bind:compPosTiltY
+      bind:compNegTiltY
+      bind:scalingFactor
+      bind:edgeAttraction
+      bind:edgeAttractionRange
+      {onCursorOffsetX}
+      {onCursorOffsetY}
+      {onCompPosTiltX}
+      {onCompNegTiltX}
+      {onCompPosTiltY}
+      {onCompNegTiltY}
+      {onScalingFactor}
+      {onEdgeAttraction}
+      {onEdgeAttractionRange}
+    />
   </div>
 </div>
 
@@ -450,7 +455,7 @@
      Camera edit modal
      ═══════════════════════════════════════════════════════════════════════════ -->
 {#if cameraModalOpen}
-<div id="camera-edit-modal" style="display:flex;" onclick={(e) => { if (e.target === e.currentTarget) cameraModalOpen = false; }}>
+<div id="camera-edit-modal" style="display:flex;" role="presentation" onclick={(e) => { if (e.target === e.currentTarget) cameraModalOpen = false; }} onkeydown={(e) => { if (e.key === 'Escape') cameraModalOpen = false; }}>
   <div class="modal-content">
     <h2>Edit Camera Settings</h2>
     <textarea id="camera-json-editor" bind:value={cameraJsonText}></textarea>

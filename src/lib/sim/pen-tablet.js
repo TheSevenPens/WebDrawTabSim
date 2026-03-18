@@ -8,12 +8,21 @@ import { Pen3DSim } from './Pen3DSim.js';
 Object.assign(Pen3DSim.prototype, {
 
     initTablet() {
-        const geometry = new THREE.BoxGeometry(16, 0.1, 9);
+        const bodyMargin = 1.5;
+        const geometry = new THREE.BoxGeometry(this.tabletWidth + bodyMargin * 2, this.tabletThickness, this.tabletDepth + bodyMargin * 2);
         const material = MaterialsFactory.createTabletMaterial();
         const tablet = new THREE.Mesh(geometry, material);
         tablet.castShadow = true;
         tablet.receiveShadow = true;
         this.scene.add(tablet);
+
+        const deskHeight = 5;
+        const deskGeometry = new THREE.BoxGeometry(60, deskHeight, 30);
+        const deskMesh = new THREE.Mesh(deskGeometry, MaterialsFactory.createDeskMaterial());
+        deskMesh.position.set(0, -deskHeight / 2, -6.5);
+        deskMesh.receiveShadow = true;
+        deskMesh.castShadow = true;
+        this.scene.add(deskMesh);
 
         // Store references for checkerboard pattern toggle
         this.tabletMesh = tablet;
