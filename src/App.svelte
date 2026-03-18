@@ -1,6 +1,7 @@
 <script>
   import { onMount } from 'svelte';
   import { Pen3DSim } from './lib/sim/index.js';
+  import SliderControl from './lib/SliderControl.svelte';
   import { runParameterAnimation } from './lib/sim/animations.js';
 
   // ── DOM reference ──────────────────────────────────────────────────────────
@@ -339,39 +340,17 @@
 <div id="control-panel">
   <h1>SevenPens DrawTabSim</h1>
 
-  <div class="control-group">
-    <label>Z: (Hover distance): <span class="slider-value">{distance.toFixed(2)} in</span></label>
-    <input type="range" bind:value={distance} min="0" max="1" step="0.05" on:input={onDistance}>
-  </div>
+  <SliderControl label="Z: (Hover distance)" bind:value={distance} min={0} max={1} step={0.05} decimals={2} unit=" in" on:input={onDistance} />
 
-  <div class="control-group">
-    <label>X: <span class="slider-value">{tabletX.toFixed(1)} in</span></label>
-    <input type="range" bind:value={tabletX} min="0" max="16" step="0.1" on:input={onTabletX}>
-  </div>
+  <SliderControl label="X" bind:value={tabletX} min={0} max={16} step={0.1} decimals={1} unit=" in" on:input={onTabletX} />
 
-  <div class="control-group">
-    <label>Y: <span class="slider-value">{tabletY.toFixed(1)} in</span></label>
-    <input type="range" bind:value={tabletY} min="0" max="9" step="0.1" on:input={onTabletY}>
-  </div>
+  <SliderControl label="Y" bind:value={tabletY} min={0} max={9} step={0.1} decimals={1} unit=" in" on:input={onTabletY} />
 
-  <div class="control-group">
-    <label>Tilt altitude: <span class="slider-value">{Math.round(tiltAltitude)}°</span></label>
-    <input type="range" bind:value={tiltAltitude} min="0" max="60" step="1" on:input={onAltitude}>
-  </div>
+  <SliderControl label="Tilt altitude" bind:value={tiltAltitude} min={0} max={60} step={1} decimals={0} unit="°" on:input={onAltitude} />
 
-  <div class="control-group">
-    <label>Tilt azimuth: <span class="slider-value">{Math.round(tiltAzimuth)}°</span></label>
-    <input type="range" bind:value={tiltAzimuth} min="0" max="359" step="1"
-           disabled={azimuthDisabled}
-           style:opacity={azimuthDisabled ? 0.5 : 1}
-           style:cursor={azimuthDisabled ? 'not-allowed' : 'pointer'}
-           on:input={onAzimuth}>
-  </div>
+  <SliderControl label="Tilt azimuth" bind:value={tiltAzimuth} min={0} max={359} step={1} decimals={0} unit="°" disabled={azimuthDisabled} on:input={onAzimuth} />
 
-  <div class="control-group">
-    <label>Barrel rotation: <span class="slider-value">{Math.round(barrelRotation)}°</span></label>
-    <input type="range" bind:value={barrelRotation} min="0" max="359" step="1" on:input={onBarrel}>
-  </div>
+  <SliderControl label="Barrel rotation" bind:value={barrelRotation} min={0} max={359} step={1} decimals={0} unit="°" on:input={onBarrel} />
 
   <div class="control-group">
     <label>Tilt X: <span class="slider-value">{tiltXDisplay}°</span></label>
@@ -438,42 +417,15 @@
     <button class="flyout-close-btn" on:click={() => openFlyout = null}>×</button>
   </div>
   <div class="flyout-content">
-    <div class="control-group">
-      <label>Cursor X offset: <span class="slider-value">{cursorOffsetX.toFixed(2)} in</span></label>
-      <input type="range" bind:value={cursorOffsetX} min="-5" max="5" step="0.05" on:input={onCursorOffsetX}>
-    </div>
-    <div class="control-group">
-      <label>Cursor Y offset: <span class="slider-value">{cursorOffsetY.toFixed(2)} in</span></label>
-      <input type="range" bind:value={cursorOffsetY} min="-5" max="5" step="0.05" on:input={onCursorOffsetY}>
-    </div>
-    <div class="control-group">
-      <label>Tilt Compensation PosTiltX: <span class="slider-value">{compPosTiltX.toFixed(2)}</span></label>
-      <input type="range" bind:value={compPosTiltX} min="0" max="1" step="0.05" on:input={onCompPosTiltX}>
-    </div>
-    <div class="control-group">
-      <label>Tilt Compensation NegTiltX: <span class="slider-value">{compNegTiltX.toFixed(2)}</span></label>
-      <input type="range" bind:value={compNegTiltX} min="0" max="1" step="0.05" on:input={onCompNegTiltX}>
-    </div>
-    <div class="control-group">
-      <label>Tilt Compensation PosTiltY: <span class="slider-value">{compPosTiltY.toFixed(2)}</span></label>
-      <input type="range" bind:value={compPosTiltY} min="0" max="1" step="0.05" on:input={onCompPosTiltY}>
-    </div>
-    <div class="control-group">
-      <label>Tilt Compensation NegTiltY: <span class="slider-value">{compNegTiltY.toFixed(2)}</span></label>
-      <input type="range" bind:value={compNegTiltY} min="0" max="1" step="0.05" on:input={onCompNegTiltY}>
-    </div>
-    <div class="control-group">
-      <label>Scaling factor: <span class="slider-value">{scalingFactor.toFixed(2)}</span></label>
-      <input type="range" bind:value={scalingFactor} min="0" max="2" step="0.05" on:input={onScalingFactor}>
-    </div>
-    <div class="control-group">
-      <label>Edge attraction: <span class="slider-value">{edgeAttraction.toFixed(2)}</span></label>
-      <input type="range" bind:value={edgeAttraction} min="-1" max="1" step="0.05" on:input={onEdgeAttraction}>
-    </div>
-    <div class="control-group">
-      <label>Edge attraction range: <span class="slider-value">{edgeAttractionRange.toFixed(2)} in</span></label>
-      <input type="range" bind:value={edgeAttractionRange} min="0" max="5" step="0.1" on:input={onEdgeAttractionRange}>
-    </div>
+    <SliderControl label="Cursor X offset" bind:value={cursorOffsetX} min={-5} max={5} step={0.05} decimals={2} unit=" in" on:input={onCursorOffsetX} />
+    <SliderControl label="Cursor Y offset" bind:value={cursorOffsetY} min={-5} max={5} step={0.05} decimals={2} unit=" in" on:input={onCursorOffsetY} />
+    <SliderControl label="Tilt Compensation PosTiltX" bind:value={compPosTiltX} min={0} max={1} step={0.05} decimals={2} on:input={onCompPosTiltX} />
+    <SliderControl label="Tilt Compensation NegTiltX" bind:value={compNegTiltX} min={0} max={1} step={0.05} decimals={2} on:input={onCompNegTiltX} />
+    <SliderControl label="Tilt Compensation PosTiltY" bind:value={compPosTiltY} min={0} max={1} step={0.05} decimals={2} on:input={onCompPosTiltY} />
+    <SliderControl label="Tilt Compensation NegTiltY" bind:value={compNegTiltY} min={0} max={1} step={0.05} decimals={2} on:input={onCompNegTiltY} />
+    <SliderControl label="Scaling factor" bind:value={scalingFactor} min={0} max={2} step={0.05} decimals={2} on:input={onScalingFactor} />
+    <SliderControl label="Edge attraction" bind:value={edgeAttraction} min={-1} max={1} step={0.05} decimals={2} on:input={onEdgeAttraction} />
+    <SliderControl label="Edge attraction range" bind:value={edgeAttractionRange} min={0} max={5} step={0.1} decimals={2} unit=" in" on:input={onEdgeAttractionRange} />
   </div>
 </div>
 
