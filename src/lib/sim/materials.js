@@ -57,6 +57,19 @@ export class MaterialsFactory {
         return this.createStandardMaterial(0x7B4A2D, 0.85, 0.05);
     }
 
+    // Monitor bezel / stand material
+    static createMonitorBezelMaterial() {
+        return this.createStandardMaterial(0x1e1e1e, 0.8, 0.1);
+    }
+
+    // Monitor screen material (dark, slightly emissive like a powered-on display)
+    static createMonitorScreenMaterial() {
+        const mat = this.createStandardMaterial(0x0a1628, 0.2, 0.0);
+        mat.emissive = new THREE.Color(0x0a1628);
+        mat.emissiveIntensity = 0.4;
+        return mat;
+    }
+
     // Tablet material
     static createTabletMaterial() {
         return this.createStandardMaterial(0x505050, 0.7, 0.2);

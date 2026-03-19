@@ -77,6 +77,7 @@ Exposes the full public API consumed by `App.svelte`: `setDistance`, `setTiltAlt
 |---|---|
 | `pen-scene.js` | Three.js scene, perspective + orthographic cameras, WebGL renderer, OrbitControls, ambient/directional/point lights, camera settings import/export |
 | `pen-tablet.js` | **Tablet body**, **digitizer grid**, desk mesh (see concepts below) |
+| `pen-monitor.js` | Desk monitor: bezel body, screen face, stand neck and base |
 | `pen-pen.js` | Pen tip (cone) + barrel (cylinder) mesh group; cursor arrow; `updatePenTransform()` — the core function that repositions and reorients the pen every frame |
 | `pen-annotations.js` | Arc, pie, arrow, and label geometry for tilt altitude, tilt azimuth, barrel rotation, tilt X/Y annotations; axis marker arrows and labels |
 | `pen-mouse.js` | Spacebar toggles mouse-drag mode; drag events map pixel deltas to tablet-coordinate offsets and call `setTabletPositionX/Y` |
@@ -139,6 +140,9 @@ worldZ  = tabletY − tabletDepth/2       (range ±4.5)
 | Desk | Y = −2.5, Z = −6.5 (center) | 60 × 5 × 30 in |
 | Tablet body | Y = 0 (center) | 19 × 0.35 × 12 in |
 | Digitizer grid | Y = 0.175 (surface) | 16 × 9 in |
+| Monitor (bezel) | Y ≈ 10.95, Z = −12 | 19.1 × 11.1 × 0.8 in |
+| Monitor screen | Y ≈ 10.95, Z ≈ −11.6 | 18.3 × 10.3 in (21" diag, 16:9) |
+| Monitor stand | Y = 0 – 5.4, Z = −12 | neck + base |
 | Pen group | Y = yOffset + distance | driven by `updatePenTransform` |
 | Floor grid helper | Y = −5 | 50 × 50 in |
 
