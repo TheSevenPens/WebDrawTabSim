@@ -1,5 +1,6 @@
 import * as THREE from 'three';
 import { MaterialsFactory } from './materials.js';
+import { TexturesFactory } from './textures.js';
 import { Pen3DSim } from './Pen3DSim.js';
 
 // pen-monitor.js — Desk monitor mesh and screen cursor
@@ -33,7 +34,9 @@ Object.assign(Pen3DSim.prototype, {
         const bodyCenterY  = baseHeight + neckHeight + bezelHeight / 2;
 
         const bezelMaterial  = MaterialsFactory.createMonitorBezelMaterial();
-        const screenMaterial = MaterialsFactory.createMonitorScreenMaterial();
+        const screenMaterial = MaterialsFactory.createMonitorScreenMaterial(
+            TexturesFactory.createDesktopTexture()
+        );
 
         // Monitor body (bezel)
         const bodyMesh = new THREE.Mesh(

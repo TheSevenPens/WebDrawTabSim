@@ -62,12 +62,10 @@ export class MaterialsFactory {
         return this.createStandardMaterial(0x1e1e1e, 0.8, 0.1);
     }
 
-    // Monitor screen material (dark, slightly emissive like a powered-on display)
-    static createMonitorScreenMaterial() {
-        const mat = this.createStandardMaterial(0x0a1628, 0.2, 0.0);
-        mat.emissive = new THREE.Color(0x0a1628);
-        mat.emissiveIntensity = 0.4;
-        return mat;
+    // Monitor screen material — self-lit (MeshBasicMaterial) so the desktop
+    // texture is not affected by scene lighting, mimicking a real display.
+    static createMonitorScreenMaterial(texture) {
+        return new THREE.MeshBasicMaterial({ map: texture });
     }
 
     // Tablet material

@@ -70,6 +70,27 @@ export class TexturesFactory {
         return texture;
     }
 
+    // Create a simple Windows-style desktop texture (1920x1080)
+    static createDesktopTexture() {
+        const W = 1920, H = 1080;
+        const taskbarH = 40;
+
+        const canvas = document.createElement('canvas');
+        canvas.width  = W;
+        canvas.height = H;
+        const ctx = canvas.getContext('2d');
+
+        // Desktop background — Windows blue
+        ctx.fillStyle = '#2b5797';
+        ctx.fillRect(0, 0, W, H);
+
+        // Taskbar — light gray strip at the bottom
+        ctx.fillStyle = '#c0c0c0';
+        ctx.fillRect(0, H - taskbarH, W, taskbarH);
+
+        return new THREE.CanvasTexture(canvas);
+    }
+
     // Create a text label texture for axis markers
     static createTextLabelTexture(text, color) {
         const canvas = document.createElement('canvas');
