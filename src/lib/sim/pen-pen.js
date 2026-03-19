@@ -168,7 +168,7 @@ Object.assign(Pen3DSim.prototype, {
     // -------------------------------------------------------------------------
 
     updatePenTransform(distance, altitude, azimuth, barrel) {
-        const worldSurfaceY = 0.05;  // world Y of the tablet surface
+        const worldSurfaceY = this.yOffset;  // world Y of the tablet surface
         const tipLength     = 0.5;   // length of pen tip cone (inches)
 
         const altitudeRad = (altitude * Math.PI) / 180;
