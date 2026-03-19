@@ -129,7 +129,7 @@ Object.assign(Pen3DSim.prototype, {
         //   tablet X  → screen X  (same direction)
         //   tablet Z  → screen Y  (positive Z = toward back of desk = higher on screen)
         const screenCursorX = normalizedX * (this.monitorScreenWidth  / 2);
-        const screenCursorY = this.monitorBodyCenterY + normalizedZ * (this.monitorScreenHeight / 2);
+        const screenCursorY = this.monitorBodyCenterY - normalizedZ * (this.monitorScreenHeight / 2);
         const screenCursorZ = this.monitorZ + this.monitorBodyDepth / 2 + 0.08; // just in front of screen face
 
         this.monitorCursor.position.set(screenCursorX, screenCursorY, screenCursorZ);
