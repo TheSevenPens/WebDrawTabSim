@@ -52,7 +52,8 @@ index.js
 ├── Pen3DSim.js        ← class skeleton, constructor, public API
 ├── pen-scene.js       ← extends prototype: scene, cameras, renderer, lighting
 ├── pen-tablet.js      ← extends prototype: tablet body, digitizer grid, desk
-├── pen-pen.js         ← extends prototype: pen mesh, cursor arrow, updatePenTransform
+├── pen-monitor.js     ← extends prototype: monitor mesh, desktop texture, screen cursor
+├── pen-pen.js         ← extends prototype: pen mesh, digitizer cursor, updatePenTransform
 ├── pen-annotations.js ← extends prototype: tilt/barrel/azimuth annotation geometry
 └── pen-mouse.js       ← extends prototype: spacebar + mouse-drag pen movement
 ```
@@ -65,7 +66,7 @@ Initialises all state constants and calls the init chain in order:
 
 ```
 initScene → initCameras → initRenderer → initControls → initLighting
-→ initTablet → initPen → initAnnotations → initAxisMarkers
+→ initTablet → initMonitor → initPen → initAnnotations → initAxisMarkers
 → animate() → updatePenTransform() → initMouseControl()
 ```
 
@@ -77,8 +78,8 @@ Exposes the full public API consumed by `App.svelte`: `setDistance`, `setTiltAlt
 |---|---|
 | `pen-scene.js` | Three.js scene, perspective + orthographic cameras, WebGL renderer, OrbitControls, ambient/directional/point lights, camera settings import/export |
 | `pen-tablet.js` | **Tablet body**, **digitizer grid**, desk mesh (see concepts below) |
-| `pen-monitor.js` | Desk monitor: bezel body, screen face, stand neck and base |
-| `pen-pen.js` | Pen tip (cone) + barrel (cylinder) mesh group; cursor arrow; `updatePenTransform()` — the core function that repositions and reorients the pen every frame |
+| `pen-monitor.js` | Desk monitor: bezel body, screen face (desktop texture), stand neck and base; screen cursor that mirrors the digitizer cursor |
+| `pen-pen.js` | Pen tip (cone) + barrel (cylinder) mesh group; digitizer cursor arrow; `updatePenTransform()` — the core function that repositions and reorients the pen every frame; calls `updateMonitorCursor()` each frame |
 | `pen-annotations.js` | Arc, pie, arrow, and label geometry for tilt altitude, tilt azimuth, barrel rotation, tilt X/Y annotations; axis marker arrows and labels |
 | `pen-mouse.js` | Spacebar toggles mouse-drag mode; drag events map pixel deltas to tablet-coordinate offsets and call `setTabletPositionX/Y` |
 
@@ -86,8 +87,8 @@ Exposes the full public API consumed by `App.svelte`: `setDistance`, `setTiltAlt
 
 | File | Responsibility |
 |---|---|
-| `materials.js` | `MaterialsFactory` — static factory methods for every material in the scene (tablet, desk, pen, grid, wireframe, annotations) |
-| `textures.js` | `TexturesFactory` — generates procedural canvas textures (checkerboard for pen barrel and tablet overlay) |
+| `materials.js` | `MaterialsFactory` — static factory methods for every material in the scene (tablet, desk, pen, grid, wireframe, annotations, monitor bezel, monitor screen) |
+| `textures.js` | `TexturesFactory` — generates procedural canvas textures (checkerboard for pen barrel and tablet overlay; Windows-style desktop for monitor screen) |
 | `animations.js` | `runParameterAnimation()` — generic RAF loop helper used by individual parameter animations (altitude, azimuth, barrel) |
 
 ---
@@ -114,6 +115,28 @@ Digitizer grid: 16 ×  0   ×  9 in  (lines drawn at Y = yOffset)
 ```
 
 To change tablet thickness, update only `tabletThickness` in `Pen3DSim.js`; `yOffset` and the geometry derive from it automatically.
+
+### Monitor screen and cursor
+
+The monitor screen face is a `MeshBasicMaterial` mesh (self-lit, unaffected by scene lighting) carrying a 1920×1080 canvas texture depicting a simple Windows-style desktop: blue background with a light-gray taskbar strip at the bottom.
+
+A second cursor arrow (`monitorCursor`) mirrors the digitizer cursor on the screen face. It is created by `pen-monitor.js` and updated each frame by `updateMonitorCursor(worldCursorX, worldCursorZ)`, which is called at the end of `updatePenTransform` in `pen-pen.js`.
+
+The coordinate mapping from digitizer world space to screen face:
+
+```
+normalizedX =  worldCursorX / (tabletWidth  / 2)   → [-1, 1]
+normalizedZ =  worldCursorZ / (tabletDepth  / 2)   → [-1, 1]
+
+screenCursorX =  normalizedX * (screenWidth  / 2)   (same direction as tablet X)
+screenCursorY = -normalizedZ * (screenHeight / 2)   (Z negated: tablet front → screen bottom)
+```
+
+The vertical axis is negated because positive tablet Z (toward the back of the desk) corresponds to the top of the screen, while positive screen Y is also up — so the natural mapping without negation would be inverted from the user's perspective.
+
+The screen cursor is positioned 0.08 in front of the screen face mesh (which sits 0.025 in front of the bezel body), ensuring it always renders on top of the desktop texture.
+
+`setCursorVisible()` controls both cursors together.
 
 ### Coordinate systems
 
