@@ -57,6 +57,17 @@ export class MaterialsFactory {
         return this.createStandardMaterial(0x7B4A2D, 0.85, 0.05);
     }
 
+    // Monitor bezel / stand material
+    static createMonitorBezelMaterial() {
+        return this.createStandardMaterial(0x1e1e1e, 0.8, 0.1);
+    }
+
+    // Monitor screen material — self-lit (MeshBasicMaterial) so the desktop
+    // texture is not affected by scene lighting, mimicking a real display.
+    static createMonitorScreenMaterial(texture) {
+        return new THREE.MeshBasicMaterial({ map: texture });
+    }
+
     // Tablet material
     static createTabletMaterial() {
         return this.createStandardMaterial(0x505050, 0.7, 0.2);

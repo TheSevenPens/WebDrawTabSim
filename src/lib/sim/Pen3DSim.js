@@ -62,6 +62,7 @@ export class Pen3DSim {
         this.initControls();
         this.initLighting();
         this.initTablet();
+        this.initMonitor();
         this.initPen();
         this.initAnnotations();
         this.initAxisMarkers();
@@ -219,7 +220,8 @@ export class Pen3DSim {
     }
 
     setCursorVisible(visible) {
-        if (this.cursorArrow) this.cursorArrow.visible = visible;
+        if (this.cursorArrow)   this.cursorArrow.visible   = visible;
+        if (this.monitorCursor) this.monitorCursor.visible = visible;
     }
 
     setPenShadowVisible(visible) {

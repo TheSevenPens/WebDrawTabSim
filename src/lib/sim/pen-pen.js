@@ -306,6 +306,9 @@ Object.assign(Pen3DSim.prototype, {
         // Place cursor arrow at computed world position on tablet surface
         this.cursorArrow.position.set(worldCursorX, this.yOffset, worldCursorZ);
 
+        // Mirror cursor on monitor screen
+        this.updateMonitorCursor(worldCursorX, worldCursorZ);
+
         // ── Tilt altitude annotation ─────────────────────────────────────────
         const arcCenter  = this.penTipWorld.clone();  // world coords
         const arcRadius  = 2.0;
