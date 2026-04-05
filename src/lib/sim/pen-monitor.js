@@ -34,9 +34,13 @@ Object.assign(Pen3DSim.prototype, {
         const bodyCenterY  = baseHeight + neckHeight + bezelHeight / 2;
 
         const bezelMaterial  = MaterialsFactory.createMonitorBezelMaterial();
+        this.desktopTexture = TexturesFactory.createDesktopTexture();
         const screenMaterial = MaterialsFactory.createMonitorScreenMaterial(
-            TexturesFactory.createDesktopTexture()
+            this.desktopTexture
         );
+
+        // Group all monitor parts so they can be toggled as a unit
+        this.monitorGroup = new THREE.Group();
 
         // Monitor body (bezel)
         const bodyMesh = new THREE.Mesh(
@@ -46,7 +50,7 @@ Object.assign(Pen3DSim.prototype, {
         bodyMesh.position.set(0, bodyCenterY, monitorZ);
         bodyMesh.castShadow = true;
         bodyMesh.receiveShadow = true;
-        this.scene.add(bodyMesh);
+        this.monitorGroup.add(bodyMesh);
 
         // Screen face — sits flush on the front face of the body
         const screenMesh = new THREE.Mesh(
@@ -54,7 +58,7 @@ Object.assign(Pen3DSim.prototype, {
             screenMaterial
         );
         screenMesh.position.set(0, bodyCenterY, monitorZ + bodyDepth / 2 + 0.025);
-        this.scene.add(screenMesh);
+        this.monitorGroup.add(screenMesh);
 
         // Stand neck
         const neckMesh = new THREE.Mesh(
@@ -63,7 +67,7 @@ Object.assign(Pen3DSim.prototype, {
         );
         neckMesh.position.set(0, neckCenterY, monitorZ);
         neckMesh.castShadow = true;
-        this.scene.add(neckMesh);
+        this.monitorGroup.add(neckMesh);
 
         // Stand base
         const baseMesh = new THREE.Mesh(
@@ -73,7 +77,9 @@ Object.assign(Pen3DSim.prototype, {
         baseMesh.position.set(0, baseCenterY, monitorZ);
         baseMesh.castShadow = true;
         baseMesh.receiveShadow = true;
-        this.scene.add(baseMesh);
+        this.monitorGroup.add(baseMesh);
+
+        this.scene.add(this.monitorGroup);
 
         // Store geometry constants needed for cursor positioning
         this.monitorScreenWidth  = screenWidth;

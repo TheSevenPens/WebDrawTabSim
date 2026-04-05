@@ -44,6 +44,7 @@ export class Pen3DSim {
         this.scalingFactor = 1;          // 0–2, 1 = no scaling
         this.edgeAttraction = 0;         // -1 to 1, 0 = no effect
         this.edgeAttractionRange = 1;    // tablet inches from edges where attraction applies
+        this.penDisplayMode = false;     // false = pen tablet (no screen), true = pen display (embedded screen)
 
         // Constants (tablet coordinate dimensions)
         this.tabletWidth = 16;           // tablet X extent in inches
@@ -246,6 +247,19 @@ export class Pen3DSim {
             this.tabletMaterial.metalness = 0.2;
         }
         this.tabletMaterial.needsUpdate = true;
+    }
+
+    setPenDisplayMode(enabled) {
+        this.penDisplayMode = enabled;
+        // Show/hide the tablet embedded screen
+        if (this.tabletScreen) this.tabletScreen.visible = enabled;
+        // Show/hide the external monitor
+        if (this.monitorGroup) this.monitorGroup.visible = !enabled;
+        if (this.monitorCursor) this.monitorCursor.visible = !enabled;
+        // Raise digitizer grid above the screen in pen display mode
+        if (this.digitizerGrid) this.digitizerGrid.position.y = enabled ? 0.008 : 0;
+        // Refresh pen transform so cursor position updates
+        this.updatePenTransform(this.distance, this.tiltAltitude, this.tiltAzimuth, this.barrelRotation);
     }
 
     setAxisMarkersVisible(visible) {

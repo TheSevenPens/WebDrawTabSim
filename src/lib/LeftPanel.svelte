@@ -9,6 +9,7 @@
     tiltAzimuth    = $bindable(),
     barrelRotation = $bindable(),
     axonometric    = $bindable(),
+    penDisplayMode = $bindable(),
     azimuthDisabled,
     tiltXDisplay,
     tiltYDisplay,
@@ -19,6 +20,7 @@
     onAzimuth,
     onBarrel,
     onAxonometric,
+    onPenDisplayMode,
     onToggleFlyout,
     onResetPen,
     onOpenCameraModal,
@@ -51,6 +53,12 @@
   <button class="action-btn" id="annotations-flyout-btn" onclick={() => onToggleFlyout('annotations')}>Annotations</button>
 
   <div class="checkbox-grid">
+    <div class="control-group">
+      <label style="display:flex;align-items:center;gap:8px;">
+        <input type="checkbox" bind:checked={penDisplayMode} onchange={onPenDisplayMode} style="width:auto;margin:0;">
+        <span>Pen display</span>
+      </label>
+    </div>
     <div class="control-group">
       <label style="display:flex;align-items:center;gap:8px;">
         <input type="checkbox" bind:checked={axonometric} onchange={onAxonometric} style="width:auto;margin:0;">
