@@ -31,12 +31,6 @@ Object.assign(Pen3DSim.prototype, {
         this.tabletBaseColor = 0x505050;
         this.tabletCheckerboardTexture = null;
 
-        const wireframe = new THREE.LineSegments(
-            new THREE.EdgesGeometry(geometry),
-            MaterialsFactory.createTabletWireframeMaterial()
-        );
-        tablet.add(wireframe);
-
         const gridGroup = new THREE.Group();
         const gridMaterial = MaterialsFactory.createGridMaterial();
         const gridSpacing = 0.5;
