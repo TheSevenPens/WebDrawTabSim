@@ -17,7 +17,7 @@ Object.assign(Pen3DSim.prototype, {
         tablet.receiveShadow = true;
         this.scene.add(tablet);
 
-        const deskHeight = 5;
+        const deskHeight = 1;
         const deskGeometry = new THREE.BoxGeometry(60, deskHeight, 30);
         const deskMesh = new THREE.Mesh(deskGeometry, MaterialsFactory.createDeskMaterial());
         deskMesh.position.set(0, -deskHeight / 2, -6.5);
@@ -55,7 +55,7 @@ Object.assign(Pen3DSim.prototype, {
         this.scene.add(gridGroup);
 
         const gridHelper = new THREE.GridHelper(50, 50, 0x444444, 0x222222);
-        gridHelper.position.y = -5;
+        gridHelper.position.y = -1;
         this.scene.add(gridHelper);
 
         // ── Pen display mode: embedded screen on tablet surface ──────────────
