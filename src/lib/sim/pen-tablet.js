@@ -43,16 +43,16 @@ Object.assign(Pen3DSim.prototype, {
 
         for (let x = -this.tabletWidth / 2; x <= this.tabletWidth / 2; x += gridSpacing) {
             const points = [
-                new THREE.Vector3(x, this.yOffset + 0.002, -this.tabletDepth / 2),
-                new THREE.Vector3(x, this.yOffset + 0.002,  this.tabletDepth / 2)
+                new THREE.Vector3(x, this.yOffset + 0.001, -this.tabletDepth / 2),
+                new THREE.Vector3(x, this.yOffset + 0.001,  this.tabletDepth / 2)
             ];
             gridGroup.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints(points), gridMaterial));
         }
 
         for (let z = -this.tabletDepth / 2; z <= this.tabletDepth / 2; z += gridSpacing) {
             const points = [
-                new THREE.Vector3(-this.tabletWidth / 2, this.yOffset + 0.002, z),
-                new THREE.Vector3( this.tabletWidth / 2, this.yOffset + 0.002, z)
+                new THREE.Vector3(-this.tabletWidth / 2, this.yOffset + 0.001, z),
+                new THREE.Vector3( this.tabletWidth / 2, this.yOffset + 0.001, z)
             ];
             gridGroup.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints(points), gridMaterial));
         }
@@ -73,7 +73,7 @@ Object.assign(Pen3DSim.prototype, {
         this.tabletScreen = new THREE.Mesh(tabletScreenGeometry, tabletScreenMaterial);
         // Rotate to lie flat on the tablet surface (PlaneGeometry faces +Y after -90° X rotation)
         this.tabletScreen.rotation.x = -Math.PI / 2;
-        this.tabletScreen.position.y = this.yOffset + 0.05; // above tablet surface to avoid z-fighting
+        this.tabletScreen.position.y = this.yOffset + 0.005; // just above tablet surface
         this.tabletScreen.visible = false; // hidden by default (pen tablet mode)
         this.scene.add(this.tabletScreen);
 

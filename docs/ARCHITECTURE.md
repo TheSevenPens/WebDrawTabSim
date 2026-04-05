@@ -41,3 +41,7 @@ The sim defines two coordinate spaces:
 - **World coordinates** (Three.js): converted automatically with origin offset so the tablet surface sits at the correct height
 
 `updatePenTransform()` converts tablet coords to world coords, applies tilt via quaternion rotations, applies barrel rotation around the pen axis, and syncs the monitor cursor position.
+
+## Z-fighting
+
+Several surfaces in the scene sit very close together — the tablet body, the digitizer grid, the cursor arrow, and (in pen display mode) the embedded screen. To prevent z-fighting at all zoom levels, the renderer uses a **logarithmic depth buffer** (`logarithmicDepthBuffer: true` in `pen-scene.js`). This gives far better depth precision than the default linear buffer, so surfaces only need tiny Y offsets (0.001"–0.01") to sort correctly whether the camera is zoomed in close or pulled far out.
