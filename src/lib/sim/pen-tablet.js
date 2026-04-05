@@ -69,14 +69,11 @@ Object.assign(Pen3DSim.prototype, {
             TexturesFactory.createDesktopTexture()
         );
         // Push the screen back in the depth buffer so the grid and cursor draw on top
-        tabletScreenMaterial.polygonOffset = true;
-        tabletScreenMaterial.polygonOffsetFactor = 1;
-        tabletScreenMaterial.polygonOffsetUnits = 1;
         const tabletScreenGeometry = new THREE.PlaneGeometry(this.tabletWidth, this.tabletDepth);
         this.tabletScreen = new THREE.Mesh(tabletScreenGeometry, tabletScreenMaterial);
         // Rotate to lie flat on the tablet surface (PlaneGeometry faces +Y after -90° X rotation)
         this.tabletScreen.rotation.x = -Math.PI / 2;
-        this.tabletScreen.position.y = this.yOffset + 0.02; // above tablet surface to avoid z-fighting with tablet body
+        this.tabletScreen.position.y = this.yOffset + 0.05; // above tablet surface to avoid z-fighting
         this.tabletScreen.visible = false; // hidden by default (pen tablet mode)
         this.scene.add(this.tabletScreen);
 

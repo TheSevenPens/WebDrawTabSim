@@ -257,7 +257,7 @@ export class Pen3DSim {
         if (this.monitorGroup) this.monitorGroup.visible = !enabled;
         if (this.monitorCursor) this.monitorCursor.visible = !enabled;
         // Raise digitizer grid above the screen in pen display mode
-        if (this.digitizerGrid) this.digitizerGrid.position.y = enabled ? 0.03 : 0;
+        if (this.digitizerGrid) this.digitizerGrid.position.y = enabled ? 0.06 : 0;
         // Refresh pen transform so cursor position updates
         this.updatePenTransform(this.distance, this.tiltAltitude, this.tiltAzimuth, this.barrelRotation);
     }
