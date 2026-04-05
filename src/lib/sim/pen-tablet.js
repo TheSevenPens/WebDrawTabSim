@@ -1,5 +1,6 @@
 import * as THREE from 'three';
 import { MaterialsFactory } from './materials.js';
+import { TexturesFactory } from './textures.js';
 import { Pen3DSim } from './Pen3DSim.js';
 
 // pen-tablet.js — Tablet mesh, grid, and checkerboard
@@ -61,6 +62,60 @@ Object.assign(Pen3DSim.prototype, {
         const gridHelper = new THREE.GridHelper(50, 50, 0x444444, 0x222222);
         gridHelper.position.y = -5;
         this.scene.add(gridHelper);
+
+        // ── Pen display mode: embedded screen on tablet surface ──────────────
+        const tabletScreenMaterial = MaterialsFactory.createMonitorScreenMaterial(
+            TexturesFactory.createDesktopTexture()
+        );
+        const tabletScreenGeometry = new THREE.PlaneGeometry(this.tabletWidth, this.tabletDepth);
+        this.tabletScreen = new THREE.Mesh(tabletScreenGeometry, tabletScreenMaterial);
+        // Rotate to lie flat on the tablet surface (PlaneGeometry faces +Y after -90° X rotation)
+        this.tabletScreen.rotation.x = -Math.PI / 2;
+        this.tabletScreen.position.y = this.yOffset + 0.001; // just above tablet surface
+        this.tabletScreen.visible = false; // hidden by default (pen tablet mode)
+        this.scene.add(this.tabletScreen);
+
+        // Cursor arrow on the tablet screen (for pen display mode)
+        this.tabletScreenCursor = this.createTabletScreenCursor();
+        this.tabletScreenCursor.visible = false;
+        this.scene.add(this.tabletScreenCursor);
+    },
+
+    createTabletScreenCursor() {
+        const cursorSize = 0.5;
+        const shape = new THREE.Shape();
+        shape.moveTo(0, 0);
+        shape.lineTo(-cursorSize * 0.2, cursorSize * 0.3);
+        shape.lineTo(-cursorSize * 0.1, cursorSize * 0.3);
+        shape.lineTo(-cursorSize * 0.1, cursorSize * 0.6);
+        shape.lineTo( cursorSize * 0.1, cursorSize * 0.6);
+        shape.lineTo( cursorSize * 0.1, cursorSize * 0.3);
+        shape.lineTo( cursorSize * 0.2, cursorSize * 0.3);
+        shape.lineTo(0, 0);
+
+        const geometry = new THREE.ShapeGeometry(shape);
+        const mesh = new THREE.Mesh(geometry, MaterialsFactory.createCursorMaterial());
+
+        // Rotate to lie flat on tablet surface: face up (+Y), tip pointing toward -Z (front)
+        mesh.rotation.x = -Math.PI / 2;
+        mesh.rotation.z = -3 * Math.PI / 4;
+
+        const outline = new THREE.LineSegments(
+            new THREE.EdgesGeometry(geometry),
+            MaterialsFactory.createCursorOutlineMaterial()
+        );
+        mesh.add(outline);
+
+        return mesh;
+    },
+
+    updateTabletScreenCursor(worldCursorX, worldCursorZ) {
+        if (!this.tabletScreenCursor || !this.tabletScreenCursor.visible) return;
+        this.tabletScreenCursor.position.set(
+            worldCursorX,
+            this.yOffset + 0.002, // just above the tablet screen
+            worldCursorZ
+        );
     },
 
 });
