@@ -45,6 +45,7 @@ export class Pen3DSim {
         this.edgeAttraction = 0;         // -1 to 1, 0 = no effect
         this.edgeAttractionRange = 1;    // tablet inches from edges where attraction applies
         this.penDisplayMode = false;     // false = pen tablet (no screen), true = pen display (embedded screen)
+        this.onCameraUpdate = null;      // callback(info) called each frame with live camera data
 
         // Constants (tablet coordinate dimensions)
         this.tabletWidth = 16;           // tablet X extent in inches
@@ -83,6 +84,14 @@ export class Pen3DSim {
             requestAnimationFrame(loop);
             this.controls.update();
             this.renderer.render(this.scene, this.camera);
+            if (this.onCameraUpdate) {
+                const pos = this.camera.position;
+                const target = this.controls.target;
+                this.onCameraUpdate({
+                    posX: pos.x, posY: pos.y, posZ: pos.z,
+                    targetX: target.x, targetY: target.y, targetZ: target.z,
+                });
+            }
         };
         loop();
     }
@@ -272,6 +281,12 @@ export class Pen3DSim {
     }
 
     // ── Camera ────────────────────────────────────────────────────────────────
+
+    setCameraView(pos, target) {
+        this.camera.position.set(pos.x, pos.y, pos.z);
+        this.controls.target.set(target.x, target.y, target.z);
+        this.controls.update();
+    }
 
     setAxonometricView(enabled) {
         if (enabled) {
