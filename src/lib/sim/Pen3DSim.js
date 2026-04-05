@@ -253,10 +253,13 @@ export class Pen3DSim {
         this.penDisplayMode = enabled;
         // Show/hide the tablet embedded screen
         if (this.tabletScreen) this.tabletScreen.visible = enabled;
-        if (this.tabletScreenCursor) this.tabletScreenCursor.visible = enabled;
         // Show/hide the external monitor
         if (this.monitorGroup) this.monitorGroup.visible = !enabled;
         if (this.monitorCursor) this.monitorCursor.visible = !enabled;
+        // Raise digitizer grid above the screen in pen display mode
+        if (this.digitizerGrid) this.digitizerGrid.position.y = enabled ? 0.03 : 0;
+        // Refresh pen transform so cursor position updates
+        this.updatePenTransform(this.distance, this.tiltAltitude, this.tiltAzimuth, this.barrelRotation);
     }
 
     setAxisMarkersVisible(visible) {

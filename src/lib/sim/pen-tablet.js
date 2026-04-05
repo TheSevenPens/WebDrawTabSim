@@ -43,20 +43,21 @@ Object.assign(Pen3DSim.prototype, {
 
         for (let x = -this.tabletWidth / 2; x <= this.tabletWidth / 2; x += gridSpacing) {
             const points = [
-                new THREE.Vector3(x, this.yOffset, -this.tabletDepth / 2),
-                new THREE.Vector3(x, this.yOffset,  this.tabletDepth / 2)
+                new THREE.Vector3(x, this.yOffset + 0.002, -this.tabletDepth / 2),
+                new THREE.Vector3(x, this.yOffset + 0.002,  this.tabletDepth / 2)
             ];
             gridGroup.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints(points), gridMaterial));
         }
 
         for (let z = -this.tabletDepth / 2; z <= this.tabletDepth / 2; z += gridSpacing) {
             const points = [
-                new THREE.Vector3(-this.tabletWidth / 2, this.yOffset, z),
-                new THREE.Vector3( this.tabletWidth / 2, this.yOffset, z)
+                new THREE.Vector3(-this.tabletWidth / 2, this.yOffset + 0.002, z),
+                new THREE.Vector3( this.tabletWidth / 2, this.yOffset + 0.002, z)
             ];
             gridGroup.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints(points), gridMaterial));
         }
 
+        this.digitizerGrid = gridGroup;
         this.scene.add(gridGroup);
 
         const gridHelper = new THREE.GridHelper(50, 50, 0x444444, 0x222222);
@@ -67,55 +68,18 @@ Object.assign(Pen3DSim.prototype, {
         const tabletScreenMaterial = MaterialsFactory.createMonitorScreenMaterial(
             TexturesFactory.createDesktopTexture()
         );
+        // Push the screen back in the depth buffer so the grid and cursor draw on top
+        tabletScreenMaterial.polygonOffset = true;
+        tabletScreenMaterial.polygonOffsetFactor = 1;
+        tabletScreenMaterial.polygonOffsetUnits = 1;
         const tabletScreenGeometry = new THREE.PlaneGeometry(this.tabletWidth, this.tabletDepth);
         this.tabletScreen = new THREE.Mesh(tabletScreenGeometry, tabletScreenMaterial);
         // Rotate to lie flat on the tablet surface (PlaneGeometry faces +Y after -90° X rotation)
         this.tabletScreen.rotation.x = -Math.PI / 2;
-        this.tabletScreen.position.y = this.yOffset + 0.001; // just above tablet surface
+        this.tabletScreen.position.y = this.yOffset + 0.02; // above tablet surface to avoid z-fighting with tablet body
         this.tabletScreen.visible = false; // hidden by default (pen tablet mode)
         this.scene.add(this.tabletScreen);
 
-        // Cursor arrow on the tablet screen (for pen display mode)
-        this.tabletScreenCursor = this.createTabletScreenCursor();
-        this.tabletScreenCursor.visible = false;
-        this.scene.add(this.tabletScreenCursor);
-    },
-
-    createTabletScreenCursor() {
-        const cursorSize = 0.5;
-        const shape = new THREE.Shape();
-        shape.moveTo(0, 0);
-        shape.lineTo(-cursorSize * 0.2, cursorSize * 0.3);
-        shape.lineTo(-cursorSize * 0.1, cursorSize * 0.3);
-        shape.lineTo(-cursorSize * 0.1, cursorSize * 0.6);
-        shape.lineTo( cursorSize * 0.1, cursorSize * 0.6);
-        shape.lineTo( cursorSize * 0.1, cursorSize * 0.3);
-        shape.lineTo( cursorSize * 0.2, cursorSize * 0.3);
-        shape.lineTo(0, 0);
-
-        const geometry = new THREE.ShapeGeometry(shape);
-        const mesh = new THREE.Mesh(geometry, MaterialsFactory.createCursorMaterial());
-
-        // Rotate to lie flat on tablet surface: face up (+Y), tip pointing toward -Z (front)
-        mesh.rotation.x = -Math.PI / 2;
-        mesh.rotation.z = -3 * Math.PI / 4;
-
-        const outline = new THREE.LineSegments(
-            new THREE.EdgesGeometry(geometry),
-            MaterialsFactory.createCursorOutlineMaterial()
-        );
-        mesh.add(outline);
-
-        return mesh;
-    },
-
-    updateTabletScreenCursor(worldCursorX, worldCursorZ) {
-        if (!this.tabletScreenCursor || !this.tabletScreenCursor.visible) return;
-        this.tabletScreenCursor.position.set(
-            worldCursorX,
-            this.yOffset + 0.002, // just above the tablet screen
-            worldCursorZ
-        );
     },
 
 });

@@ -304,11 +304,12 @@ Object.assign(Pen3DSim.prototype, {
         }
 
         // Place cursor arrow at computed world position on tablet surface
-        this.cursorArrow.position.set(worldCursorX, this.yOffset, worldCursorZ);
+        // In pen display mode, raise cursor above the embedded screen
+        const cursorY = this.yOffset + (this.penDisplayMode ? 0.03 : 0.005);
+        this.cursorArrow.position.set(worldCursorX, cursorY, worldCursorZ);
 
         // Mirror cursor on monitor screen and tablet screen (pen display mode)
         this.updateMonitorCursor(worldCursorX, worldCursorZ);
-        this.updateTabletScreenCursor(worldCursorX, worldCursorZ);
 
         // ── Tilt altitude annotation ─────────────────────────────────────────
         const arcCenter  = this.penTipWorld.clone();  // world coords
