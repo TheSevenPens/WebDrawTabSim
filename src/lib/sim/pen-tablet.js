@@ -17,7 +17,7 @@ Object.assign(Pen3DSim.prototype, {
         tablet.receiveShadow = true;
         this.scene.add(tablet);
 
-        const deskHeight = 5;
+        const deskHeight = 1;
         const deskGeometry = new THREE.BoxGeometry(60, deskHeight, 30);
         const deskMesh = new THREE.Mesh(deskGeometry, MaterialsFactory.createDeskMaterial());
         deskMesh.position.set(0, -deskHeight / 2, -6.5);
@@ -25,17 +25,33 @@ Object.assign(Pen3DSim.prototype, {
         deskMesh.castShadow = true;
         this.scene.add(deskMesh);
 
+        // Desk legs
+        const legHeight = 28;
+        const legSize = 1.5;
+        const legGeometry = new THREE.BoxGeometry(legSize, legHeight, legSize);
+        const legMaterial = MaterialsFactory.createDeskMaterial();
+        const deskW = 60, deskD = 30, deskZ = -6.5;
+        const legY = -deskHeight - legHeight / 2;
+        const legInset = 2; // inset from desk edges
+        const legPositions = [
+            [-deskW / 2 + legInset, legY, deskZ - deskD / 2 + legInset],
+            [ deskW / 2 - legInset, legY, deskZ - deskD / 2 + legInset],
+            [-deskW / 2 + legInset, legY, deskZ + deskD / 2 - legInset],
+            [ deskW / 2 - legInset, legY, deskZ + deskD / 2 - legInset],
+        ];
+        for (const [x, y, z] of legPositions) {
+            const leg = new THREE.Mesh(legGeometry, legMaterial);
+            leg.position.set(x, y, z);
+            leg.castShadow = true;
+            leg.receiveShadow = true;
+            this.scene.add(leg);
+        }
+
         // Store references for checkerboard pattern toggle
         this.tabletMesh = tablet;
         this.tabletMaterial = material;
         this.tabletBaseColor = 0x505050;
         this.tabletCheckerboardTexture = null;
-
-        const wireframe = new THREE.LineSegments(
-            new THREE.EdgesGeometry(geometry),
-            MaterialsFactory.createTabletWireframeMaterial()
-        );
-        tablet.add(wireframe);
 
         const gridGroup = new THREE.Group();
         const gridMaterial = MaterialsFactory.createGridMaterial();
@@ -61,7 +77,16 @@ Object.assign(Pen3DSim.prototype, {
         this.scene.add(gridGroup);
 
         const gridHelper = new THREE.GridHelper(50, 50, 0x444444, 0x222222);
-        gridHelper.position.y = -5;
+        // Floor
+        const floorGeometry = new THREE.PlaneGeometry(200, 200);
+        const floorMaterial = new THREE.MeshStandardMaterial({ color: 0x3a3a3a, roughness: 0.9, metalness: 0.0 });
+        const floor = new THREE.Mesh(floorGeometry, floorMaterial);
+        floor.rotation.x = -Math.PI / 2;
+        floor.position.y = -29;
+        floor.receiveShadow = true;
+        this.scene.add(floor);
+
+        gridHelper.position.y = -29; // bottom of desk legs
         this.scene.add(gridHelper);
 
         // ── Pen display mode: embedded screen on tablet surface ──────────────

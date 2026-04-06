@@ -21,9 +21,13 @@
     onBarrel,
     onAxonometric,
     onPenDisplayMode,
+    showCameraInfo = $bindable(),
+    cameraPos,
+    cameraTarget,
+    cameraViews,
+    onViewChange,
     onToggleFlyout,
     onResetPen,
-    onOpenCameraModal,
     onExportPNG,
   } = $props();
 </script>
@@ -67,8 +71,30 @@
     </div>
   </div>
 
+  <div class="checkbox-grid">
+    <div class="control-group">
+      <label style="display:flex;align-items:center;gap:8px;">
+        <input type="checkbox" bind:checked={showCameraInfo} style="width:auto;margin:0;">
+        <span>Camera info</span>
+      </label>
+    </div>
+  </div>
+
+  {#if showCameraInfo}
+  <div class="camera-info" style="font-size:11px;line-height:1.4;padding:4px 0;font-family:monospace;color:#aaa;">
+    <div>Pos: {cameraPos.x.toFixed(2)}, {cameraPos.y.toFixed(2)}, {cameraPos.z.toFixed(2)}</div>
+    <div>Target: {cameraTarget.x.toFixed(2)}, {cameraTarget.y.toFixed(2)}, {cameraTarget.z.toFixed(2)}</div>
+  </div>
+  {/if}
+
   <button class="action-btn" onclick={onResetPen}>Reset pen</button>
   <button class="action-btn" id="animations-flyout-btn" onclick={() => onToggleFlyout('animations')}>Animations</button>
-  <button class="action-btn" onclick={onOpenCameraModal}>Edit View</button>
-  <button class="action-btn" onclick={onExportPNG}>Export as PNG</button>
+  <button class="action-btn" onclick={() => onExportPNG(1920, 1080)}>Export 1080p</button>
+  <button class="action-btn" onclick={() => onExportPNG(3840, 2160)}>Export 4K</button>
+  <select class="action-btn" onchange={onViewChange} style="text-align:left;">
+    <option value="">Views...</option>
+    {#each cameraViews as view}
+      <option value={view.name}>{view.name}</option>
+    {/each}
+  </select>
 </div>

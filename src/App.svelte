@@ -47,8 +47,41 @@
 
   // ── Flyout / modal state ───────────────────────────────────────────────────
   let openFlyout      = $state(null); // 'pointer-tracking' | 'annotations' | 'animations' | null
-  let cameraModalOpen = $state(false);
-  let cameraJsonText  = $state('');
+  let showCameraInfo  = $state(false);
+  let cameraPos       = $state({ x: 0, y: 0, z: 0 });
+  let cameraTarget    = $state({ x: 0, y: 0, z: 0 });
+
+  // ── Camera views ───────────────────────────────────────────────────────────
+  const cameraViews = [
+    {
+      name: 'DEFAULT',
+      pos: { x: 1.30, y: 38.39, z: 61.98 },
+      target: { x: 1.83, y: 0, z: -3.93 },
+    },
+    {
+      name: 'DEFAULT_ZOOMED',
+      pos: { x: -0.91, y: 0.92, z: 0.80 },
+      target: { x: 0.26, y: 0, z: -0.18 },
+    },
+    {
+      name: 'TOP_DOWN',
+      pos: { x: 0.26, y: 28.07, z: -0.18 },
+      target: { x: 0.26, y: 0, z: -0.18 },
+    },
+    {
+      name: 'CURRENTDEFAULT',
+      pos: { x: -19.15, y: 15, z: 16.07 },
+      target: { x: 0, y: 0, z: 0 },
+    },
+  ];
+
+  function onViewChange(e) {
+    const name = e.target.value;
+    if (!name) return;
+    const view = cameraViews.find(v => v.name === name);
+    if (view) sim.setCameraView(view.pos, view.target);
+    e.target.value = ''; // reset dropdown
+  }
 
   // ── Animation cancel handles ───────────────────────────────────────────────
   let cancelMainAnimation     = null;
@@ -75,6 +108,13 @@
 
   onMount(() => {
     sim = new Pen3DSim(viewer);
+
+    // Live camera info callback
+    sim.onCameraUpdate = (info) => {
+      if (!showCameraInfo) return;
+      cameraPos    = { x: info.posX, y: info.posY, z: info.posZ };
+      cameraTarget = { x: info.targetX, y: info.targetY, z: info.targetZ };
+    };
 
     // Apply initial checkbox state
     sim.setAzimuthAnnotationsVisible(showAzimuth);
@@ -306,31 +346,10 @@
     }, 500);
   }
 
-  // ── Camera modal ───────────────────────────────────────────────────────────
-
-  function openCameraModal() {
-    try {
-      cameraJsonText = sim.getCameraSettingsJSON();
-      cameraModalOpen = true;
-    } catch (e) {
-      alert(`Error loading camera settings: ${e.message}`);
-    }
-  }
-
-  function applyCameraSettings() {
-    try {
-      sim.setCameraSettingsJSON(cameraJsonText);
-      cameraModalOpen = false;
-    } catch (e) {
-      alert(`Error applying camera settings: ${e.message}`);
-    }
-  }
-
   // ── Keyboard ───────────────────────────────────────────────────────────────
 
   function handleKeyDown(e) {
     if (e.key === 'Escape') {
-      if (cameraModalOpen) { cameraModalOpen = false; return; }
       openFlyout = null;
     }
   }
@@ -361,10 +380,14 @@
   {onBarrel}
   {onAxonometric}
   {onPenDisplayMode}
+  bind:showCameraInfo
+  {cameraPos}
+  {cameraTarget}
+  {cameraViews}
+  {onViewChange}
   onToggleFlyout={toggleFlyout}
   onResetPen={resetPen}
-  onOpenCameraModal={openCameraModal}
-  onExportPNG={() => sim?.exportAsPNG()}
+  onExportPNG={(w, h) => sim?.exportAsPNG(w, h)}
 />
 
 <!-- ═══════════════════════════════════════════════════════════════════════════
@@ -455,18 +478,3 @@
   </div>
 </div>
 
-<!-- ═══════════════════════════════════════════════════════════════════════════
-     Camera edit modal
-     ═══════════════════════════════════════════════════════════════════════════ -->
-{#if cameraModalOpen}
-<div id="camera-edit-modal" style="display:flex;" role="presentation" onclick={(e) => { if (e.target === e.currentTarget) cameraModalOpen = false; }} onkeydown={(e) => { if (e.key === 'Escape') cameraModalOpen = false; }}>
-  <div class="modal-content">
-    <h2>Edit Camera Settings</h2>
-    <textarea id="camera-json-editor" bind:value={cameraJsonText}></textarea>
-    <div class="modal-actions">
-      <button id="camera-edit-cancel" onclick={() => cameraModalOpen = false}>CANCEL</button>
-      <button id="camera-edit-ok" onclick={applyCameraSettings}>OK</button>
-    </div>
-  </div>
-</div>
-{/if}

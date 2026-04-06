@@ -70,12 +70,12 @@ Object.assign(Pen3DSim.prototype, {
         directionalLight.castShadow = true;
         directionalLight.shadow.mapSize.width = 2048;
         directionalLight.shadow.mapSize.height = 2048;
-        directionalLight.shadow.camera.left = -15;
-        directionalLight.shadow.camera.right = 15;
-        directionalLight.shadow.camera.top = 15;
-        directionalLight.shadow.camera.bottom = -15;
+        directionalLight.shadow.camera.left = -40;
+        directionalLight.shadow.camera.right = 40;
+        directionalLight.shadow.camera.top = 30;
+        directionalLight.shadow.camera.bottom = -30;
         directionalLight.shadow.camera.near = 0.1;
-        directionalLight.shadow.camera.far = 50;
+        directionalLight.shadow.camera.far = 60;
         this.scene.add(directionalLight);
 
         const pointLight = new THREE.PointLight(0xffffff, 0.3);

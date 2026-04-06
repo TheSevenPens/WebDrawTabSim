@@ -15,6 +15,6 @@ It is useful for:
 
 - **Multiple camera modes** — interactive orbit, axonometric toggle, camera settings import/export (JSON)
 - **Animations** — demo preset and per-parameter animated sweeps (altitude, azimuth, barrel) with cancellation support
-- **PNG export** — capture the current 3D view for use in documentation
+- **PNG export** — export the current 3D view at 1080p (1920x1080) or 4K (3840x2160). Exports are rendered at 2x internally and downsampled for crisp lines and edges
 - **Pointer tracking** — nine parameters model real-world cursor behaviors like parallax offset, tilt compensation, and edge snapping
 - **Visual annotations** — togglable arcs, pies, axis arrows, and helper lines clarify spatial relationships

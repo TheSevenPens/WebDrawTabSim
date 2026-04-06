@@ -506,7 +506,7 @@ Object.assign(Pen3DSim.prototype, {
             }
             azimuthPieShape.lineTo(0, 0);
             this.arcPieMesh = new THREE.Mesh(new THREE.ShapeGeometry(azimuthPieShape), this.arcPieMaterial);
-            this.arcPieMesh.position.set(this.penTipSurfaceBelow.x, this.yOffset, this.penTipSurfaceBelow.z);
+            this.arcPieMesh.position.set(this.penTipSurfaceBelow.x, this.yOffset + 0.003, this.penTipSurfaceBelow.z);
             this.arcPieMesh.setRotationFromQuaternion(xzPlaneQuat);
             this.arcAnnotationGroup.add(this.arcPieMesh);
         } else {

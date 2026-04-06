@@ -45,6 +45,7 @@ export class Pen3DSim {
         this.edgeAttraction = 0;         // -1 to 1, 0 = no effect
         this.edgeAttractionRange = 1;    // tablet inches from edges where attraction applies
         this.penDisplayMode = false;     // false = pen tablet (no screen), true = pen display (embedded screen)
+        this.onCameraUpdate = null;      // callback(info) called each frame with live camera data
 
         // Constants (tablet coordinate dimensions)
         this.tabletWidth = 16;           // tablet X extent in inches
@@ -83,6 +84,14 @@ export class Pen3DSim {
             requestAnimationFrame(loop);
             this.controls.update();
             this.renderer.render(this.scene, this.camera);
+            if (this.onCameraUpdate) {
+                const pos = this.camera.position;
+                const target = this.controls.target;
+                this.onCameraUpdate({
+                    posX: pos.x, posY: pos.y, posZ: pos.z,
+                    targetX: target.x, targetY: target.y, targetZ: target.z,
+                });
+            }
         };
         loop();
     }
@@ -273,6 +282,12 @@ export class Pen3DSim {
 
     // ── Camera ────────────────────────────────────────────────────────────────
 
+    setCameraView(pos, target) {
+        this.camera.position.set(pos.x, pos.y, pos.z);
+        this.controls.target.set(target.x, target.y, target.z);
+        this.controls.update();
+    }
+
     setAxonometricView(enabled) {
         if (enabled) {
             this.orthographicCamera.position.copy(this.perspectiveCamera.position);
@@ -313,12 +328,35 @@ export class Pen3DSim {
         };
     }
 
-    exportAsPNG() {
+    exportAsPNG(width = 1920, height = 1080) {
+        const origWidth = this.viewer.clientWidth;
+        const origHeight = this.viewer.clientHeight;
+        const origPixelRatio = this.renderer.getPixelRatio();
+
+        // Render at 2x for supersampled crispness
+        this.renderer.setPixelRatio(2);
+        this.renderer.setSize(width, height);
+        this.perspectiveCamera.aspect = width / height;
+        this.perspectiveCamera.updateProjectionMatrix();
         this.renderer.render(this.scene, this.camera);
+
+        // The drawing buffer is 2x; draw it onto a canvas at the requested size
+        const canvas = document.createElement('canvas');
+        canvas.width = width;
+        canvas.height = height;
+        const ctx = canvas.getContext('2d');
+        ctx.drawImage(this.renderer.domElement, 0, 0, width, height);
+
         const link = document.createElement('a');
-        link.download = 'Pen3DSim-render.png';
-        link.href = this.renderer.domElement.toDataURL('image/png');
+        link.download = `Pen3DSim-${width}x${height}.png`;
+        link.href = canvas.toDataURL('image/png');
         link.click();
+
+        // Restore original size and pixel ratio
+        this.renderer.setPixelRatio(origPixelRatio);
+        this.renderer.setSize(origWidth, origHeight);
+        this.perspectiveCamera.aspect = origWidth / origHeight;
+        this.perspectiveCamera.updateProjectionMatrix();
     }
 
     onResize() {
