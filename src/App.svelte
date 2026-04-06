@@ -387,7 +387,7 @@
   {onViewChange}
   onToggleFlyout={toggleFlyout}
   onResetPen={resetPen}
-  onExportPNG={() => sim?.exportAsPNG()}
+  onExportPNG={(w, h) => sim?.exportAsPNG(w, h)}
 />
 
 <!-- ═══════════════════════════════════════════════════════════════════════════

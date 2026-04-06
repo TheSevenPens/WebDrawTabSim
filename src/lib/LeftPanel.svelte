@@ -89,7 +89,8 @@
 
   <button class="action-btn" onclick={onResetPen}>Reset pen</button>
   <button class="action-btn" id="animations-flyout-btn" onclick={() => onToggleFlyout('animations')}>Animations</button>
-  <button class="action-btn" onclick={onExportPNG}>Export as PNG</button>
+  <button class="action-btn" onclick={() => onExportPNG(1920, 1080)}>Export 1080p</button>
+  <button class="action-btn" onclick={() => onExportPNG(3840, 2160)}>Export 4K</button>
   <select class="action-btn" onchange={onViewChange} style="text-align:left;">
     <option value="">Views...</option>
     {#each cameraViews as view}

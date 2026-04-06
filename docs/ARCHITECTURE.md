@@ -42,6 +42,10 @@ The sim defines two coordinate spaces:
 
 `updatePenTransform()` converts tablet coords to world coords, applies tilt via quaternion rotations, applies barrel rotation around the pen axis, and syncs the monitor cursor position.
 
+## PNG Export
+
+PNG export temporarily resizes the renderer to the target resolution (1920x1080 or 3840x2160) with the pixel ratio set to 2. This renders the scene at 2x the target size internally. The result is then drawn onto a standard canvas at the target dimensions, producing a downsampled image with crisper lines and edges than a 1:1 render. The renderer and camera are restored to their original size immediately after capture.
+
 ## Z-fighting
 
 Several surfaces in the scene sit very close together — the tablet body, the digitizer grid, the cursor arrow, and (in pen display mode) the embedded screen. To prevent z-fighting at all zoom levels, the renderer uses a **logarithmic depth buffer** (`logarithmicDepthBuffer: true` in `pen-scene.js`). This gives far better depth precision than the default linear buffer, so surfaces only need tiny Y offsets (0.001"–0.01") to sort correctly whether the camera is zoomed in close or pulled far out.

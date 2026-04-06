@@ -94,6 +94,10 @@ input[type="range"] {
 #viewer {
     flex: 1;
     position: relative;
+    aspect-ratio: 16 / 9;
+    max-height: 100vh;
+    align-self: center;
+    margin: 50px;
 }
 
 #info {
