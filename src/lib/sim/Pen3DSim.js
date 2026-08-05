@@ -74,7 +74,6 @@ export class Pen3DSim {
         this.initPen();
         this.initAnnotations();
         this.initAxisMarkers();
-        this.initComposer();
 
         // Start render loop
         this.animate();
@@ -90,7 +89,7 @@ export class Pen3DSim {
         const loop = () => {
             requestAnimationFrame(loop);
             this.controls.update();
-            this.renderFrame();
+            this.renderer.render(this.scene, this.camera);
             if (this.onCameraUpdate) {
                 const pos = this.camera.position;
                 const target = this.controls.target;
@@ -339,7 +338,6 @@ export class Pen3DSim {
         }
         this.controls.object = this.camera;
         this.controls.update();
-        this.syncComposerCamera();
     }
 
     // ── Cursor orientation ────────────────────────────────────────────────────
@@ -367,10 +365,9 @@ export class Pen3DSim {
 
         this.renderer.setPixelRatio(EXPORT.supersample);
         this.renderer.setSize(width, height);
-        if (this.composer) this.composer.setSize(width, height);
         this.perspectiveCamera.aspect = width / height;
         this.perspectiveCamera.updateProjectionMatrix();
-        this.renderFrame();
+        this.renderer.render(this.scene, this.camera);
 
         const canvas = document.createElement('canvas');
         canvas.width = width;
@@ -385,7 +382,6 @@ export class Pen3DSim {
 
         this.renderer.setPixelRatio(origPixelRatio);
         this.renderer.setSize(origWidth, origHeight);
-        if (this.composer) this.composer.setSize(origWidth, origHeight);
         this.perspectiveCamera.aspect = origWidth / origHeight;
         this.perspectiveCamera.updateProjectionMatrix();
     }
@@ -398,9 +394,6 @@ export class Pen3DSim {
         this.orthographicCamera.right  =  this.orthoSize * aspect;
         this.orthographicCamera.updateProjectionMatrix();
         this.renderer.setSize(this.viewer.clientWidth, this.viewer.clientHeight);
-        if (this.composer) {
-            this.composer.setSize(this.viewer.clientWidth, this.viewer.clientHeight);
-        }
     }
 
     // ── Animation helpers ─────────────────────────────────────────────────────

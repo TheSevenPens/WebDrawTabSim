@@ -85,7 +85,7 @@ Object.assign(Pen3DSim.prototype, {
         const floorY = -29;
         const roomW = 100;
         const roomD = 80;
-        const roomH = 60;
+        const roomH = 90;
         const wallMaterial = MaterialsFactory.createWallMaterial();
 
         const floorGeometry = new THREE.PlaneGeometry(roomW, roomD);
