@@ -65,9 +65,8 @@ Object.assign(Pen3DSim.prototype, {
             const deltaX = currentMouseX - this.lastMouseX;
             const deltaY = currentMouseY - this.lastMouseY;
 
-            // Map screen pixels to tablet coordinate inches (0.01 in/px — adjust to taste)
-            const pixelsPerInch = 0.01;
-            // Mouse X → tablet X; mouse Y → tablet Y (depth, front-to-back)
+            // Map screen pixels to tablet inches via configurable sensitivity
+            const pixelsPerInch = this.mouseSensitivity;
             const newTabletX = this.tabletOffsetX + deltaX * pixelsPerInch;
             const newTabletY = this.tabletOffsetY + deltaY * pixelsPerInch;
 
