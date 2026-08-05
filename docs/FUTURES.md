@@ -3,17 +3,11 @@
 ## Known Issues
 
 - **npm audit vulnerabilities**: 4 moderate-severity issues in the esbuild dependency chain (affects Vite dev server). Run `npm audit` for details.
-- **Mouse drag sensitivity is hardcoded**: `pixelsPerInch = 0.01` in `pen-mouse.js` (line 69) is a magic number with an "adjust to taste" comment. Should be configurable.
-- **Alert dialogs for errors**: Camera settings import uses `alert()` for parse errors (`App.svelte`), which blocks interaction and is unfriendly UX. Should use an in-page message instead.
-- **No validation on sim setters**: Methods like `setDistance()`, `setTiltAltitude()` accept values without range checks. Invalid values (NaN, out-of-range) could break the 3D scene.
 - **No WebGL fallback**: If the browser lacks WebGL support, the constructor silently fails with no error message shown to the user.
 
 ## Code Quality
 
-- **Duplicated cursor arrow geometry**: `pen-pen.js` (`createCursorArrow`) and `pen-monitor.js` (`createMonitorCursor`) contain nearly identical arrow-shape creation code. Could be extracted into a shared utility.
-- **Large `updatePenTransform()` function**: ~250 lines in `pen-pen.js` handling coordinate conversion, quaternion math, tilt compensation, edge attraction, annotation updates, and monitor cursor sync. Would benefit from being broken into smaller focused functions.
-- **Repetitive animation functions**: `runAnimAltitude()`, `runAnimAzimuth()`, `runAnimBarrel()` in `App.svelte` are ~95% identical. Could use a generic helper.
-- **Boilerplate callbacks**: ~33 one-line callback functions in `App.svelte` that simply forward a value to the sim. Could be reduced with a factory or direct binding.
+- **Large annotation update path**: `updateAnnotations()` in `pen-pen.js` is still sizable after the pose/cursor/annotation split; further extraction of per-annotation updaters would help.
 - **No tests**: No test files exist. Adding Vitest tests for the coordinate math and state logic would improve reliability.
 
 ## Suggested Features
@@ -43,4 +37,4 @@
 ## Code Modernization
 
 - **TypeScript migration**: The project is pure JavaScript. TypeScript would add type safety, especially around the coordinate math and Three.js API usage.
-- **Extract constants**: Magic numbers (animation durations, default pen values, material colors) are scattered across files. A central `config.js` would help.
+- Shared defaults now live in `src/lib/sim/config.js` (tablet size, demo pose, ranges, colors, animation timings). Keep new magic numbers out of companion files when possible.

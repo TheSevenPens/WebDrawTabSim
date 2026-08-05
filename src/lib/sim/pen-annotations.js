@@ -2,6 +2,7 @@ import * as THREE from 'three';
 import { MaterialsFactory } from './materials.js';
 import { TexturesFactory } from './textures.js';
 import { Pen3DSim } from './Pen3DSim.js';
+import { ANNOTATION } from './config.js';
 
 // pen-annotations.js — Annotation scene objects, geometry helpers, and visibility setters
 // Extends Pen3DSim.prototype (must be loaded after Pen3DSim.js)
@@ -21,19 +22,15 @@ Object.assign(Pen3DSim.prototype, {
         this.arcLine = new THREE.Mesh(arcGeometry, arcMaterial);
         this.arcAnnotationGroup.add(this.arcLine);
 
-        const arrowMaterial = MaterialsFactory.createArrowMaterial(this.azimuthColor);
-        const arrowGeometry = new THREE.BufferGeometry();
-        const arrowLine = new THREE.Line(arrowGeometry, arrowMaterial);
-        arrowLine.visible = false;
-        this.arcAnnotationGroup.add(arrowLine);
-
         const dottedArcMaterial = MaterialsFactory.createDottedCircleMaterial(this.azimuthColor);
         const dottedArcGeometry = new THREE.BufferGeometry();
         this.dottedArcLine = new THREE.Line(dottedArcGeometry, dottedArcMaterial);
         this.arcAnnotationGroup.add(this.dottedArcLine);
 
         this.arcPieMaterial = MaterialsFactory.createPieMaterial(this.azimuthColor);
-        this.arcPieMesh = null;
+        this.arcPieMesh = new THREE.Mesh(new THREE.BufferGeometry(), this.arcPieMaterial);
+        this.arcPieMesh.visible = false;
+        this.arcAnnotationGroup.add(this.arcPieMesh);
 
         this.scene.add(this.arcAnnotationGroup);
 
@@ -43,41 +40,28 @@ Object.assign(Pen3DSim.prototype, {
         this.surfaceLine = new THREE.Line(this.surfaceLineGeometry, surfaceLineMaterial);
         this.scene.add(this.surfaceLine);
 
-        const surfaceArrowGeometry = new THREE.BufferGeometry();
-        const surfaceArrowLine = new THREE.Line(surfaceArrowGeometry, surfaceLineMaterial);
-        surfaceArrowLine.visible = false;
-        this.scene.add(surfaceArrowLine);
-
         // Barrel rotation annotation group
         this.barrelAnnotationGroup = new THREE.Group();
-        const barrelAnnotationMaterial = MaterialsFactory.createArcMaterial(0xff8800);
-        const barrelArrowMaterial = MaterialsFactory.createArrowMaterial(0xff8800);
+        const barrelAnnotationMaterial = MaterialsFactory.createArcMaterial(ANNOTATION.barrelColor);
+        const barrelArrowMaterial = MaterialsFactory.createArrowMaterial(ANNOTATION.barrelColor);
 
         const barrelArcGeometry = new THREE.BufferGeometry();
         this.barrelArcLine = new THREE.Mesh(barrelArcGeometry, barrelAnnotationMaterial);
         this.barrelAnnotationGroup.add(this.barrelArcLine);
 
-        const barrelArrowGeometry = new THREE.BufferGeometry();
-        const barrelArrowLine = new THREE.Line(barrelArrowGeometry, barrelArrowMaterial);
-        barrelArrowLine.visible = false;
-        this.barrelAnnotationGroup.add(barrelArrowLine);
-
         const barrelSurfaceLineGeometry = new THREE.BufferGeometry();
         this.barrelSurfaceLine = new THREE.Line(barrelSurfaceLineGeometry, barrelArrowMaterial);
         this.barrelAnnotationGroup.add(this.barrelSurfaceLine);
 
-        const barrelSurfaceArrowGeometry = new THREE.BufferGeometry();
-        const barrelSurfaceArrowLine = new THREE.Line(barrelSurfaceArrowGeometry, barrelArrowMaterial);
-        barrelSurfaceArrowLine.visible = false;
-        this.barrelAnnotationGroup.add(barrelSurfaceArrowLine);
-
-        const barrelDottedCircleMaterial = MaterialsFactory.createDottedCircleMaterial(0xff8800);
+        const barrelDottedCircleMaterial = MaterialsFactory.createDottedCircleMaterial(ANNOTATION.barrelColor);
         const barrelDottedCircleGeometry = new THREE.BufferGeometry();
         this.barrelDottedCircleLine = new THREE.Line(barrelDottedCircleGeometry, barrelDottedCircleMaterial);
         this.barrelAnnotationGroup.add(this.barrelDottedCircleLine);
 
-        this.barrelPieMaterial = MaterialsFactory.createPieMaterial(0xff8800);
-        this.barrelPieMesh = null;
+        this.barrelPieMaterial = MaterialsFactory.createPieMaterial(ANNOTATION.barrelColor);
+        this.barrelPieMesh = new THREE.Mesh(new THREE.BufferGeometry(), this.barrelPieMaterial);
+        this.barrelPieMesh.visible = false;
+        this.barrelAnnotationGroup.add(this.barrelPieMesh);
 
         this.scene.add(this.barrelAnnotationGroup);
 
@@ -88,7 +72,9 @@ Object.assign(Pen3DSim.prototype, {
         this.scene.add(this.tiltAltitudeArcLine);
 
         this.tiltAltitudePieMaterial = MaterialsFactory.createPieMaterial(this.tiltAltitudeColor);
-        this.tiltAltitudePieMesh = null;
+        this.tiltAltitudePieMesh = new THREE.Mesh(new THREE.BufferGeometry(), this.tiltAltitudePieMaterial);
+        this.tiltAltitudePieMesh.visible = false;
+        this.scene.add(this.tiltAltitudePieMesh);
 
         const tiltAltitudeVerticalLineMaterial = MaterialsFactory.createVerticalLineMaterial(this.tiltAltitudeColor);
         const tiltAltitudeVerticalLineGeometry = new THREE.BufferGeometry();
@@ -101,39 +87,43 @@ Object.assign(Pen3DSim.prototype, {
         this.scene.add(this.tiltAltitudeSemicircleLine);
 
         // Tilt X annotation
-        const tiltXArcMaterial = MaterialsFactory.createArcMaterial(0x88ccff);
+        const tiltXArcMaterial = MaterialsFactory.createArcMaterial(ANNOTATION.tiltXColor);
         const tiltXArcGeometry = new THREE.BufferGeometry();
         this.tiltXArcLine = new THREE.Mesh(tiltXArcGeometry, tiltXArcMaterial);
         this.scene.add(this.tiltXArcLine);
 
-        this.tiltXPieMaterial = MaterialsFactory.createPieMaterial(0x88ccff);
-        this.tiltXPieMesh = null;
+        this.tiltXPieMaterial = MaterialsFactory.createPieMaterial(ANNOTATION.tiltXColor);
+        this.tiltXPieMesh = new THREE.Mesh(new THREE.BufferGeometry(), this.tiltXPieMaterial);
+        this.tiltXPieMesh.visible = false;
+        this.scene.add(this.tiltXPieMesh);
 
-        const tiltXVerticalLineMaterial = MaterialsFactory.createVerticalLineMaterial(0x88ccff);
+        const tiltXVerticalLineMaterial = MaterialsFactory.createVerticalLineMaterial(ANNOTATION.tiltXColor);
         const tiltXVerticalLineGeometry = new THREE.BufferGeometry();
         this.tiltXVerticalLine = new THREE.Line(tiltXVerticalLineGeometry, tiltXVerticalLineMaterial);
         this.scene.add(this.tiltXVerticalLine);
 
-        const tiltXDottedCircleMaterial = MaterialsFactory.createDottedCircleMaterial(0x88ccff);
+        const tiltXDottedCircleMaterial = MaterialsFactory.createDottedCircleMaterial(ANNOTATION.tiltXColor);
         const tiltXDottedCircleGeometry = new THREE.BufferGeometry();
         this.tiltXDottedCircleLine = new THREE.Line(tiltXDottedCircleGeometry, tiltXDottedCircleMaterial);
         this.scene.add(this.tiltXDottedCircleLine);
 
         // Tilt Y annotation
-        const tiltYArcMaterial = MaterialsFactory.createArcMaterial(0xff88cc);
+        const tiltYArcMaterial = MaterialsFactory.createArcMaterial(ANNOTATION.tiltYColor);
         const tiltYArcGeometry = new THREE.BufferGeometry();
         this.tiltYArcLine = new THREE.Mesh(tiltYArcGeometry, tiltYArcMaterial);
         this.scene.add(this.tiltYArcLine);
 
-        this.tiltYPieMaterial = MaterialsFactory.createPieMaterial(0xff88cc);
-        this.tiltYPieMesh = null;
+        this.tiltYPieMaterial = MaterialsFactory.createPieMaterial(ANNOTATION.tiltYColor);
+        this.tiltYPieMesh = new THREE.Mesh(new THREE.BufferGeometry(), this.tiltYPieMaterial);
+        this.tiltYPieMesh.visible = false;
+        this.scene.add(this.tiltYPieMesh);
 
-        const tiltYVerticalLineMaterial = MaterialsFactory.createVerticalLineMaterial(0xff88cc);
+        const tiltYVerticalLineMaterial = MaterialsFactory.createVerticalLineMaterial(ANNOTATION.tiltYColor);
         const tiltYVerticalLineGeometry = new THREE.BufferGeometry();
         this.tiltYVerticalLine = new THREE.Line(tiltYVerticalLineGeometry, tiltYVerticalLineMaterial);
         this.scene.add(this.tiltYVerticalLine);
 
-        const tiltYDottedCircleMaterial = MaterialsFactory.createDottedCircleMaterial(0xff88cc);
+        const tiltYDottedCircleMaterial = MaterialsFactory.createDottedCircleMaterial(ANNOTATION.tiltYColor);
         const tiltYDottedCircleGeometry = new THREE.BufferGeometry();
         this.tiltYDottedCircleLine = new THREE.Line(tiltYDottedCircleGeometry, tiltYDottedCircleMaterial);
         this.scene.add(this.tiltYDottedCircleLine);
@@ -149,7 +139,7 @@ Object.assign(Pen3DSim.prototype, {
             return sprite;
         };
 
-        const tabletTopY  = 0.05;
+        const tabletTopY  = this.yOffset;
         const arrowOffset = 0.5;
         const arrowPos = new THREE.Vector3(
             -this.tabletWidth  / 2 - arrowOffset,
@@ -162,6 +152,7 @@ Object.assign(Pen3DSim.prototype, {
         const yAxisColor = '#00cc66';
         const zAxisColor = '#0055cc';
 
+        // Labels use tablet-space names: world Y = tablet Z, world Z = tablet Y
         this.xLabel = createTextLabel('X', xAxisColor, arrowPos.clone().add(new THREE.Vector3(labelDistance, 0, 0)));
         this.yLabel = createTextLabel('Z', yAxisColor, arrowPos.clone().add(new THREE.Vector3(0, labelDistance, 0)));
         this.zLabel = createTextLabel('Y', zAxisColor, arrowPos.clone().add(new THREE.Vector3(0, 0, labelDistance)));
@@ -178,6 +169,9 @@ Object.assign(Pen3DSim.prototype, {
         this.scene.add(this.xArrow);
         this.scene.add(this.yArrow);
         this.scene.add(this.zArrow);
+
+        // Hidden by default; UI toggles visibility
+        this.setAxisMarkersVisible(false);
     },
 
     // -------------------------------------------------------------------------
@@ -201,90 +195,7 @@ Object.assign(Pen3DSim.prototype, {
     },
 
     createBarrelArcPoints(center, axis, u, v, radius, startAngle, endAngle, segments) {
-        const points = [];
-        for (let i = 0; i <= segments; i++) {
-            const angle = startAngle + (endAngle - startAngle) * (i / segments);
-            const point = center.clone()
-                .add(u.clone().multiplyScalar(radius * Math.cos(angle)))
-                .add(v.clone().multiplyScalar(radius * Math.sin(angle)));
-            points.push(point);
-        }
-        return points;
-    },
-
-    createSurfaceArrow(startX, startZ, endX, endZ) {
-        const arrowHeadLength = 0.3;
-        const arrowWidth = 0.15;
-        const dx = endX - startX;
-        const dz = endZ - startZ;
-        const length = Math.sqrt(dx * dx + dz * dz);
-
-        if (length < 0.001) return [];
-
-        const dirX = dx / length;
-        const dirZ = dz / length;
-        const perpX = -dirZ;
-        const perpZ = dirX;
-
-        return [
-            new THREE.Vector3(endX, this.yOffset, endZ),
-            new THREE.Vector3(endX - arrowHeadLength * dirX - arrowWidth * perpX, this.yOffset, endZ - arrowHeadLength * dirZ - arrowWidth * perpZ),
-            new THREE.Vector3(endX - arrowHeadLength * dirX + arrowWidth * perpX, this.yOffset, endZ - arrowHeadLength * dirZ + arrowWidth * perpZ),
-            new THREE.Vector3(endX, this.yOffset, endZ)
-        ];
-    },
-
-    createBarrelArrow(center, axis, u, v, radius, angle) {
-        const arrowHeadLength = 0.3;
-        const arrowWidth = 0.15;
-        const endPoint = center.clone()
-            .add(u.clone().multiplyScalar(radius * Math.cos(angle)))
-            .add(v.clone().multiplyScalar(radius * Math.sin(angle)));
-
-        const tangent = u.clone().multiplyScalar(Math.sin(angle)).add(v.clone().multiplyScalar(-Math.cos(angle))).normalize();
-        const perp    = u.clone().multiplyScalar(Math.cos(angle)).add(v.clone().multiplyScalar( Math.sin(angle))).normalize();
-
-        return [
-            endPoint.clone(),
-            endPoint.clone().add(tangent.clone().multiplyScalar(-arrowHeadLength)).add(perp.clone().multiplyScalar(-arrowWidth)),
-            endPoint.clone().add(tangent.clone().multiplyScalar(-arrowHeadLength)).add(perp.clone().multiplyScalar( arrowWidth)),
-            endPoint.clone()
-        ];
-    },
-
-    createBarrelSurfaceArrow(center, direction, axis) {
-        const arrowHeadLength = 0.3;
-        const arrowWidth = 0.15;
-        if (direction.length() < 0.001) return [];
-
-        const endPoint = center.clone().add(direction);
-        const dir  = direction.clone().normalize();
-        const perp = new THREE.Vector3().crossVectors(dir, axis).normalize();
-
-        return [
-            endPoint.clone(),
-            endPoint.clone().add(dir.clone().multiplyScalar(-arrowHeadLength)).add(perp.clone().multiplyScalar(-arrowWidth)),
-            endPoint.clone().add(dir.clone().multiplyScalar(-arrowHeadLength)).add(perp.clone().multiplyScalar( arrowWidth)),
-            endPoint.clone()
-        ];
-    },
-
-    createArrow(centerX, centerZ, radius, angle) {
-        const arrowHeadLength = 0.3;
-        const arrowWidth = 0.15;
-        const endX = centerX + radius * Math.cos(angle);
-        const endZ = centerZ + radius * Math.sin(angle);
-        const dirX =  Math.sin(angle);
-        const dirZ = -Math.cos(angle);
-        const perpX = Math.cos(angle);
-        const perpZ = Math.sin(angle);
-
-        return [
-            new THREE.Vector3(endX, this.yOffset, endZ),
-            new THREE.Vector3(endX - arrowHeadLength * dirX - arrowWidth * perpX, this.yOffset, endZ - arrowHeadLength * dirZ - arrowWidth * perpZ),
-            new THREE.Vector3(endX - arrowHeadLength * dirX + arrowWidth * perpX, this.yOffset, endZ - arrowHeadLength * dirZ + arrowWidth * perpZ),
-            new THREE.Vector3(endX, this.yOffset, endZ)
-        ];
+        return this.createCircularArcInPlane(center, u, v, radius, startAngle, endAngle, segments);
     },
 
     createPieShapeInPlane(center, u, v, radius, startAngle, endAngle, segments = 32) {
@@ -312,6 +223,56 @@ Object.assign(Pen3DSim.prototype, {
         mesh.setRotationFromQuaternion(quaternion);
 
         return mesh;
+    },
+
+    /**
+     * Rebuild geometry on a persistent pie mesh (avoids remove/re-add each frame).
+     */
+    updatePieMesh(pieMesh, material, center, u, v, radius, startAngle, endAngle, segments = 32, parent = null) {
+        if (!pieMesh) return;
+        if (pieMesh.geometry) pieMesh.geometry.dispose();
+
+        const shape = new THREE.Shape();
+        shape.moveTo(0, 0);
+        for (let i = 0; i <= segments; i++) {
+            const angle = startAngle + (endAngle - startAngle) * (i / segments);
+            shape.lineTo(radius * Math.cos(angle), radius * Math.sin(angle));
+        }
+        shape.lineTo(0, 0);
+
+        pieMesh.geometry = new THREE.ShapeGeometry(shape);
+        pieMesh.material = material;
+        pieMesh.position.copy(center);
+        pieMesh.setRotationFromQuaternion(this.calculatePieRotationQuaternion(u, v));
+        pieMesh.visible = true;
+        if (parent && pieMesh.parent !== parent) parent.add(pieMesh);
+    },
+
+    /**
+     * Azimuth pie uses a fixed XZ-plane quaternion rather than u/v basis.
+     */
+    updatePieMeshInGroup(pieMesh, material, group, position, quaternion, radius, startAngle, endAngle, segments = 32) {
+        if (!pieMesh) return;
+        if (pieMesh.geometry) pieMesh.geometry.dispose();
+
+        const shape = new THREE.Shape();
+        shape.moveTo(0, 0);
+        for (let i = 0; i <= segments; i++) {
+            const angle = startAngle + (endAngle - startAngle) * (i / segments);
+            shape.lineTo(radius * Math.cos(angle), radius * Math.sin(angle));
+        }
+        shape.lineTo(0, 0);
+
+        pieMesh.geometry = new THREE.ShapeGeometry(shape);
+        pieMesh.material = material;
+        pieMesh.position.copy(position);
+        pieMesh.setRotationFromQuaternion(quaternion);
+        pieMesh.visible = true;
+        if (group && pieMesh.parent !== group) group.add(pieMesh);
+    },
+
+    hidePieMesh(pieMesh) {
+        if (pieMesh) pieMesh.visible = false;
     },
 
     calculateTiltX(altitude, azimuth) {
@@ -362,18 +323,16 @@ Object.assign(Pen3DSim.prototype, {
     updateArcWithTube(arcLine, center, u, v, radius, startAngle, endAngle, segments = 32) {
         const points = this.createCircularArcInPlane(center, u, v, radius, startAngle, endAngle, segments);
         const curve  = this.createCurveFromPoints(points);
-        const tubeGeometry = new THREE.TubeGeometry(curve, segments, 0.02, 8, false);
+        const tubeGeometry = new THREE.TubeGeometry(curve, segments, ANNOTATION.tubeRadius, 8, false);
         if (arcLine.geometry) arcLine.geometry.dispose();
         arcLine.geometry = tubeGeometry;
         arcLine.visible  = true;
     },
 
     cleanupPieMesh(pieMesh, parent) {
-        if (pieMesh) {
-            parent.remove(pieMesh);
-            if (pieMesh.geometry) pieMesh.geometry.dispose();
-        }
-        return null;
+        // Kept for compatibility; prefer hidePieMesh + updatePieMesh.
+        this.hidePieMesh(pieMesh);
+        return pieMesh;
     },
 
     updateDottedCircle(line, center, u, v, radius, segments = 64) {

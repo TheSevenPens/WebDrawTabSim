@@ -290,4 +290,11 @@ input[type="checkbox"] {
     background: #45a049;
 }
 
+.camera-edit-error {
+    color: #ff6b6b;
+    font-size: 12px;
+    margin-top: 10px;
+    margin-bottom: 0;
+}
+
 

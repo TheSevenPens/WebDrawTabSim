@@ -1,4 +1,9 @@
 import * as THREE from 'three';
+import { TexturesFactory } from './textures.js';
+import {
+    TABLET, DEFAULT_PEN, DEMO_POSE, PEN_RANGES, POINTER_DEFAULTS,
+    ANNOTATION, CURSOR, EXPORT, ANIMATION, clampValue,
+} from './config.js';
 
 // Pen3DSim.js — Class skeleton: constructor, animate loop, and public API
 // All init/handle/geometry/update methods live in companion files:
@@ -23,39 +28,40 @@ export class Pen3DSim {
         this.viewer = viewerElement;
 
         // Pen state — all values in tablet coordinates
-        this.tiltAltitude = 0;          // degrees from vertical (0 = upright)
-        this.tiltAzimuth = 0;           // degrees around tablet surface plane
-        this.barrelRotation = 0;        // degrees of barrel spin around pen axis
-        this.tabletOffsetX = 8;         // tablet X: 0–tabletWidth inches
-        this.tabletOffsetY = 4.5;       // tablet Y: 0–tabletDepth inches (front-to-back)
-        this.distance = 0;              // tablet Z: pen tip height above surface in inches
+        this.tiltAltitude = DEFAULT_PEN.tiltAltitude;
+        this.tiltAzimuth = DEFAULT_PEN.tiltAzimuth;
+        this.barrelRotation = DEFAULT_PEN.barrelRotation;
+        this.tabletOffsetX = DEFAULT_PEN.tabletX;
+        this.tabletOffsetY = DEFAULT_PEN.tabletY;
+        this.distance = DEFAULT_PEN.distance;
         this.showAltitudeAnnotations = false;
         this.showBarrelAnnotations = false;
         this.showTiltXAnnotations = false;
         this.showTiltYAnnotations = false;
-        this.cursorRotation = 180;       // degrees around cursor long axis
-        this.cursorTipRotationY = 90;    // degrees around world Y axis at tip
-        this.cursorOffsetX = 0;          // cursor offset in tablet X direction (inches)
-        this.cursorOffsetY = 0;          // cursor offset in tablet Y direction (inches)
-        this.tiltCompensationPosTiltXValue = 0;
-        this.tiltCompensationNegTiltXValue = 0;
-        this.tiltCompensationPosTiltYValue = 0;
-        this.tiltCompensationNegTiltYValue = 0;
-        this.scalingFactor = 1;          // 0–2, 1 = no scaling
-        this.edgeAttraction = 0;         // -1 to 1, 0 = no effect
-        this.edgeAttractionRange = 1;    // tablet inches from edges where attraction applies
-        this.penDisplayMode = false;     // false = pen tablet (no screen), true = pen display (embedded screen)
-        this.onCameraUpdate = null;      // callback(info) called each frame with live camera data
+        this.cursorRotation = CURSOR.rotation;
+        this.cursorTipRotationY = CURSOR.tipRotationY;
+        this.cursorOffsetX = POINTER_DEFAULTS.cursorOffsetX;
+        this.cursorOffsetY = POINTER_DEFAULTS.cursorOffsetY;
+        this.tiltCompensationPosTiltXValue = POINTER_DEFAULTS.tiltCompensationPosTiltX;
+        this.tiltCompensationNegTiltXValue = POINTER_DEFAULTS.tiltCompensationNegTiltX;
+        this.tiltCompensationPosTiltYValue = POINTER_DEFAULTS.tiltCompensationPosTiltY;
+        this.tiltCompensationNegTiltYValue = POINTER_DEFAULTS.tiltCompensationNegTiltY;
+        this.scalingFactor = POINTER_DEFAULTS.scalingFactor;
+        this.edgeAttraction = POINTER_DEFAULTS.edgeAttraction;
+        this.edgeAttractionRange = POINTER_DEFAULTS.edgeAttractionRange;
+        this.mouseSensitivity = POINTER_DEFAULTS.mouseSensitivity;
+        this.penDisplayMode = false;
+        this.onCameraUpdate = null;
 
         // Constants (tablet coordinate dimensions)
-        this.tabletWidth = 16;           // tablet X extent in inches
-        this.tabletDepth = 9;            // tablet Y extent in inches
-        this.tabletThickness = 0.35;     // tablet body height in inches
-        this.yOffset = this.tabletThickness / 2; // world Y of tablet surface
-        this.arcRadius = 1.5;
-        this.barrelArcRadius = 1.5;
-        this.azimuthColor = 0x77dd33;
-        this.tiltAltitudeColor = 0xee33cc;
+        this.tabletWidth = TABLET.width;
+        this.tabletDepth = TABLET.depth;
+        this.tabletThickness = TABLET.thickness;
+        this.yOffset = this.tabletThickness / 2;
+        this.arcRadius = ANNOTATION.arcRadius;
+        this.barrelArcRadius = ANNOTATION.barrelArcRadius;
+        this.azimuthColor = ANNOTATION.azimuthColor;
+        this.tiltAltitudeColor = ANNOTATION.tiltAltitudeColor;
 
         // Build scene (methods from companion files via Object.assign)
         this.initScene();
@@ -96,16 +102,11 @@ export class Pen3DSim {
         loop();
     }
 
-    // ── Pen parameters ────────────────────────────────────────────────────────
-
-    setDistance(value) {
-        this.distance = value;
+    _refreshPen() {
         this.updatePenTransform(this.distance, this.tiltAltitude, this.tiltAzimuth, this.barrelRotation);
     }
 
-    setTiltAltitude(value) {
-        this.tiltAltitude = value;
-        this.updatePenTransform(this.distance, this.tiltAltitude, this.tiltAzimuth, this.barrelRotation);
+    _tiltResult() {
         return {
             shouldEnableAzimuth: this.tiltAltitude !== 0,
             tiltX: this.calculateTiltX(this.tiltAltitude, this.tiltAzimuth),
@@ -113,93 +114,107 @@ export class Pen3DSim {
         };
     }
 
+    _dispatchTabletPosition() {
+        if (!this.viewer) return;
+        this.viewer.dispatchEvent(new CustomEvent('tabletPositionChanged', {
+            detail: { x: this.tabletOffsetX, y: this.tabletOffsetY }
+        }));
+    }
+
+    // ── Pen parameters ────────────────────────────────────────────────────────
+
+    setDistance(value) {
+        this.distance = clampValue(value, PEN_RANGES.distance.min, PEN_RANGES.distance.max, this.distance);
+        this._refreshPen();
+    }
+
+    setTiltAltitude(value) {
+        this.tiltAltitude = clampValue(value, PEN_RANGES.tiltAltitude.min, PEN_RANGES.tiltAltitude.max, this.tiltAltitude);
+        this._refreshPen();
+        return this._tiltResult();
+    }
+
     setTiltAzimuth(value) {
-        this.tiltAzimuth = value;
-        this.updatePenTransform(this.distance, this.tiltAltitude, this.tiltAzimuth, this.barrelRotation);
-        return {
-            tiltX: this.calculateTiltX(this.tiltAltitude, this.tiltAzimuth),
-            tiltY: this.calculateTiltY(this.tiltAltitude, this.tiltAzimuth),
-        };
+        this.tiltAzimuth = clampValue(value, PEN_RANGES.tiltAzimuth.min, PEN_RANGES.tiltAzimuth.max, this.tiltAzimuth);
+        this._refreshPen();
+        return this._tiltResult();
     }
 
     setBarrelRotation(value) {
-        this.barrelRotation = value;
-        this.updatePenTransform(this.distance, this.tiltAltitude, this.tiltAzimuth, this.barrelRotation);
+        this.barrelRotation = clampValue(value, PEN_RANGES.barrelRotation.min, PEN_RANGES.barrelRotation.max, this.barrelRotation);
+        this._refreshPen();
     }
 
     // ── Tablet / cursor position (all values in tablet coordinates) ────────────
 
-    // value: tablet X, 0–tabletWidth inches (left → right)
     setTabletPositionX(value) {
-        this.tabletOffsetX = value;
-        this.updatePenTransform(this.distance, this.tiltAltitude, this.tiltAzimuth, this.barrelRotation);
-        if (this.viewer) {
-            this.viewer.dispatchEvent(new CustomEvent('tabletPositionChanged', {
-                detail: { x: value, y: this.tabletOffsetY }
-            }));
-        }
+        this.tabletOffsetX = clampValue(value, PEN_RANGES.tabletX.min, PEN_RANGES.tabletX.max, this.tabletOffsetX);
+        this._refreshPen();
+        this._dispatchTabletPosition();
     }
 
-    // value: tablet Y, 0–tabletDepth inches (front → back)
     setTabletPositionY(value) {
-        this.tabletOffsetY = value;
-        this.updatePenTransform(this.distance, this.tiltAltitude, this.tiltAzimuth, this.barrelRotation);
-        if (this.viewer) {
-            this.viewer.dispatchEvent(new CustomEvent('tabletPositionChanged', {
-                detail: { x: this.tabletOffsetX, y: value }
-            }));
-        }
+        this.tabletOffsetY = clampValue(value, PEN_RANGES.tabletY.min, PEN_RANGES.tabletY.max, this.tabletOffsetY);
+        this._refreshPen();
+        this._dispatchTabletPosition();
     }
 
-    // value: cursor offset in tablet X direction (inches)
     setCursorOffsetX(value) {
-        this.cursorOffsetX = value;
-        this.updatePenTransform(this.distance, this.tiltAltitude, this.tiltAzimuth, this.barrelRotation);
+        this.cursorOffsetX = clampValue(value, PEN_RANGES.cursorOffsetX.min, PEN_RANGES.cursorOffsetX.max, this.cursorOffsetX);
+        this._refreshPen();
     }
 
-    // value: cursor offset in tablet Y direction (inches)
     setCursorOffsetY(value) {
-        this.cursorOffsetY = value;
-        this.updatePenTransform(this.distance, this.tiltAltitude, this.tiltAzimuth, this.barrelRotation);
+        this.cursorOffsetY = clampValue(value, PEN_RANGES.cursorOffsetY.min, PEN_RANGES.cursorOffsetY.max, this.cursorOffsetY);
+        this._refreshPen();
     }
 
     // ── Tilt compensation ─────────────────────────────────────────────────────
 
     setTiltCompensationPosTiltXValue(value) {
-        this.tiltCompensationPosTiltXValue = value;
-        this.updatePenTransform(this.distance, this.tiltAltitude, this.tiltAzimuth, this.barrelRotation);
+        this.tiltCompensationPosTiltXValue = clampValue(value, PEN_RANGES.tiltCompensation.min, PEN_RANGES.tiltCompensation.max, this.tiltCompensationPosTiltXValue);
+        this._refreshPen();
     }
 
     setTiltCompensationNegTiltXValue(value) {
-        this.tiltCompensationNegTiltXValue = value;
-        this.updatePenTransform(this.distance, this.tiltAltitude, this.tiltAzimuth, this.barrelRotation);
+        this.tiltCompensationNegTiltXValue = clampValue(value, PEN_RANGES.tiltCompensation.min, PEN_RANGES.tiltCompensation.max, this.tiltCompensationNegTiltXValue);
+        this._refreshPen();
     }
 
     setTiltCompensationPosTiltYValue(value) {
-        this.tiltCompensationPosTiltYValue = value;
-        this.updatePenTransform(this.distance, this.tiltAltitude, this.tiltAzimuth, this.barrelRotation);
+        this.tiltCompensationPosTiltYValue = clampValue(value, PEN_RANGES.tiltCompensation.min, PEN_RANGES.tiltCompensation.max, this.tiltCompensationPosTiltYValue);
+        this._refreshPen();
     }
 
     setTiltCompensationNegTiltYValue(value) {
-        this.tiltCompensationNegTiltYValue = value;
-        this.updatePenTransform(this.distance, this.tiltAltitude, this.tiltAzimuth, this.barrelRotation);
+        this.tiltCompensationNegTiltYValue = clampValue(value, PEN_RANGES.tiltCompensation.min, PEN_RANGES.tiltCompensation.max, this.tiltCompensationNegTiltYValue);
+        this._refreshPen();
     }
 
     // ── Cursor scaling / edge attraction ──────────────────────────────────────
 
     setScalingFactor(value) {
-        this.scalingFactor = value;
-        this.updatePenTransform(this.distance, this.tiltAltitude, this.tiltAzimuth, this.barrelRotation);
+        this.scalingFactor = clampValue(value, PEN_RANGES.scalingFactor.min, PEN_RANGES.scalingFactor.max, this.scalingFactor);
+        this._refreshPen();
     }
 
     setEdgeAttraction(value) {
-        this.edgeAttraction = value;
-        this.updatePenTransform(this.distance, this.tiltAltitude, this.tiltAzimuth, this.barrelRotation);
+        this.edgeAttraction = clampValue(value, PEN_RANGES.edgeAttraction.min, PEN_RANGES.edgeAttraction.max, this.edgeAttraction);
+        this._refreshPen();
     }
 
     setEdgeAttractionRange(value) {
-        this.edgeAttractionRange = value;
-        this.updatePenTransform(this.distance, this.tiltAltitude, this.tiltAzimuth, this.barrelRotation);
+        this.edgeAttractionRange = clampValue(value, PEN_RANGES.edgeAttractionRange.min, PEN_RANGES.edgeAttractionRange.max, this.edgeAttractionRange);
+        this._refreshPen();
+    }
+
+    setMouseSensitivity(value) {
+        this.mouseSensitivity = clampValue(
+            value,
+            PEN_RANGES.mouseSensitivity.min,
+            PEN_RANGES.mouseSensitivity.max,
+            this.mouseSensitivity
+        );
     }
 
     // ── Visibility toggles ────────────────────────────────────────────────────
@@ -211,27 +226,27 @@ export class Pen3DSim {
 
     setAltitudeAnnotationsVisible(visible) {
         this.showAltitudeAnnotations = visible;
-        this.updatePenTransform(this.distance, this.tiltAltitude, this.tiltAzimuth, this.barrelRotation);
+        this._refreshPen();
     }
 
     setBarrelAnnotationsVisible(visible) {
         this.showBarrelAnnotations = visible;
-        this.updatePenTransform(this.distance, this.tiltAltitude, this.tiltAzimuth, this.barrelRotation);
+        this._refreshPen();
     }
 
     setTiltXAnnotationsVisible(visible) {
         this.showTiltXAnnotations = visible;
-        this.updatePenTransform(this.distance, this.tiltAltitude, this.tiltAzimuth, this.barrelRotation);
+        this._refreshPen();
     }
 
     setTiltYAnnotationsVisible(visible) {
         this.showTiltYAnnotations = visible;
-        this.updatePenTransform(this.distance, this.tiltAltitude, this.tiltAzimuth, this.barrelRotation);
+        this._refreshPen();
     }
 
     setCursorVisible(visible) {
         if (this.cursorArrow)   this.cursorArrow.visible   = visible;
-        if (this.monitorCursor) this.monitorCursor.visible = visible;
+        if (this.monitorCursor) this.monitorCursor.visible = visible && !this.penDisplayMode;
     }
 
     setPenShadowVisible(visible) {
@@ -260,15 +275,11 @@ export class Pen3DSim {
 
     setPenDisplayMode(enabled) {
         this.penDisplayMode = enabled;
-        // Show/hide the tablet embedded screen
         if (this.tabletScreen) this.tabletScreen.visible = enabled;
-        // Show/hide the external monitor
         if (this.monitorGroup) this.monitorGroup.visible = !enabled;
         if (this.monitorCursor) this.monitorCursor.visible = !enabled;
-        // Raise digitizer grid above the screen in pen display mode
         if (this.digitizerGrid) this.digitizerGrid.position.y = enabled ? 0.008 : 0;
-        // Refresh pen transform so cursor position updates
-        this.updatePenTransform(this.distance, this.tiltAltitude, this.tiltAzimuth, this.barrelRotation);
+        this._refreshPen();
     }
 
     setAxisMarkersVisible(visible) {
@@ -316,31 +327,21 @@ export class Pen3DSim {
 
     // ── Utility ───────────────────────────────────────────────────────────────
 
-    // Returns default tablet-coordinate values for all pen parameters.
     reset() {
-        return {
-            distance: 0,
-            tiltAltitude: 0,
-            tiltAzimuth: 0,
-            barrelRotation: 0,
-            tabletX: 8,    // tablet X (inches)
-            tabletY: 4.5,  // tablet Y (inches)
-        };
+        return { ...DEFAULT_PEN };
     }
 
-    exportAsPNG(width = 1920, height = 1080) {
+    exportAsPNG(width = EXPORT.hd.width, height = EXPORT.hd.height) {
         const origWidth = this.viewer.clientWidth;
         const origHeight = this.viewer.clientHeight;
         const origPixelRatio = this.renderer.getPixelRatio();
 
-        // Render at 2x for supersampled crispness
-        this.renderer.setPixelRatio(2);
+        this.renderer.setPixelRatio(EXPORT.supersample);
         this.renderer.setSize(width, height);
         this.perspectiveCamera.aspect = width / height;
         this.perspectiveCamera.updateProjectionMatrix();
         this.renderer.render(this.scene, this.camera);
 
-        // The drawing buffer is 2x; draw it onto a canvas at the requested size
         const canvas = document.createElement('canvas');
         canvas.width = width;
         canvas.height = height;
@@ -352,7 +353,6 @@ export class Pen3DSim {
         link.href = canvas.toDataURL('image/png');
         link.click();
 
-        // Restore original size and pixel ratio
         this.renderer.setPixelRatio(origPixelRatio);
         this.renderer.setSize(origWidth, origHeight);
         this.perspectiveCamera.aspect = origWidth / origHeight;
@@ -384,13 +384,12 @@ export class Pen3DSim {
         return ((( start + diff * t) % 360) + 360) % 360;
     }
 
-    // Animates from default position to a demo position.
+    // Animates from default position to the shared demo pose.
     // onProgress receives (current, progress) where current uses tablet coordinates.
     animateToDemo(onProgress) {
-        // All positions in tablet coordinates
-        const start = { distance: 0, tiltAltitude:   0, tiltAzimuth:   0, barrelRotation:   0, tabletX: 8, tabletY: 4.5 };
-        const end   = { distance: 0, tiltAltitude:  45, tiltAzimuth: 242, barrelRotation: 318, tabletX: 8, tabletY: 4.5 };
-        const duration = 8000;
+        const start = { ...DEFAULT_PEN };
+        const end   = { ...DEMO_POSE };
+        const duration = ANIMATION.durationMs;
         const startTime = performance.now();
         let frameId = null;
 
@@ -406,7 +405,6 @@ export class Pen3DSim {
                 tabletY:        start.tabletY + (end.tabletY - start.tabletY) * eased,
             };
 
-            // Update internal tablet-coordinate state
             this.distance       = current.distance;
             this.tiltAltitude   = current.tiltAltitude;
             this.tiltAzimuth    = current.tiltAzimuth;

@@ -11,6 +11,7 @@
     scalingFactor       = $bindable(),
     edgeAttraction      = $bindable(),
     edgeAttractionRange = $bindable(),
+    mouseSensitivity    = $bindable(),
     onCursorOffsetX,
     onCursorOffsetY,
     onCompPosTiltX,
@@ -20,6 +21,7 @@
     onScalingFactor,
     onEdgeAttraction,
     onEdgeAttractionRange,
+    onMouseSensitivity,
   } = $props();
 </script>
 
@@ -32,3 +34,4 @@
 <SliderControl label="Scaling factor"         bind:value={scalingFactor}       min={0}  max={2} step={0.05} decimals={2}          oninput={onScalingFactor} />
 <SliderControl label="Edge attraction"        bind:value={edgeAttraction}      min={-1} max={1} step={0.05} decimals={2}          oninput={onEdgeAttraction} />
 <SliderControl label="Edge attraction range"  bind:value={edgeAttractionRange} min={0}  max={5} step={0.1}  decimals={2} unit=" in" oninput={onEdgeAttractionRange} />
+<SliderControl label="Mouse drag sensitivity" bind:value={mouseSensitivity}    min={0.001} max={0.1} step={0.001} decimals={3} unit=" in/px" oninput={onMouseSensitivity} />

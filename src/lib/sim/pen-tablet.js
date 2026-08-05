@@ -2,6 +2,7 @@ import * as THREE from 'three';
 import { MaterialsFactory } from './materials.js';
 import { TexturesFactory } from './textures.js';
 import { Pen3DSim } from './Pen3DSim.js';
+import { TABLET } from './config.js';
 
 // pen-tablet.js — Tablet mesh, grid, and checkerboard
 // Extends Pen3DSim.prototype (must be loaded after Pen3DSim.js)
@@ -9,7 +10,7 @@ import { Pen3DSim } from './Pen3DSim.js';
 Object.assign(Pen3DSim.prototype, {
 
     initTablet() {
-        const bodyMargin = 1.5;
+        const bodyMargin = TABLET.bodyMargin;
         const geometry = new THREE.BoxGeometry(this.tabletWidth + bodyMargin * 2, this.tabletThickness, this.tabletDepth + bodyMargin * 2);
         const material = MaterialsFactory.createTabletMaterial();
         const tablet = new THREE.Mesh(geometry, material);

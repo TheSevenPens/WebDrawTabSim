@@ -5,6 +5,7 @@
   import AnnotationSettings from './lib/AnnotationSettings.svelte';
   import PointerTrackingSettings from './lib/PointerTrackingSettings.svelte';
   import { runParameterAnimation } from './lib/sim/animations.js';
+  import { DEMO_POSE, POINTER_DEFAULTS, ANIMATION } from './lib/sim/config.js';
 
   // ── DOM reference ──────────────────────────────────────────────────────────
   let viewer = $state();
@@ -44,10 +45,14 @@
   let scalingFactor       = $state(1);
   let edgeAttraction      = $state(0);
   let edgeAttractionRange = $state(1);
+  let mouseSensitivity    = $state(POINTER_DEFAULTS.mouseSensitivity);
 
   // ── Flyout / modal state ───────────────────────────────────────────────────
   let openFlyout      = $state(null); // 'pointer-tracking' | 'annotations' | 'animations' | null
   let showCameraInfo  = $state(false);
+  let showCameraEdit  = $state(false);
+  let cameraJsonText  = $state('');
+  let cameraEditError = $state('');
   let cameraPos       = $state({ x: 0, y: 0, z: 0 });
   let cameraTarget    = $state({ x: 0, y: 0, z: 0 });
 
@@ -84,10 +89,8 @@
   }
 
   // ── Animation cancel handles ───────────────────────────────────────────────
-  let cancelMainAnimation     = null;
-  let cancelAltitudeAnimation = null;
-  let cancelAzimuthAnimation  = null;
-  let cancelBarrelAnimation   = null;
+  let cancelMainAnimation = null;
+  let cancelParamAnimation = null;
 
   // ── Helpers ────────────────────────────────────────────────────────────────
 
@@ -102,6 +105,26 @@
 
   function toggleFlyout(name) {
     openFlyout = openFlyout === name ? null : name;
+  }
+
+  /**
+   * Generic single-parameter animation used by altitude / azimuth / barrel buttons.
+   * @param {{ cancelPrev?: () => void, start: number, end: number, angular?: boolean,
+   *           apply: (value: number) => void, onDone?: () => void }} opts
+   */
+  function runParamAnim({ start, end, angular = false, apply }) {
+    openFlyout = null;
+    if (cancelParamAnimation) cancelParamAnimation();
+    setTimeout(() => {
+      apply(start);
+      cancelParamAnimation = runParameterAnimation(sim, ANIMATION.durationMs, (eased, progress) => {
+        const value = angular
+          ? sim.interpolateAngle(start, end, eased)
+          : start + (end - start) * eased;
+        apply(value);
+        if (progress >= 1) cancelParamAnimation = null;
+      });
+    }, ANIMATION.startDelayMs);
   }
 
   // ── Mount ──────────────────────────────────────────────────────────────────
@@ -169,6 +192,7 @@
   function onScalingFactor()     { sim.setScalingFactor(scalingFactor); }
   function onEdgeAttraction()    { sim.setEdgeAttraction(edgeAttraction); }
   function onEdgeAttractionRange() { sim.setEdgeAttractionRange(edgeAttractionRange); }
+  function onMouseSensitivity()  { sim.setMouseSensitivity(mouseSensitivity); }
 
   // ── Annotation checkbox handlers ───────────────────────────────────────────
 
@@ -231,7 +255,7 @@
 
   function runDemo() {
     openFlyout = null;
-    const demo = { distance: 0, tiltAltitude: 45, tiltAzimuth: 242, barrelRotation: 318, tabletX: 8.6, tabletY: 5.3 };
+    const demo = { ...DEMO_POSE };
     distance = demo.distance;
     tiltAltitude = demo.tiltAltitude;
     tiltAzimuth = demo.tiltAzimuth;
@@ -284,73 +308,90 @@
         setTiltXY(result);
         if (progress >= 1) cancelMainAnimation = null;
       });
-    }, 500);
+    }, ANIMATION.startDelayMs);
   }
 
   // ── Individual animations ──────────────────────────────────────────────────
 
   function runAnimAltitude() {
-    openFlyout = null;
-    if (cancelAltitudeAnimation) cancelAltitudeAnimation();
-    setTimeout(() => {
-      const curAzimuth = tiltAzimuth;
-      const startAlt = 0, endAlt = 45;
-      tiltAltitude = startAlt;
-      sim.setTiltAltitude(startAlt);
-      sim.setTiltAzimuth(curAzimuth);
-      cancelAltitudeAnimation = runParameterAnimation(sim, 8000, (eased, progress) => {
-        tiltAltitude = startAlt + (endAlt - startAlt) * eased;
+    const curAzimuth = tiltAzimuth;
+    runParamAnim({
+      start: 0,
+      end: ANIMATION.altitudeEnd,
+      apply: (value) => {
+        tiltAltitude = value;
         tiltAzimuth = curAzimuth;
         const result = sim.setTiltAltitude(tiltAltitude);
         sim.setTiltAzimuth(curAzimuth);
         setTiltXY(result);
         updateAzimuthState();
-        if (progress >= 1) cancelAltitudeAnimation = null;
-      });
-    }, 500);
+      },
+    });
   }
 
   function runAnimAzimuth() {
-    openFlyout = null;
-    if (cancelAzimuthAnimation) cancelAzimuthAnimation();
-    setTimeout(() => {
-      const curAlt = tiltAltitude;
-      const startAz = 0, endAz = 252;
-      tiltAzimuth = startAz;
-      sim.setTiltAltitude(curAlt);
-      sim.setTiltAzimuth(startAz);
-      cancelAzimuthAnimation = runParameterAnimation(sim, 8000, (eased, progress) => {
+    const curAlt = tiltAltitude;
+    runParamAnim({
+      start: 0,
+      end: ANIMATION.azimuthEnd,
+      angular: true,
+      apply: (value) => {
         tiltAltitude = curAlt;
-        tiltAzimuth = sim.interpolateAngle(startAz, endAz, eased);
+        tiltAzimuth = value;
         sim.setTiltAltitude(curAlt);
         const result = sim.setTiltAzimuth(tiltAzimuth);
         setTiltXY(result);
         updateAzimuthState();
-        if (progress >= 1) cancelAzimuthAnimation = null;
-      });
-    }, 500);
+      },
+    });
   }
 
   function runAnimBarrel() {
-    openFlyout = null;
-    if (cancelBarrelAnimation) cancelBarrelAnimation();
-    setTimeout(() => {
-      const startBarrel = 0, endBarrel = 316;
-      barrelRotation = startBarrel;
-      sim.setBarrelRotation(startBarrel);
-      cancelBarrelAnimation = runParameterAnimation(sim, 8000, (eased, progress) => {
-        barrelRotation = sim.interpolateAngle(startBarrel, endBarrel, eased);
+    runParamAnim({
+      start: 0,
+      end: ANIMATION.barrelEnd,
+      angular: true,
+      apply: (value) => {
+        barrelRotation = value;
         sim.setBarrelRotation(barrelRotation);
-        if (progress >= 1) cancelBarrelAnimation = null;
-      });
-    }, 500);
+      },
+    });
+  }
+
+  // ── Camera settings edit (inline error, no alert) ──────────────────────────
+
+  function openCameraEdit() {
+    cameraEditError = '';
+    try {
+      cameraJsonText = sim.getCameraSettingsJSON();
+      showCameraEdit = true;
+    } catch (error) {
+      cameraEditError = `Error loading camera settings: ${error.message}`;
+      showCameraEdit = true;
+    }
+  }
+
+  function closeCameraEdit() {
+    showCameraEdit = false;
+    cameraEditError = '';
+  }
+
+  function applyCameraEdit() {
+    try {
+      sim.setCameraSettingsJSON(cameraJsonText);
+      cameraEditError = '';
+      showCameraEdit = false;
+    } catch (error) {
+      cameraEditError = `Error applying camera settings: ${error.message}`;
+    }
   }
 
   // ── Keyboard ───────────────────────────────────────────────────────────────
 
   function handleKeyDown(e) {
     if (e.key === 'Escape') {
-      openFlyout = null;
+      if (showCameraEdit) closeCameraEdit();
+      else openFlyout = null;
     }
   }
 </script>
@@ -388,12 +429,38 @@
   onToggleFlyout={toggleFlyout}
   onResetPen={resetPen}
   onExportPNG={(w, h) => sim?.exportAsPNG(w, h)}
+  onEditCamera={openCameraEdit}
 />
 
 <!-- ═══════════════════════════════════════════════════════════════════════════
      3D Viewer
      ═══════════════════════════════════════════════════════════════════════════ -->
 <div id="viewer" bind:this={viewer}></div>
+
+<!-- ═══════════════════════════════════════════════════════════════════════════
+     Camera settings modal (inline errors, no alert)
+     ═══════════════════════════════════════════════════════════════════════════ -->
+{#if showCameraEdit}
+<div
+  id="camera-edit-modal"
+  style="display:flex;"
+  role="presentation"
+  onclick={(e) => { if (e.target === e.currentTarget) closeCameraEdit(); }}
+  onkeydown={(e) => { if (e.key === 'Escape') closeCameraEdit(); }}
+>
+  <div class="modal-content" role="dialog" aria-modal="true" aria-labelledby="camera-edit-title">
+    <h2 id="camera-edit-title">Camera Settings</h2>
+    <textarea id="camera-json-editor" bind:value={cameraJsonText} spellcheck="false"></textarea>
+    {#if cameraEditError}
+      <p class="camera-edit-error">{cameraEditError}</p>
+    {/if}
+    <div class="modal-actions">
+      <button id="camera-edit-cancel" type="button" onclick={closeCameraEdit}>Cancel</button>
+      <button id="camera-edit-ok" type="button" onclick={applyCameraEdit}>Apply</button>
+    </div>
+  </div>
+</div>
+{/if}
 
 <!-- ═══════════════════════════════════════════════════════════════════════════
      Annotations flyout
@@ -448,6 +515,7 @@
       bind:scalingFactor
       bind:edgeAttraction
       bind:edgeAttractionRange
+      bind:mouseSensitivity
       {onCursorOffsetX}
       {onCursorOffsetY}
       {onCompPosTiltX}
@@ -457,6 +525,7 @@
       {onScalingFactor}
       {onEdgeAttraction}
       {onEdgeAttractionRange}
+      {onMouseSensitivity}
     />
   </div>
 </div>
