@@ -33,9 +33,9 @@
 <SliderControl label="Barrel rotation" bind:value={barrelRotation} min={0} max={359} step={1} decimals={0} unit="°" oninput={onBarrel} />
 
 <div class="control-group">
-  <label>Tilt X: <span class="slider-value">{tiltXDisplay}°</span></label>
+  <span class="readout">Tilt X: <span class="slider-value">{tiltXDisplay}°</span></span>
 </div>
 
 <div class="control-group">
-  <label>Tilt Y: <span class="slider-value">{tiltYDisplay}°</span></label>
+  <span class="readout">Tilt Y: <span class="slider-value">{tiltYDisplay}°</span></span>
 </div>

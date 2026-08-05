@@ -287,9 +287,6 @@ Object.assign(Pen3DSim.prototype, {
         const cursorY = this.yOffset + (this.penDisplayMode ? 0.01 : 0.002);
         this.cursorArrow.position.set(worldCursorX, cursorY, worldCursorZ);
         this.updateMonitorCursor(worldCursorX, worldCursorZ);
-
-        this._worldCursorX = worldCursorX;
-        this._worldCursorZ = worldCursorZ;
     },
 
     // -------------------------------------------------------------------------

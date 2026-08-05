@@ -109,8 +109,8 @@
 
   /**
    * Generic single-parameter animation used by altitude / azimuth / barrel buttons.
-   * @param {{ cancelPrev?: () => void, start: number, end: number, angular?: boolean,
-   *           apply: (value: number) => void, onDone?: () => void }} opts
+   * @param {{ start: number, end: number, angular?: boolean,
+   *           apply: (value: number) => void }} opts
    */
   function runParamAnim({ start, end, angular = false, apply }) {
     openFlyout = null;
