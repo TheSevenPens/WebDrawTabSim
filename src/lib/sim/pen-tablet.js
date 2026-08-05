@@ -85,13 +85,18 @@ Object.assign(Pen3DSim.prototype, {
         const floorY = -29;
         const roomW = 100;
         const roomD = 80;
+        // Grow depth 50% toward the camera (+Z); keep the back wall fixed
+        const roomDExtra = roomD * 0.5;
+        const roomDFull = roomD + roomDExtra;
+        const roomCenterZ = deskZ + roomDExtra / 2;
+        const wallZBack = deskZ - roomD / 2;
         const roomH = 90;
         const wallMaterial = MaterialsFactory.createWallMaterial();
 
-        const floorGeometry = new THREE.PlaneGeometry(roomW, roomD);
+        const floorGeometry = new THREE.PlaneGeometry(roomW, roomDFull);
         const floor = new THREE.Mesh(floorGeometry, MaterialsFactory.createFloorMaterial());
         floor.rotation.x = -Math.PI / 2;
-        floor.position.set(0, floorY, deskZ);
+        floor.position.set(0, floorY, roomCenterZ);
         floor.receiveShadow = true;
         this.scene.add(floor);
 
@@ -100,27 +105,27 @@ Object.assign(Pen3DSim.prototype, {
             new THREE.PlaneGeometry(roomW, roomH),
             wallMaterial
         );
-        backWall.position.set(0, floorY + roomH / 2, deskZ - roomD / 2);
+        backWall.position.set(0, floorY + roomH / 2, wallZBack);
         backWall.receiveShadow = true;
         this.scene.add(backWall);
 
         // Left wall
         const leftWall = new THREE.Mesh(
-            new THREE.PlaneGeometry(roomD, roomH),
+            new THREE.PlaneGeometry(roomDFull, roomH),
             wallMaterial.clone()
         );
         leftWall.rotation.y = Math.PI / 2;
-        leftWall.position.set(-roomW / 2, floorY + roomH / 2, deskZ);
+        leftWall.position.set(-roomW / 2, floorY + roomH / 2, roomCenterZ);
         leftWall.receiveShadow = true;
         this.scene.add(leftWall);
 
         // Right wall
         const rightWall = new THREE.Mesh(
-            new THREE.PlaneGeometry(roomD, roomH),
+            new THREE.PlaneGeometry(roomDFull, roomH),
             wallMaterial.clone()
         );
         rightWall.rotation.y = -Math.PI / 2;
-        rightWall.position.set(roomW / 2, floorY + roomH / 2, deskZ);
+        rightWall.position.set(roomW / 2, floorY + roomH / 2, roomCenterZ);
         rightWall.receiveShadow = true;
         this.scene.add(rightWall);
 
@@ -129,7 +134,6 @@ Object.assign(Pen3DSim.prototype, {
         const boardDepth = 0.75;
         const boardMaterial = MaterialsFactory.createBaseboardMaterial();
         const boardY = floorY + boardH / 2;
-        const wallZBack = deskZ - roomD / 2;
         const wallXLeft = -roomW / 2;
         const wallXRight = roomW / 2;
 
@@ -142,18 +146,18 @@ Object.assign(Pen3DSim.prototype, {
         this.scene.add(backBoard);
 
         const leftBoard = new THREE.Mesh(
-            new THREE.BoxGeometry(boardDepth, boardH, roomD),
+            new THREE.BoxGeometry(boardDepth, boardH, roomDFull),
             boardMaterial.clone()
         );
-        leftBoard.position.set(wallXLeft + boardDepth / 2, boardY, deskZ);
+        leftBoard.position.set(wallXLeft + boardDepth / 2, boardY, roomCenterZ);
         leftBoard.receiveShadow = true;
         this.scene.add(leftBoard);
 
         const rightBoard = new THREE.Mesh(
-            new THREE.BoxGeometry(boardDepth, boardH, roomD),
+            new THREE.BoxGeometry(boardDepth, boardH, roomDFull),
             boardMaterial.clone()
         );
-        rightBoard.position.set(wallXRight - boardDepth / 2, boardY, deskZ);
+        rightBoard.position.set(wallXRight - boardDepth / 2, boardY, roomCenterZ);
         rightBoard.receiveShadow = true;
         this.scene.add(rightBoard);
 
