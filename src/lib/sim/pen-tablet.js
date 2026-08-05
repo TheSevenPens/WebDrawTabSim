@@ -2,9 +2,9 @@ import * as THREE from 'three';
 import { MaterialsFactory } from './materials.js';
 import { TexturesFactory } from './textures.js';
 import { Pen3DSim } from './Pen3DSim.js';
-import { TABLET } from './config.js';
+import { TABLET, SCENE } from './config.js';
 
-// pen-tablet.js — Tablet mesh, grid, and checkerboard
+// pen-tablet.js — Tablet mesh, grid, desk, studio room
 // Extends Pen3DSim.prototype (must be loaded after Pen3DSim.js)
 
 Object.assign(Pen3DSim.prototype, {
@@ -19,21 +19,22 @@ Object.assign(Pen3DSim.prototype, {
         this.scene.add(tablet);
 
         const deskHeight = 1;
-        const deskGeometry = new THREE.BoxGeometry(60, deskHeight, 30);
-        const deskMesh = new THREE.Mesh(deskGeometry, MaterialsFactory.createDeskMaterial());
-        deskMesh.position.set(0, -deskHeight / 2, -6.5);
+        const deskW = 60, deskD = 30, deskZ = -6.5;
+        const woodMap = TexturesFactory.createWoodGrainTexture();
+        const deskGeometry = new THREE.BoxGeometry(deskW, deskHeight, deskD);
+        const deskMesh = new THREE.Mesh(deskGeometry, MaterialsFactory.createDeskMaterial(woodMap));
+        deskMesh.position.set(0, -deskHeight / 2, deskZ);
         deskMesh.receiveShadow = true;
         deskMesh.castShadow = true;
         this.scene.add(deskMesh);
 
-        // Desk legs
+        // Desk legs — solid light wood (no grain)
         const legHeight = 28;
         const legSize = 1.5;
         const legGeometry = new THREE.BoxGeometry(legSize, legHeight, legSize);
-        const legMaterial = MaterialsFactory.createDeskMaterial();
-        const deskW = 60, deskD = 30, deskZ = -6.5;
+        const legMaterial = MaterialsFactory.createDeskLegMaterial();
         const legY = -deskHeight - legHeight / 2;
-        const legInset = 2; // inset from desk edges
+        const legInset = 2;
         const legPositions = [
             [-deskW / 2 + legInset, legY, deskZ - deskD / 2 + legInset],
             [ deskW / 2 - legInset, legY, deskZ - deskD / 2 + legInset],
@@ -51,7 +52,7 @@ Object.assign(Pen3DSim.prototype, {
         // Store references for checkerboard pattern toggle
         this.tabletMesh = tablet;
         this.tabletMaterial = material;
-        this.tabletBaseColor = 0x505050;
+        this.tabletBaseColor = SCENE.tabletBase;
         this.tabletCheckerboardTexture = null;
 
         const gridGroup = new THREE.Group();
@@ -77,32 +78,59 @@ Object.assign(Pen3DSim.prototype, {
         this.digitizerGrid = gridGroup;
         this.scene.add(gridGroup);
 
-        const gridHelper = new THREE.GridHelper(50, 50, 0x444444, 0x222222);
-        // Floor
-        const floorGeometry = new THREE.PlaneGeometry(200, 200);
-        const floorMaterial = new THREE.MeshStandardMaterial({ color: 0x3a3a3a, roughness: 0.9, metalness: 0.0 });
-        const floor = new THREE.Mesh(floorGeometry, floorMaterial);
+        // Floor + studio walls (no dark GridHelper)
+        const floorY = -29;
+        const roomW = 100;
+        const roomD = 80;
+        const roomH = 60;
+        const wallMaterial = MaterialsFactory.createWallMaterial();
+
+        const floorGeometry = new THREE.PlaneGeometry(roomW, roomD);
+        const floor = new THREE.Mesh(floorGeometry, MaterialsFactory.createFloorMaterial());
         floor.rotation.x = -Math.PI / 2;
-        floor.position.y = -29;
+        floor.position.set(0, floorY, deskZ);
         floor.receiveShadow = true;
         this.scene.add(floor);
 
-        gridHelper.position.y = -29; // bottom of desk legs
-        this.scene.add(gridHelper);
+        // Back wall (behind monitor)
+        const backWall = new THREE.Mesh(
+            new THREE.PlaneGeometry(roomW, roomH),
+            wallMaterial
+        );
+        backWall.position.set(0, floorY + roomH / 2, deskZ - roomD / 2);
+        backWall.receiveShadow = true;
+        this.scene.add(backWall);
+
+        // Left wall
+        const leftWall = new THREE.Mesh(
+            new THREE.PlaneGeometry(roomD, roomH),
+            wallMaterial.clone()
+        );
+        leftWall.rotation.y = Math.PI / 2;
+        leftWall.position.set(-roomW / 2, floorY + roomH / 2, deskZ);
+        leftWall.receiveShadow = true;
+        this.scene.add(leftWall);
+
+        // Right wall
+        const rightWall = new THREE.Mesh(
+            new THREE.PlaneGeometry(roomD, roomH),
+            wallMaterial.clone()
+        );
+        rightWall.rotation.y = -Math.PI / 2;
+        rightWall.position.set(roomW / 2, floorY + roomH / 2, deskZ);
+        rightWall.receiveShadow = true;
+        this.scene.add(rightWall);
 
         // ── Pen display mode: embedded screen on tablet surface ──────────────
         const tabletScreenMaterial = MaterialsFactory.createMonitorScreenMaterial(
             TexturesFactory.createDesktopTexture()
         );
-        // Push the screen back in the depth buffer so the grid and cursor draw on top
         const tabletScreenGeometry = new THREE.PlaneGeometry(this.tabletWidth, this.tabletDepth);
         this.tabletScreen = new THREE.Mesh(tabletScreenGeometry, tabletScreenMaterial);
-        // Rotate to lie flat on the tablet surface (PlaneGeometry faces +Y after -90° X rotation)
         this.tabletScreen.rotation.x = -Math.PI / 2;
-        this.tabletScreen.position.y = this.yOffset + 0.005; // just above tablet surface
-        this.tabletScreen.visible = false; // hidden by default (pen tablet mode)
+        this.tabletScreen.position.y = this.yOffset + 0.005;
+        this.tabletScreen.visible = false;
         this.scene.add(this.tabletScreen);
-
     },
 
 });

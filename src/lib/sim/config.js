@@ -10,6 +10,19 @@ export const TABLET = {
     bodyMargin: 1.5,
 };
 
+/** Bright studio palette for the 3D environment (not the control panel). */
+export const SCENE = {
+    background: 0xf0eee8,
+    wall: 0xf7f6f2,
+    floor: 0xe8e4dc,
+    desk: 0xd4b896,
+    deskGrainDark: 0xc9a87c,
+    tablet: 0xf3d4d8,
+    tabletBase: 0xf3d4d8,
+    grid: 0x9a6a75,
+    monitorBezel: 0x2a2a2e,
+};
+
 export const DEFAULT_PEN = {
     distance: 0,
     tiltAltitude: 0,
