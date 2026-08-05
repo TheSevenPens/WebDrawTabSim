@@ -2,7 +2,7 @@ import * as THREE from 'three';
 import { TexturesFactory } from './textures.js';
 import {
     TABLET, DEFAULT_PEN, DEMO_POSE, PEN_RANGES, POINTER_DEFAULTS,
-    ANNOTATION, CURSOR, EXPORT, ANIMATION, clampValue,
+    ANNOTATION, CURSOR, EXPORT, ANIMATION, SCENE, clampValue,
 } from './config.js';
 
 // Pen3DSim.js — Class skeleton: constructor, animate loop, and public API
@@ -256,21 +256,48 @@ export class Pen3DSim {
 
     setTabletCheckerboardVisible(visible) {
         if (!this.tabletMaterial) return;
+        this.tabletCheckerboardVisible = visible;
         if (visible) {
-            if (!this.tabletCheckerboardTexture) {
-                this.tabletCheckerboardTexture = TexturesFactory.createTabletCheckerboardTexture(this.tabletWidth, this.tabletDepth);
+            const dark = this.darkTablet;
+            const c1 = dark ? '#5c4a6e' : '#e4d8f0';
+            const c2 = dark ? '#3a2c48' : '#c8b4dc';
+            // Rebuild so light/dark mode always matches
+            if (this.tabletCheckerboardTexture) {
+                this.tabletCheckerboardTexture.dispose();
             }
+            this.tabletCheckerboardTexture = TexturesFactory.createTabletCheckerboardTexture(
+                this.tabletWidth, this.tabletDepth, c1, c2
+            );
             this.tabletMaterial.map = this.tabletCheckerboardTexture;
-            this.tabletMaterial.roughness = 0.7;
-            this.tabletMaterial.metalness = 0.2;
+            this.tabletMaterial.roughness = 0.92;
+            this.tabletMaterial.metalness = 0.0;
             this.tabletMaterial.color.setHex(0xffffff);
         } else {
             this.tabletMaterial.map = null;
             this.tabletMaterial.color.setHex(this.tabletBaseColor);
-            this.tabletMaterial.roughness = 0.7;
-            this.tabletMaterial.metalness = 0.2;
+            this.tabletMaterial.roughness = 0.92;
+            this.tabletMaterial.metalness = 0.0;
         }
         this.tabletMaterial.needsUpdate = true;
+    }
+
+    /**
+     * Switch tablet body between light lavender and a much darker lavender.
+     * @param {boolean} dark
+     */
+    setDarkTablet(dark) {
+        this.darkTablet = !!dark;
+        this.tabletBaseColor = dark ? SCENE.tabletDark : SCENE.tablet;
+        if (this.gridMaterial) {
+            this.gridMaterial.color.setHex(dark ? SCENE.gridDark : SCENE.grid);
+            this.gridMaterial.opacity = dark ? 0.4 : 0.55;
+        }
+        if (this.tabletCheckerboardVisible) {
+            this.setTabletCheckerboardVisible(true);
+        } else if (this.tabletMaterial) {
+            this.tabletMaterial.color.setHex(this.tabletBaseColor);
+            this.tabletMaterial.needsUpdate = true;
+        }
     }
 
     setPenDisplayMode(enabled) {

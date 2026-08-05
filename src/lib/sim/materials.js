@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import { SCENE } from './config.js';
 
 // Materials Factory - Creates all materials used in Pen3DSim
 
@@ -52,14 +53,43 @@ export class MaterialsFactory {
 
     // Specific material creators for common use cases
 
-    // Desk material
-    static createDeskMaterial() {
-        return this.createStandardMaterial(0x7B4A2D, 0.85, 0.05);
+    // Desk material — light maple; optional wood-grain map for the top
+    static createDeskMaterial(map = null) {
+        // When a grain map is provided it already carries the wood color — use white
+        // as the tint so the texture is not darkened by multiplication.
+        const color = map ? 0xffffff : SCENE.desk;
+        return this.createStandardMaterial(color, 0.82, 0.02, map);
+    }
+
+    // Desk leg material — solid light wood (no grain map)
+    static createDeskLegMaterial() {
+        return this.createStandardMaterial(SCENE.deskGrainDark, 0.85, 0.02);
+    }
+
+    // Wall material — matte white studio (slight emissive so walls stay bright)
+    static createWallMaterial() {
+        const material = this.createStandardMaterial(0xffffff, 0.98, 0.0);
+        material.emissive = new THREE.Color(0xf5f4f0);
+        material.emissiveIntensity = 0.22;
+        return material;
+    }
+
+    // Baseboard — brighter matte trim along the floor line
+    static createBaseboardMaterial() {
+        const material = this.createStandardMaterial(SCENE.baseboard, 0.9, 0.0);
+        material.emissive = new THREE.Color(0xffffff);
+        material.emissiveIntensity = 0.12;
+        return material;
+    }
+
+    // Floor material — pale warm gray
+    static createFloorMaterial() {
+        return this.createStandardMaterial(SCENE.floor, 0.92, 0.0);
     }
 
     // Monitor bezel / stand material
     static createMonitorBezelMaterial() {
-        return this.createStandardMaterial(0x1e1e1e, 0.8, 0.1);
+        return this.createStandardMaterial(SCENE.monitorBezel, 0.75, 0.15);
     }
 
     // Monitor screen material — self-lit (MeshBasicMaterial) so the desktop
@@ -68,9 +98,9 @@ export class MaterialsFactory {
         return new THREE.MeshBasicMaterial({ map: texture });
     }
 
-    // Tablet material
+    // Tablet material — soft lavender, matte low-poly slab
     static createTabletMaterial() {
-        return this.createStandardMaterial(0x505050, 0.7, 0.2);
+        return this.createStandardMaterial(SCENE.tablet, 0.92, 0.0);
     }
 
     // Tablet wireframe material
@@ -78,9 +108,13 @@ export class MaterialsFactory {
         return this.createLineBasicMaterial(0x808080, 1);
     }
 
-    // Grid material
+    // Grid material — soft contrast against the tablet body
     static createGridMaterial() {
-        return this.createLineBasicMaterial(0x5a5a5a, 1);
+        return new THREE.LineBasicMaterial({
+            color: SCENE.grid,
+            transparent: true,
+            opacity: 0.55,
+        });
     }
 
     // Pen tip/barrel material (with texture)

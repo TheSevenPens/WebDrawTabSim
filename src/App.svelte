@@ -34,6 +34,7 @@
   let showCheckerboard = $state(false);
   let axonometric      = $state(false);
   let penDisplayMode   = $state(false);
+  let darkTablet       = $state(false);
 
   // ── Pointer-tracking state ─────────────────────────────────────────────────
   let cursorOffsetX       = $state(0);
@@ -207,6 +208,7 @@
   function onShowCheckerboard() { sim.setTabletCheckerboardVisible(showCheckerboard); }
   function onAxonometric()      { sim.setAxonometricView(axonometric); }
   function onPenDisplayMode()   { sim.setPenDisplayMode(penDisplayMode); }
+  function onDarkTablet()       { sim.setDarkTablet(darkTablet); }
 
   function allAnnotationsOn() {
     showAltitude = showAzimuth = showTiltX = showTiltY = showBarrel = showAxis = showCursor = showPenShadow = true;
@@ -410,6 +412,7 @@
   bind:barrelRotation
   bind:axonometric
   bind:penDisplayMode
+  bind:darkTablet
   {azimuthDisabled}
   {tiltXDisplay}
   {tiltYDisplay}
@@ -421,6 +424,7 @@
   {onBarrel}
   {onAxonometric}
   {onPenDisplayMode}
+  {onDarkTablet}
   bind:showCameraInfo
   {cameraPos}
   {cameraTarget}

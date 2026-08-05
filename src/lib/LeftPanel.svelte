@@ -10,6 +10,7 @@
     barrelRotation = $bindable(),
     axonometric    = $bindable(),
     penDisplayMode = $bindable(),
+    darkTablet     = $bindable(),
     azimuthDisabled,
     tiltXDisplay,
     tiltYDisplay,
@@ -21,6 +22,7 @@
     onBarrel,
     onAxonometric,
     onPenDisplayMode,
+    onDarkTablet,
     showCameraInfo = $bindable(),
     cameraPos,
     cameraTarget,
@@ -73,6 +75,12 @@
   </div>
 
   <div class="checkbox-grid">
+    <div class="control-group">
+      <label style="display:flex;align-items:center;gap:8px;">
+        <input type="checkbox" bind:checked={darkTablet} onchange={onDarkTablet} style="width:auto;margin:0;">
+        <span>Dark tablet</span>
+      </label>
+    </div>
     <div class="control-group">
       <label style="display:flex;align-items:center;gap:8px;">
         <input type="checkbox" bind:checked={showCameraInfo} style="width:auto;margin:0;">

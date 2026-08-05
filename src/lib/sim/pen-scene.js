@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
 import { Pen3DSim } from './Pen3DSim.js';
+import { SCENE } from './config.js';
 
 // pen-scene.js — Scene, renderer, cameras, lighting, and camera settings
 // Extends Pen3DSim.prototype (must be loaded after Pen3DSim.js)
@@ -9,7 +10,7 @@ Object.assign(Pen3DSim.prototype, {
 
     initScene() {
         this.scene = new THREE.Scene();
-        this.scene.background = new THREE.Color(0x1a1a1a);
+        this.scene.background = new THREE.Color(SCENE.background);
     },
 
     initCameras() {
@@ -46,7 +47,8 @@ Object.assign(Pen3DSim.prototype, {
         this.renderer = new THREE.WebGLRenderer({ antialias: true, preserveDrawingBuffer: true, logarithmicDepthBuffer: true });
         this.renderer.setSize(this.viewer.clientWidth, this.viewer.clientHeight);
         this.renderer.shadowMap.enabled = true;
-        this.renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+        this.renderer.shadowMap.type = THREE.PCFShadowMap;
+        this.renderer.outputColorSpace = THREE.SRGBColorSpace;
         this.viewer.appendChild(this.renderer.domElement);
     },
 
@@ -62,24 +64,39 @@ Object.assign(Pen3DSim.prototype, {
     },
 
     initLighting() {
-        const ambientLight = new THREE.AmbientLight(0xffffff, 0.5);
+        // Soft ambient so light wood and white walls stay bright
+        const ambientLight = new THREE.AmbientLight(0xffffff, 0.88);
         this.scene.add(ambientLight);
 
-        const directionalLight = new THREE.DirectionalLight(0xffffff, 0.8);
-        directionalLight.position.set(0, 20, 0);
+        // Warm key from above-front
+        const directionalLight = new THREE.DirectionalLight(0xfff5eb, 0.75);
+        directionalLight.position.set(8, 28, 12);
         directionalLight.castShadow = true;
-        directionalLight.shadow.mapSize.width = 2048;
-        directionalLight.shadow.mapSize.height = 2048;
-        directionalLight.shadow.camera.left = -40;
-        directionalLight.shadow.camera.right = 40;
-        directionalLight.shadow.camera.top = 30;
-        directionalLight.shadow.camera.bottom = -30;
+        // Higher res + PCF (not soft) keeps the pen shadow sharper without
+        // clipping the rest of the room’s shadow coverage.
+        directionalLight.shadow.mapSize.width = 4096;
+        directionalLight.shadow.mapSize.height = 4096;
+        directionalLight.shadow.camera.left = -50;
+        directionalLight.shadow.camera.right = 50;
+        directionalLight.shadow.camera.top = 40;
+        directionalLight.shadow.camera.bottom = -40;
         directionalLight.shadow.camera.near = 0.1;
-        directionalLight.shadow.camera.far = 60;
+        directionalLight.shadow.camera.far = 100;
+        directionalLight.shadow.bias = -0.0002;
         this.scene.add(directionalLight);
 
-        const pointLight = new THREE.PointLight(0xffffff, 0.3);
-        pointLight.position.set(-10, 10, -10);
+        // Cool fill from the front so the desk isn’t flat
+        const fillLight = new THREE.DirectionalLight(0xe8f0ff, 0.45);
+        fillLight.position.set(-6, 12, 22);
+        this.scene.add(fillLight);
+
+        // Soft bounce from behind to lift white walls
+        const wallFill = new THREE.DirectionalLight(0xffffff, 0.3);
+        wallFill.position.set(0, 20, -30);
+        this.scene.add(wallFill);
+
+        const pointLight = new THREE.PointLight(0xffffff, 0.2);
+        pointLight.position.set(-12, 14, -8);
         this.scene.add(pointLight);
     },
 
