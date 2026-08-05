@@ -124,6 +124,39 @@ Object.assign(Pen3DSim.prototype, {
         rightWall.receiveShadow = true;
         this.scene.add(rightWall);
 
+        // Lighter baseboards along each wall
+        const boardH = 5;
+        const boardDepth = 0.75;
+        const boardMaterial = MaterialsFactory.createBaseboardMaterial();
+        const boardY = floorY + boardH / 2;
+        const wallZBack = deskZ - roomD / 2;
+        const wallXLeft = -roomW / 2;
+        const wallXRight = roomW / 2;
+
+        const backBoard = new THREE.Mesh(
+            new THREE.BoxGeometry(roomW, boardH, boardDepth),
+            boardMaterial
+        );
+        backBoard.position.set(0, boardY, wallZBack + boardDepth / 2);
+        backBoard.receiveShadow = true;
+        this.scene.add(backBoard);
+
+        const leftBoard = new THREE.Mesh(
+            new THREE.BoxGeometry(boardDepth, boardH, roomD),
+            boardMaterial.clone()
+        );
+        leftBoard.position.set(wallXLeft + boardDepth / 2, boardY, deskZ);
+        leftBoard.receiveShadow = true;
+        this.scene.add(leftBoard);
+
+        const rightBoard = new THREE.Mesh(
+            new THREE.BoxGeometry(boardDepth, boardH, roomD),
+            boardMaterial.clone()
+        );
+        rightBoard.position.set(wallXRight - boardDepth / 2, boardY, deskZ);
+        rightBoard.receiveShadow = true;
+        this.scene.add(rightBoard);
+
         // ── Pen display mode: embedded screen on tablet surface ──────────────
         const tabletScreenMaterial = MaterialsFactory.createMonitorScreenMaterial(
             TexturesFactory.createDesktopTexture()

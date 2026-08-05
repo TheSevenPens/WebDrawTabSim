@@ -74,6 +74,14 @@ export class MaterialsFactory {
         return material;
     }
 
+    // Baseboard — brighter matte trim along the floor line
+    static createBaseboardMaterial() {
+        const material = this.createStandardMaterial(SCENE.baseboard, 0.9, 0.0);
+        material.emissive = new THREE.Color(0xffffff);
+        material.emissiveIntensity = 0.12;
+        return material;
+    }
+
     // Floor material — pale warm gray
     static createFloorMaterial() {
         return this.createStandardMaterial(SCENE.floor, 0.92, 0.0);

@@ -14,7 +14,9 @@ export const TABLET = {
 export const SCENE = {
     background: 0xf0eee8,
     wall: 0xf7f6f2,
-    floor: 0xe8e4dc,
+    floor: 0xd8d2c6,
+    /** Brighter than wall paint — soft trim at the floor line */
+    baseboard: 0xffffff,
     desk: 0xd4b896,
     deskGrainDark: 0xc9a87c,
     tablet: 0xd4c4e4,
