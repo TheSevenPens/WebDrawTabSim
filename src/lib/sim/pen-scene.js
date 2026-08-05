@@ -1,5 +1,9 @@
 import * as THREE from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
+import { EffectComposer } from 'three/examples/jsm/postprocessing/EffectComposer.js';
+import { RenderPass } from 'three/examples/jsm/postprocessing/RenderPass.js';
+import { GTAOPass } from 'three/examples/jsm/postprocessing/GTAOPass.js';
+import { OutputPass } from 'three/examples/jsm/postprocessing/OutputPass.js';
 import { Pen3DSim } from './Pen3DSim.js';
 import { SCENE } from './config.js';
 
@@ -44,12 +48,77 @@ Object.assign(Pen3DSim.prototype, {
     },
 
     initRenderer() {
-        this.renderer = new THREE.WebGLRenderer({ antialias: true, preserveDrawingBuffer: true, logarithmicDepthBuffer: true });
+        // No logarithmic depth — GTAO reconstructs positions from a linear depth buffer
+        this.renderer = new THREE.WebGLRenderer({ antialias: true, preserveDrawingBuffer: true });
         this.renderer.setSize(this.viewer.clientWidth, this.viewer.clientHeight);
         this.renderer.shadowMap.enabled = true;
         this.renderer.shadowMap.type = THREE.PCFShadowMap;
         this.renderer.outputColorSpace = THREE.SRGBColorSpace;
         this.viewer.appendChild(this.renderer.domElement);
+    },
+
+    /** Ground-truth AO for contact shading around the pen, tablet, and desk. */
+    initComposer() {
+        const width = this.viewer.clientWidth;
+        const height = this.viewer.clientHeight;
+
+        this.composer = new EffectComposer(this.renderer);
+
+        this.renderPass = new RenderPass(this.scene, this.camera);
+        this.composer.addPass(this.renderPass);
+
+        this.gtaoPass = new GTAOPass(this.scene, this.camera, width, height);
+        this.gtaoPass.output = GTAOPass.OUTPUT.Default;
+        // World units are inches; keep AO local to creases / contact edges
+        this.gtaoPass.updateGtaoMaterial({
+            radius: 2.5,
+            distanceExponent: 1.5,
+            thickness: 1.5,
+            scale: 1.15,
+            samples: 16,
+            distanceFallOff: 1.0,
+            screenSpaceRadius: false,
+        });
+        this.gtaoPass.updatePdMaterial({
+            lumaPhi: 10,
+            depthPhi: 2,
+            normalPhi: 3,
+            radius: 8,
+            radiusExponent: 1.5,
+            rings: 2,
+            samples: 16,
+        });
+        this.gtaoPass.blendIntensity = 0.7;
+        this.composer.addPass(this.gtaoPass);
+
+        this.composer.addPass(new OutputPass());
+
+        const clipBox = new THREE.Box3().setFromObject(this.scene);
+        if (!clipBox.isEmpty()) {
+            this.gtaoPass.setSceneClipBox(clipBox);
+        }
+    },
+
+    /** Keep AO / render passes pointed at the active camera (perspective ↔ ortho). */
+    syncComposerCamera() {
+        if (!this.composer || !this.gtaoPass || !this.renderPass) return;
+        this.renderPass.camera = this.camera;
+        this.gtaoPass.camera = this.camera;
+        const isPersp = this.camera.isPerspectiveCamera ? 1 : 0;
+        if (this.gtaoPass.gtaoMaterial.defines.PERSPECTIVE_CAMERA !== isPersp) {
+            this.gtaoPass.gtaoMaterial.defines.PERSPECTIVE_CAMERA = isPersp;
+            this.gtaoPass.gtaoMaterial.needsUpdate = true;
+        }
+        this.gtaoPass.gtaoMaterial.uniforms.cameraNear.value = this.camera.near;
+        this.gtaoPass.gtaoMaterial.uniforms.cameraFar.value = this.camera.far;
+    },
+
+    renderFrame() {
+        if (this.composer) {
+            this.composer.render();
+        } else {
+            this.renderer.render(this.scene, this.camera);
+        }
     },
 
     initControls() {
@@ -209,6 +278,7 @@ Object.assign(Pen3DSim.prototype, {
             this.camera.updateProjectionMatrix();
 
             this.controls.update();
+            this.syncComposerCamera();
             return true;
         } catch (error) {
             throw new Error(`Error applying camera settings: ${error.message}`);
