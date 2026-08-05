@@ -90,9 +90,9 @@ export class MaterialsFactory {
         return new THREE.MeshBasicMaterial({ map: texture });
     }
 
-    // Tablet material — pale pink
+    // Tablet material — soft lavender, matte low-poly slab
     static createTabletMaterial() {
-        return this.createStandardMaterial(SCENE.tablet, 0.55, 0.08);
+        return this.createStandardMaterial(SCENE.tablet, 0.92, 0.0);
     }
 
     // Tablet wireframe material
@@ -100,9 +100,13 @@ export class MaterialsFactory {
         return this.createLineBasicMaterial(0x808080, 1);
     }
 
-    // Grid material — darker for contrast on lighter tablet
+    // Grid material — soft contrast against the tablet body
     static createGridMaterial() {
-        return this.createLineBasicMaterial(SCENE.grid, 1);
+        return new THREE.LineBasicMaterial({
+            color: SCENE.grid,
+            transparent: true,
+            opacity: 0.55,
+        });
     }
 
     // Pen tip/barrel material (with texture)

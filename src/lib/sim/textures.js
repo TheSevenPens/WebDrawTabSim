@@ -31,7 +31,7 @@ export class TexturesFactory {
     }
 
     // Create a checkerboard texture for the tablet
-    static createTabletCheckerboardTexture(tabletWidth, tabletDepth) {
+    static createTabletCheckerboardTexture(tabletWidth, tabletDepth, color1 = '#e4d8f0', color2 = '#c8b4dc') {
         // Grid spacing is 0.25 inches, tablet is 16x9 inches
         // So we need 64x36 squares
         const gridSpacing = 0.25;
@@ -49,9 +49,8 @@ export class TexturesFactory {
         const squareSizeX = canvas.width / squaresX;
         const squareSizeZ = canvas.height / squaresZ;
 
-        // Soft pink checkerboard for measuring on a pale pink tablet
-        const checkColor1 = '#f8e4e7';
-        const checkColor2 = '#e8c4cb';
+        const checkColor1 = color1;
+        const checkColor2 = color2;
 
         for (let z = 0; z < squaresZ; z++) {
             for (let x = 0; x < squaresX; x++) {

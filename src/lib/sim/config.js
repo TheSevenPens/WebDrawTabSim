@@ -6,8 +6,8 @@
 export const TABLET = {
     width: 16,
     depth: 9,
-    thickness: 0.35,
-    bodyMargin: 1.5,
+    thickness: 0.22,
+    bodyMargin: 0.45,
 };
 
 /** Bright studio palette for the 3D environment (not the control panel). */
@@ -17,9 +17,14 @@ export const SCENE = {
     floor: 0xe8e4dc,
     desk: 0xd4b896,
     deskGrainDark: 0xc9a87c,
-    tablet: 0xf3d4d8,
-    tabletBase: 0xf3d4d8,
-    grid: 0x9a6a75,
+    tablet: 0xd4c4e4,
+    tabletBase: 0xd4c4e4,
+    /** Dark lavender variant of the tablet body */
+    tabletDark: 0x4a3a58,
+    /** Digitizer grid on light tablet — deeper lavender for readable contrast */
+    grid: 0x8f6fa8,
+    /** Digitizer grid on dark tablet — slightly lighter lavender */
+    gridDark: 0x6e5a82,
     monitorBezel: 0x2a2a2e,
 };
 

@@ -76,7 +76,10 @@ Object.assign(Pen3DSim.prototype, {
         }
 
         this.digitizerGrid = gridGroup;
+        this.gridMaterial = gridMaterial;
         this.scene.add(gridGroup);
+        this.darkTablet = false;
+        this.tabletCheckerboardVisible = false;
 
         // Floor + studio walls (no dark GridHelper)
         const floorY = -29;
