@@ -47,7 +47,8 @@ Object.assign(Pen3DSim.prototype, {
         this.renderer = new THREE.WebGLRenderer({ antialias: true, preserveDrawingBuffer: true, logarithmicDepthBuffer: true });
         this.renderer.setSize(this.viewer.clientWidth, this.viewer.clientHeight);
         this.renderer.shadowMap.enabled = true;
-        this.renderer.shadowMap.type = THREE.PCFShadowMap;
+        // Basic (unfiltered) shadow map for crisp, hard-edged shadows.
+        this.renderer.shadowMap.type = THREE.BasicShadowMap;
         this.renderer.outputColorSpace = THREE.SRGBColorSpace;
         this.viewer.appendChild(this.renderer.domElement);
     },
@@ -72,14 +73,14 @@ Object.assign(Pen3DSim.prototype, {
         const directionalLight = new THREE.DirectionalLight(0xfff5eb, 0.75);
         directionalLight.position.set(8, 28, 12);
         directionalLight.castShadow = true;
-        // Higher res + PCF (not soft) keeps the pen shadow sharper without
-        // clipping the rest of the room’s shadow coverage.
+        // High-res map over a frustum tightened to the desk/tablet area so each
+        // texel is small and the (unfiltered) pen shadow stays crisp.
         directionalLight.shadow.mapSize.width = 4096;
         directionalLight.shadow.mapSize.height = 4096;
-        directionalLight.shadow.camera.left = -50;
-        directionalLight.shadow.camera.right = 50;
-        directionalLight.shadow.camera.top = 40;
-        directionalLight.shadow.camera.bottom = -40;
+        directionalLight.shadow.camera.left = -24;
+        directionalLight.shadow.camera.right = 24;
+        directionalLight.shadow.camera.top = 24;
+        directionalLight.shadow.camera.bottom = -24;
         directionalLight.shadow.camera.near = 0.1;
         directionalLight.shadow.camera.far = 100;
         directionalLight.shadow.bias = -0.0002;
