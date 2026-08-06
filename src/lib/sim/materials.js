@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import { SCENE } from './config.js';
+import { SCENE, PEN_COLORS } from './config.js';
 
 // Materials Factory - Creates all materials used in Pen3DSim
 
@@ -117,9 +117,22 @@ export class MaterialsFactory {
         });
     }
 
-    // Pen tip/barrel material (with texture)
+    // Pen tip/barrel material (with texture) — legacy, retained for reference
     static createPenMaterial(texture) {
         return this.createStandardMaterial(0xffffff, 0.8, 0.1, texture);
+    }
+
+    // Pen part materials — three pieces revolved from the SVG profile.
+    // The body takes an optional checkerboard map (white base so the pattern
+    // shows at full color); without a map it falls back to matte graphite.
+    static createPenBodyMaterial(map = null) {
+        return this.createStandardMaterial(map ? 0xffffff : PEN_COLORS.body, 0.7, 0.15, map);
+    }
+    static createPenEraserMaterial() {
+        return this.createStandardMaterial(PEN_COLORS.eraser, 0.75, 0.12);
+    }
+    static createPenNibMaterial() {
+        return this.createStandardMaterial(PEN_COLORS.nib, 0.5, 0.1);
     }
 
     // Cursor material

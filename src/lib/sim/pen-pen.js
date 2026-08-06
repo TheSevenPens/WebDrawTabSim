@@ -3,10 +3,35 @@ import { MaterialsFactory } from './materials.js';
 import { TexturesFactory } from './textures.js';
 import { Pen3DSim } from './Pen3DSim.js';
 import { createCursorArrowMesh } from './cursor-geometry.js';
-import { PEN_MESH, CURSOR, ANNOTATION, POINTER_DEFAULTS } from './config.js';
+import { PEN_MESH, PEN_PROFILE, PEN_CHECKER, CURSOR, ANNOTATION, POINTER_DEFAULTS } from './config.js';
 
 // pen-pen.js — Pen mesh, cursor arrow, and the core updatePenTransform loop
 // Extends Pen3DSim.prototype (must be loaded after Pen3DSim.js)
+
+// Revolve a [radius, y] silhouette profile around the pen's local +Y axis.
+function latheFromProfile(profile, segments) {
+    const points = profile.map(([r, y]) => new THREE.Vector2(r, y));
+    return new THREE.LatheGeometry(points, segments);
+}
+
+// LatheGeometry spaces the V texture coordinate per profile *index*, so an
+// unevenly-sampled profile stretches the checkerboard. Re-map V to the
+// cumulative arc length of the profile so the checks stay square along the body.
+function remapLatheVByArcLength(geometry, profile) {
+    const n = profile.length;
+    const cum = [0];
+    for (let j = 1; j < n; j++) {
+        const dr = profile[j][0] - profile[j - 1][0];
+        const dy = profile[j][1] - profile[j - 1][1];
+        cum[j] = cum[j - 1] + Math.hypot(dr, dy);
+    }
+    const total = cum[n - 1] || 1;
+    const uv = geometry.attributes.uv;
+    for (let v = 0; v < uv.count; v++) {
+        uv.setY(v, cum[v % n] / total);   // vertices are grouped in rings of n
+    }
+    uv.needsUpdate = true;
+}
 
 Object.assign(Pen3DSim.prototype, {
 
@@ -17,34 +42,45 @@ Object.assign(Pen3DSim.prototype, {
     initPen() {
         this.penGroup = new THREE.Group();
 
-        const checkerboardTexture = TexturesFactory.createCheckerboardTexture();
-        checkerboardTexture.wrapS = THREE.RepeatWrapping;
-        checkerboardTexture.wrapT = THREE.RepeatWrapping;
+        const tipHeight    = PEN_MESH.tipHeight;     // nib apex at local y = -tipHeight
+        const barrelHeight = PEN_MESH.barrelHeight;  // eraser apex at local y = +barrelHeight
+        const segments     = PEN_MESH.latheSegments;
 
-        const tipHeight = PEN_MESH.tipHeight;
-        const tipGeometry = new THREE.ConeGeometry(PEN_MESH.tipRadius, tipHeight, 16);
-        const tipTexture = checkerboardTexture.clone();
-        tipTexture.needsUpdate = true;
-        tipTexture.repeat.set(2, 1);
-        const tipMaterial = MaterialsFactory.createPenMaterial(tipTexture);
-        const penTip = new THREE.Mesh(tipGeometry, tipMaterial);
-        penTip.castShadow = true;
-        penTip.rotation.x = Math.PI;
-        penTip.position.y = -tipHeight / 2;
-        this.penGroup.add(penTip);
-        this.penTipMesh = penTip;
+        // Three pieces revolved from the hand-drawn wacpen-half.svg profile:
+        // a dark nib tip, a graphite body, and a tail eraser dome. All parts
+        // share the pen's local +Y axis (nib at the bottom), so the existing
+        // pose/tilt/barrel math is unaffected.
+        const nib = new THREE.Mesh(
+            latheFromProfile(PEN_PROFILE.nib, segments),
+            MaterialsFactory.createPenNibMaterial()
+        );
 
-        const barrelHeight = PEN_MESH.barrelHeight;
-        const barrelGeometry = new THREE.CylinderGeometry(PEN_MESH.barrelRadius, PEN_MESH.barrelRadius, barrelHeight, 16);
-        const barrelTexture = checkerboardTexture.clone();
-        barrelTexture.needsUpdate = true;
-        barrelTexture.repeat.set(2, 2);
-        const barrelMaterial = MaterialsFactory.createPenMaterial(barrelTexture);
-        const penBarrel = new THREE.Mesh(barrelGeometry, barrelMaterial);
-        penBarrel.castShadow = true;
-        penBarrel.position.y = barrelHeight / 2;
-        this.penGroup.add(penBarrel);
-        this.penBarrelMesh = penBarrel;
+        // Body carries a checkerboard wrap so barrel rotation is visible.
+        const checkerTexture = TexturesFactory.createCheckerboardTexture();
+        checkerTexture.wrapS = THREE.RepeatWrapping;
+        checkerTexture.wrapT = THREE.RepeatWrapping;
+        checkerTexture.repeat.set(PEN_CHECKER.repeatAround, PEN_CHECKER.repeatLength);
+        const bodyGeometry = latheFromProfile(PEN_PROFILE.body, segments);
+        remapLatheVByArcLength(bodyGeometry, PEN_PROFILE.body);
+        const body = new THREE.Mesh(
+            bodyGeometry,
+            MaterialsFactory.createPenBodyMaterial(checkerTexture)
+        );
+
+        const eraser = new THREE.Mesh(
+            latheFromProfile(PEN_PROFILE.eraser, segments),
+            MaterialsFactory.createPenEraserMaterial()
+        );
+
+        this.penShadowMeshes = [nib, body, eraser];
+        for (const mesh of this.penShadowMeshes) {
+            mesh.castShadow = true;
+            this.penGroup.add(mesh);
+        }
+
+        // Retained references (tip = nib, barrel = body) for shadow toggling.
+        this.penTipMesh    = nib;
+        this.penBarrelMesh  = body;
 
         this.penGroup.position.set(0, 0, 0);
         this.scene.add(this.penGroup);

@@ -250,8 +250,10 @@ export class Pen3DSim {
     }
 
     setPenShadowVisible(visible) {
-        if (this.penTipMesh)    this.penTipMesh.castShadow    = visible;
-        if (this.penBarrelMesh) this.penBarrelMesh.castShadow = visible;
+        const meshes = this.penShadowMeshes || [this.penTipMesh, this.penBarrelMesh];
+        for (const mesh of meshes) {
+            if (mesh) mesh.castShadow = visible;
+        }
     }
 
     setTabletCheckerboardVisible(visible) {

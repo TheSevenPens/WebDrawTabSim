@@ -94,10 +94,52 @@ export const ANNOTATION = {
 };
 
 export const PEN_MESH = {
-    tipHeight: 0.5,
-    tipRadius: 0.1,
-    barrelHeight: 4,
-    barrelRadius: 0.15,
+    tipHeight: 0.5,      // nib tip sits at local y = -tipHeight (pen contact point)
+    tipRadius: 0.1,      // legacy; retained for reference
+    barrelHeight: 4,     // pen top sits at local y = +barrelHeight (eraser apex)
+    barrelRadius: 0.15,  // legacy; retained for reference
+    latheSegments: 48,   // radial resolution of the revolved pen parts
+};
+
+// Colors for the individual pen parts — three pieces revolved from the
+// hand-drawn wacpen-half.svg profile: eraser tail, graphite body, dark nib.
+export const PEN_COLORS = {
+    eraser: 0x676c73,  // tail dome (slightly lighter graphite)
+    body:   0x565b62,  // matte graphite barrel (used when checkerboard is off)
+    nib:    0x141518,  // dark drawing nib tip
+};
+
+// Checkerboard wrap on the body — helps the viewer see barrel rotation.
+// Repeat is in tiles; the source texture is 2×2 checks, so [cols, rows] tiles
+// give 2·cols checks around the circumference and 2·rows up the length.
+export const PEN_CHECKER = {
+    repeatAround: 4,   // → 8 checks around the barrel
+    repeatLength: 13,  // → 26 checks along the barrel (arc-length even)
+};
+
+// Silhouette profiles for the revolved (LatheGeometry) pen parts, generated
+// from wacpen-half.svg (see scratchpad/parse-svg-pen.mjs). Each entry is
+// [radius, y] in inches, ordered bottom → top; a radius of 0 caps that end.
+// All parts share the pen's local +Y axis with the nib at the bottom. Adjacent
+// pieces share their boundary ring (nib↔body at r0.0151, body↔eraser at
+// r0.0935). See PEN_MESH for the tip/top anchors the pose math relies on.
+export const PEN_PROFILE = {
+    // Tiny rounded drawing nib protruding from the body's front face.
+    nib: [
+        [0.0000, -0.5000], [0.0094, -0.4975], [0.0143, -0.4909], [0.0151, -0.4540],
+    ],
+    // Main body: flat nib-cone face → tapered front → widest grip → long taper
+    // → shoulder lip under the eraser.
+    body: [
+        [0.0151, -0.4540], [0.0441, -0.4540], [0.1776, -0.0533], [0.2046, 0.0462],
+        [0.2017, 0.0777], [0.1853, 0.1568], [0.1794, 0.2328], [0.1559, 2.1313],
+        [0.1183, 3.8136], [0.0935, 3.8136],
+    ],
+    // Rounded tail eraser dome, apex at y = barrelHeight.
+    eraser: [
+        [0.0935, 3.8136], [0.0846, 3.9310], [0.0743, 3.9748], [0.0635, 3.9873],
+        [0.0493, 3.9947], [0.0000, 4.0000],
+    ],
 };
 
 export const CURSOR = {
