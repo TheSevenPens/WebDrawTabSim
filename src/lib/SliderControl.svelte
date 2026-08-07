@@ -3,47 +3,61 @@
 
   const id = `slider-${Math.random().toString(36).slice(2)}`;
 
-  let editing = $state(false);
-  let editText = $state('');
+  // The number field is directly editable at any time. While it's focused we
+  // let the user type freely (tracking the raw text); otherwise the display
+  // stays in sync with the value driven by the range slider / mouse / reset.
+  let focused = $state(false);
+  let text = $state('');
 
-  function startEdit() {
-    if (disabled) return;
-    editText = Number(value).toFixed(decimals);
-    editing = true;
-  }
+  $effect(() => {
+    if (!focused) text = Number(value).toFixed(decimals);
+  });
 
-  function commitEdit() {
-    const parsed = parseFloat(editText);
+  const clamp = (n) => Math.min(max, Math.max(min, n));
+
+  function onNumberInput(e) {
+    text = e.target.value;
+    const parsed = parseFloat(text);
     if (!isNaN(parsed)) {
-      value = Math.min(max, Math.max(min, parsed));
+      value = clamp(parsed);
       oninput?.();
     }
-    editing = false;
   }
 
-  function onKeyDown(e) {
-    if (e.key === 'Enter') { e.target.blur(); }
-    if (e.key === 'Escape') { editing = false; }
+  function onNumberFocus(e) {
+    focused = true;
+    e.target.select();
+  }
+
+  function onNumberBlur() {
+    focused = false;
+    // Normalize to a clamped, rounded value and refresh the display.
+    const rounded = clamp(parseFloat(Number(value).toFixed(decimals)) || min);
+    if (rounded !== value) { value = rounded; oninput?.(); }
+    text = Number(value).toFixed(decimals);
+  }
+
+  function onNumberKeyDown(e) {
+    if (e.key === 'Enter') e.target.blur();
   }
 </script>
 
 <div class="control-group">
   <div class="slider-label-row">
     <label for={id}>{label}:</label>
-    {#if editing}
-      <input
-        class="slider-value-input"
-        type="text"
-        bind:value={editText}
-        onblur={commitEdit}
-        onkeydown={onKeyDown}
-        autofocus
-      />{unit}
-    {:else}
-      <span class="slider-value editable" role="button" tabindex="0" onclick={startEdit} onkeydown={(e) => e.key === 'Enter' && startEdit()}>
-        {Number(value).toFixed(decimals)}{unit}
-      </span>
-    {/if}
+    <input
+      class="slider-value-input"
+      type="number"
+      {min}
+      {max}
+      {step}
+      {disabled}
+      value={text}
+      onfocus={onNumberFocus}
+      oninput={onNumberInput}
+      onblur={onNumberBlur}
+      onkeydown={onNumberKeyDown}
+    />{#if unit}<span class="unit">{unit}</span>{/if}
   </div>
   <input {id}
     type="range"
@@ -66,18 +80,34 @@
   }
 
   .slider-value-input {
-    width: 4em;
-    background: transparent;
-    border: none;
-    border-bottom: 1px solid #aaa;
-    color: #aaa;
+    width: 3.6em;
+    background: rgba(255, 255, 255, 0.06);
+    border: 1px solid #555;
+    border-radius: 3px;
+    color: #ddd;
     font-size: 12px;
     font-family: inherit;
-    padding: 0;
+    padding: 1px 4px;
     outline: none;
+    text-align: right;
   }
 
-  .slider-value.editable {
-    cursor: text;
+  .slider-value-input:hover:not(:disabled) {
+    border-color: #777;
+  }
+
+  .slider-value-input:focus {
+    border-color: #4a90d9;
+    background: rgba(255, 255, 255, 0.1);
+  }
+
+  .slider-value-input:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+
+  .unit {
+    color: #aaa;
+    font-size: 12px;
   }
 </style>
