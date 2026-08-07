@@ -80,7 +80,7 @@
   }
 
   .slider-value-input {
-    width: 3.6em;
+    width: 5.5em;
     background: rgba(255, 255, 255, 0.06);
     border: 1px solid #555;
     border-radius: 3px;
