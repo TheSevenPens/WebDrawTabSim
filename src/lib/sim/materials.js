@@ -128,8 +128,8 @@ export class MaterialsFactory {
     static createPenBodyMaterial(map = null) {
         return this.createStandardMaterial(map ? 0xffffff : PEN_COLORS.body, 0.7, 0.15, map);
     }
-    static createPenEraserMaterial() {
-        return this.createStandardMaterial(PEN_COLORS.eraser, 0.75, 0.12);
+    static createPenEraserMaterial(map = null) {
+        return this.createStandardMaterial(map ? 0xffffff : PEN_COLORS.eraser, 0.75, 0.12, map);
     }
     static createPenNibMaterial() {
         return this.createStandardMaterial(PEN_COLORS.nib, 0.5, 0.1);

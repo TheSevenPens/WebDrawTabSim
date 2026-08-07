@@ -15,6 +15,17 @@ function latheFromProfile(profile, segments) {
     return new THREE.LatheGeometry(points, segments);
 }
 
+// Total arc length of a [radius, y] profile (units cancel, so scale-independent).
+function profileArcLength(profile) {
+    let total = 0;
+    for (let j = 1; j < profile.length; j++) {
+        const dr = profile[j][0] - profile[j - 1][0];
+        const dy = profile[j][1] - profile[j - 1][1];
+        total += Math.hypot(dr, dy);
+    }
+    return total;
+}
+
 // LatheGeometry spaces the V texture coordinate per profile *index*, so an
 // unevenly-sampled profile stretches the checkerboard. Re-map V to the
 // cumulative arc length of the profile so the checks stay square along the body.
@@ -56,21 +67,32 @@ Object.assign(Pen3DSim.prototype, {
             MaterialsFactory.createPenNibMaterial()
         );
 
-        // Body carries a checkerboard wrap so barrel rotation is visible.
-        const checkerTexture = TexturesFactory.createCheckerboardTexture();
-        checkerTexture.wrapS = THREE.RepeatWrapping;
-        checkerTexture.wrapT = THREE.RepeatWrapping;
-        checkerTexture.repeat.set(PEN_CHECKER.repeatAround, PEN_CHECKER.repeatLength);
+        // Body and eraser both carry a checkerboard wrap so barrel rotation is
+        // visible. A fresh texture per piece lets each set its own length-repeat;
+        // the eraser's is scaled by its arc length relative to the body so the
+        // checks stay the same size across the seam.
+        const makeChecker = (repeatLength) => {
+            const tex = TexturesFactory.createCheckerboardTexture();
+            tex.wrapS = THREE.RepeatWrapping;
+            tex.wrapT = THREE.RepeatWrapping;
+            tex.repeat.set(PEN_CHECKER.repeatAround, repeatLength);
+            return tex;
+        };
+        const bodyArc = profileArcLength(PEN_PROFILE.body);
+
         const bodyGeometry = latheFromProfile(PEN_PROFILE.body, segments);
         remapLatheVByArcLength(bodyGeometry, PEN_PROFILE.body);
         const body = new THREE.Mesh(
             bodyGeometry,
-            MaterialsFactory.createPenBodyMaterial(checkerTexture)
+            MaterialsFactory.createPenBodyMaterial(makeChecker(PEN_CHECKER.repeatLength))
         );
 
+        const eraserGeometry = latheFromProfile(PEN_PROFILE.eraser, segments);
+        remapLatheVByArcLength(eraserGeometry, PEN_PROFILE.eraser);
+        const eraserRepeatLength = PEN_CHECKER.repeatLength * (profileArcLength(PEN_PROFILE.eraser) / bodyArc);
         const eraser = new THREE.Mesh(
-            latheFromProfile(PEN_PROFILE.eraser, segments),
-            MaterialsFactory.createPenEraserMaterial()
+            eraserGeometry,
+            MaterialsFactory.createPenEraserMaterial(makeChecker(eraserRepeatLength))
         );
 
         this.penShadowMeshes = [nib, body, eraser];
