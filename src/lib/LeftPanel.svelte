@@ -53,15 +53,15 @@
     bind:tiltAltitude
     bind:tiltAzimuth
     bind:barrelRotation
+    bind:sharpNib
     {azimuthDisabled}
-    {tiltXDisplay}
-    {tiltYDisplay}
     {onDistance}
     {onTabletX}
     {onTabletY}
     {onAltitude}
     {onAzimuth}
     {onBarrel}
+    {onSharpNib}
   />
 
   <button class="action-btn" id="pointer-tracking-flyout-btn" onclick={() => onToggleFlyout('pointer-tracking')}>Pointer tracking</button>
@@ -93,15 +93,6 @@
       <label style="display:flex;align-items:center;gap:8px;">
         <input type="checkbox" bind:checked={showCameraInfo} style="width:auto;margin:0;">
         <span>Camera info</span>
-      </label>
-    </div>
-  </div>
-
-  <div class="checkbox-grid">
-    <div class="control-group">
-      <label style="display:flex;align-items:center;gap:8px;">
-        <input type="checkbox" bind:checked={sharpNib} onchange={onSharpNib} style="width:auto;margin:0;">
-        <span>Sharp nib tip</span>
       </label>
     </div>
   </div>

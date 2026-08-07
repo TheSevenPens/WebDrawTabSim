@@ -1,5 +1,5 @@
 <script>
-  let { label = '', value = $bindable(0), min = 0, max = 1, step = 1, unit = '', decimals = 2, disabled = false, oninput } = $props();
+  let { label = '', title = '', value = $bindable(0), min = 0, max = 1, step = 1, unit = '', decimals = 2, disabled = false, inline = false, oninput } = $props();
 
   const id = `slider-${Math.random().toString(36).slice(2)}`;
 
@@ -42,9 +42,9 @@
   }
 </script>
 
-<div class="control-group">
+<div class="control-group" class:inline>
   <div class="slider-label-row">
-    <label for={id}>{label}:</label>
+    <label for={id} title={title || label}>{label}:</label>
     <input
       class="slider-value-input"
       type="number"
@@ -77,6 +77,38 @@
     display: flex;
     align-items: center;
     gap: 4px;
+  }
+
+  /* Inline layout: label, number, and slider all on one row. */
+  .control-group.inline {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .control-group.inline .slider-label-row {
+    flex: 0 0 auto;
+  }
+
+  /* Fixed-width columns so labels, numbers, units, and sliders line up. */
+  .control-group.inline label {
+    flex: 0 0 2.2em;
+    white-space: nowrap;
+  }
+
+  .control-group.inline .slider-value-input {
+    flex: 0 0 auto;
+  }
+
+  .control-group.inline .unit {
+    flex: 0 0 2.4em;
+  }
+
+  .control-group.inline input[type="range"] {
+    flex: 1 1 auto;
+    width: auto;
+    min-width: 60px;
+    margin: 0;
   }
 
   .slider-value-input {
