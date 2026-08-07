@@ -163,6 +163,13 @@ export const EXPORT = {
     supersample: 2,
 };
 
+// Initial camera orbit around the origin (matches the Az/El/Dist readout).
+export const CAMERA_INITIAL = {
+    azimuthDeg: 310,
+    elevationDeg: 30,
+    distance: 30,
+};
+
 /**
  * Clamp to [min, max]. Non-finite values fall back to `fallback` (default: min).
  */

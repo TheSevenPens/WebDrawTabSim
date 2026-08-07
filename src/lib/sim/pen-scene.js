@@ -1,7 +1,7 @@
 import * as THREE from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
 import { Pen3DSim } from './Pen3DSim.js';
-import { SCENE } from './config.js';
+import { SCENE, CAMERA_INITIAL } from './config.js';
 
 // pen-scene.js — Scene, renderer, cameras, lighting, and camera settings
 // Extends Pen3DSim.prototype (must be loaded after Pen3DSim.js)
@@ -18,13 +18,17 @@ Object.assign(Pen3DSim.prototype, {
         const cameraNear = 0.1;
         const cameraFar = 1000;
 
+        // Initial position from azimuth/elevation/distance around the origin,
+        // so the camera readout starts at exactly these values.
+        const theta = THREE.MathUtils.degToRad(CAMERA_INITIAL.azimuthDeg);
+        const phi = THREE.MathUtils.degToRad(90 - CAMERA_INITIAL.elevationDeg);
+        const sinPhiR = Math.sin(phi) * CAMERA_INITIAL.distance;
+        const rotatedX = sinPhiR * Math.sin(theta);
+        const camY = Math.cos(phi) * CAMERA_INITIAL.distance;
+        const rotatedZ = sinPhiR * Math.cos(theta);
+
         this.perspectiveCamera = new THREE.PerspectiveCamera(30, cameraAspectRatio, cameraNear, cameraFar);
-        const yRotation = 50 * Math.PI / 180;
-        const initialX = 0;
-        const initialZ = 25;
-        const rotatedX = initialX * Math.cos(yRotation) - initialZ * Math.sin(yRotation);
-        const rotatedZ = initialX * Math.sin(yRotation) + initialZ * Math.cos(yRotation);
-        this.perspectiveCamera.position.set(rotatedX, 15, rotatedZ);
+        this.perspectiveCamera.position.set(rotatedX, camY, rotatedZ);
         this.perspectiveCamera.lookAt(0, 0, 0);
 
         const orthoSize = 20;
@@ -36,7 +40,7 @@ Object.assign(Pen3DSim.prototype, {
             cameraNear,
             cameraFar
         );
-        this.orthographicCamera.position.set(rotatedX, 15, rotatedZ);
+        this.orthographicCamera.position.set(rotatedX, camY, rotatedZ);
         this.orthographicCamera.lookAt(0, 0, 0);
 
         this.camera = this.perspectiveCamera;
