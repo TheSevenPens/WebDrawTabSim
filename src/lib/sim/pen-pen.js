@@ -3,14 +3,15 @@ import { MaterialsFactory } from './materials.js';
 import { TexturesFactory } from './textures.js';
 import { Pen3DSim } from './Pen3DSim.js';
 import { createCursorArrowMesh } from './cursor-geometry.js';
-import { PEN_MESH, PEN_PROFILE, PEN_CHECKER, CURSOR, ANNOTATION, POINTER_DEFAULTS } from './config.js';
+import { PEN_MESH, PEN_PROFILE, PEN_CHECKER, CURSOR, ANNOTATION, POINTER_DEFAULTS, SCALE } from './config.js';
 
 // pen-pen.js — Pen mesh, cursor arrow, and the core updatePenTransform loop
 // Extends Pen3DSim.prototype (must be loaded after Pen3DSim.js)
 
 // Revolve a [radius, y] silhouette profile around the pen's local +Y axis.
+// Profile values are in design units and scaled to the mm world here.
 function latheFromProfile(profile, segments) {
-    const points = profile.map(([r, y]) => new THREE.Vector2(r, y));
+    const points = profile.map(([r, y]) => new THREE.Vector2(r * SCALE, y * SCALE));
     return new THREE.LatheGeometry(points, segments);
 }
 
@@ -239,7 +240,7 @@ Object.assign(Pen3DSim.prototype, {
             const t = (worldSurfaceY - this.penTipWorld.y) / this._penAxisDir.y;
             this.penAxisIntersection.copy(this.penTipWorld).add(this._penAxisDir.clone().multiplyScalar(t));
         } else {
-            this.penAxisIntersection.copy(this.penTipWorld).add(this._penAxisDir.clone().multiplyScalar(20));
+            this.penAxisIntersection.copy(this.penTipWorld).add(this._penAxisDir.clone().multiplyScalar(20 * SCALE));
             this.penAxisIntersection.y = worldSurfaceY;
         }
         this.penAxisLinePositions[0] = this.penTipWorld.x;
@@ -320,7 +321,7 @@ Object.assign(Pen3DSim.prototype, {
             worldCursorZ += attractZ;
         }
 
-        const cursorY = this.yOffset + (this.penDisplayMode ? 0.01 : 0.002);
+        const cursorY = this.yOffset + (this.penDisplayMode ? 0.01 : 0.002) * SCALE;
         this.cursorArrow.position.set(worldCursorX, cursorY, worldCursorZ);
         this.updateMonitorCursor(worldCursorX, worldCursorZ);
     },
@@ -427,7 +428,7 @@ Object.assign(Pen3DSim.prototype, {
         }
 
         // ── Azimuth surface line ─────────────────────────────────────────────
-        const fixedLineLength = 2.0;
+        const fixedLineLength = 2.0 * SCALE;
         const dx = this.penTopSurfaceBelow.x - this.penTipSurfaceBelow.x;
         const dz = this.penTopSurfaceBelow.z - this.penTipSurfaceBelow.z;
         const horizLen = Math.sqrt(dx * dx + dz * dz);
@@ -477,7 +478,7 @@ Object.assign(Pen3DSim.prototype, {
 
             this.updatePieMeshInGroup(
                 this.arcPieMesh, this.arcPieMaterial, this.arcAnnotationGroup,
-                new THREE.Vector3(this.penTipSurfaceBelow.x, this.yOffset + 0.003, this.penTipSurfaceBelow.z),
+                new THREE.Vector3(this.penTipSurfaceBelow.x, this.yOffset + 0.003 * SCALE, this.penTipSurfaceBelow.z),
                 xzPlaneQuat, this.arcRadius, startAngle, endAngle, arcSegments
             );
         } else {
@@ -524,7 +525,7 @@ Object.assign(Pen3DSim.prototype, {
             this.barrelDottedCircleLine.computeLineDistances();
             this.barrelDottedCircleLine.visible = true;
 
-            const barrelFixedLineLength = 1.5;
+            const barrelFixedLineLength = 1.5 * SCALE;
             const barrelDir = u.clone().multiplyScalar(Math.cos(barrelEndAngle))
                                .add(v.clone().multiplyScalar(Math.sin(barrelEndAngle)))
                                .normalize()

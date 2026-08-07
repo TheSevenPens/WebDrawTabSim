@@ -1,13 +1,18 @@
 /**
  * Central defaults and shared constants for Pen3DSim.
- * All lengths are in inches unless noted.
+ * All lengths are in millimetres (1 world unit = 1 mm).
+ *
+ * SCALE converts the original inch-based design values to the mm world so the
+ * scene keeps its proportions. The tablet active area (16×9 → 384×216) and every
+ * other distance are scaled by it; a few values (e.g. the bezel) are absolute mm.
  */
+export const SCALE = 24;
 
 export const TABLET = {
-    width: 16,
-    depth: 9,
-    thickness: 0.22,
-    bodyMargin: 0.45,
+    width: 16 * SCALE,   // active-area width  = 384 mm
+    depth: 9 * SCALE,    // active-area depth  = 216 mm
+    thickness: 0.22 * SCALE,
+    bodyMargin: 25,      // bezel around the active area = 25 mm
 };
 
 /** Bright studio palette for the 3D environment (not the control panel). */
@@ -35,8 +40,8 @@ export const DEFAULT_PEN = {
     tiltAltitude: 0,
     tiltAzimuth: 0,
     barrelRotation: 0,
-    tabletX: 8,
-    tabletY: 4.5,
+    tabletX: 8 * SCALE,    // centre of the active area (192 mm)
+    tabletY: 4.5 * SCALE,  // centre of the active area (108 mm)
 };
 
 /** Shared end pose for Demo jump and Anim Rot all. */
@@ -45,24 +50,24 @@ export const DEMO_POSE = {
     tiltAltitude: 45,
     tiltAzimuth: 242,
     barrelRotation: 318,
-    tabletX: 8,
-    tabletY: 4.5,
+    tabletX: 8 * SCALE,
+    tabletY: 4.5 * SCALE,
 };
 
 export const PEN_RANGES = {
-    distance:       { min: 0, max: 1 },
+    distance:       { min: 0, max: 1 * SCALE },
     tabletX:        { min: 0, max: TABLET.width },
     tabletY:        { min: 0, max: TABLET.depth },
     tiltAltitude:   { min: 0, max: 60 },
     tiltAzimuth:    { min: 0, max: 359 },
     barrelRotation: { min: 0, max: 359 },
-    cursorOffsetX:  { min: -5, max: 5 },
-    cursorOffsetY:  { min: -5, max: 5 },
+    cursorOffsetX:  { min: -5 * SCALE, max: 5 * SCALE },
+    cursorOffsetY:  { min: -5 * SCALE, max: 5 * SCALE },
     tiltCompensation: { min: 0, max: 1 },
     scalingFactor:  { min: 0, max: 2 },
     edgeAttraction: { min: -1, max: 1 },
-    edgeAttractionRange: { min: 0, max: 5 },
-    mouseSensitivity: { min: 0.001, max: 0.1 },
+    edgeAttractionRange: { min: 0, max: 5 * SCALE },
+    mouseSensitivity: { min: 0.001 * SCALE, max: 0.1 * SCALE },
 };
 
 export const POINTER_DEFAULTS = {
@@ -74,18 +79,18 @@ export const POINTER_DEFAULTS = {
     tiltCompensationNegTiltY: 0,
     scalingFactor: 1,
     edgeAttraction: 0,
-    edgeAttractionRange: 1,
-    /** Inches of cursor shift per degree of tilt when compensation is 1.0 */
-    tiltCompensationScale: 0.01,
-    /** Screen pixels → tablet inches for spacebar+drag */
-    mouseSensitivity: 0.01,
+    edgeAttractionRange: 1 * SCALE,
+    /** mm of cursor shift per degree of tilt when compensation is 1.0 */
+    tiltCompensationScale: 0.01 * SCALE,
+    /** Screen pixels → tablet mm for spacebar+drag */
+    mouseSensitivity: 0.01 * SCALE,
 };
 
 export const ANNOTATION = {
-    arcRadius: 1.5,
-    barrelArcRadius: 1.5,
-    tiltArcRadius: 2.0,
-    tubeRadius: 0.02,
+    arcRadius: 1.5 * SCALE,
+    barrelArcRadius: 1.5 * SCALE,
+    tiltArcRadius: 2.0 * SCALE,
+    tubeRadius: 0.02 * SCALE,
     azimuthColor: 0x77dd33,
     tiltAltitudeColor: 0xee33cc,
     tiltXColor: 0x88ccff,
@@ -94,11 +99,11 @@ export const ANNOTATION = {
 };
 
 export const PEN_MESH = {
-    tipHeight: 0.5,      // nib tip sits at local y = -tipHeight (pen contact point)
-    tipRadius: 0.1,      // legacy; retained for reference
-    barrelHeight: 4,     // pen top sits at local y = +barrelHeight (eraser apex)
-    barrelRadius: 0.15,  // legacy; retained for reference
-    latheSegments: 48,   // radial resolution of the revolved pen parts
+    tipHeight: 0.5 * SCALE,      // nib tip sits at local y = -tipHeight (pen contact point)
+    tipRadius: 0.1 * SCALE,      // legacy; retained for reference
+    barrelHeight: 4 * SCALE,     // pen top sits at local y = +barrelHeight (eraser apex)
+    barrelRadius: 0.15 * SCALE,  // legacy; retained for reference
+    latheSegments: 48,           // radial resolution of the revolved pen parts
 };
 
 // Colors for the individual pen parts — three pieces revolved from the
@@ -119,7 +124,9 @@ export const PEN_CHECKER = {
 
 // Silhouette profiles for the revolved (LatheGeometry) pen parts, generated
 // from wacpen-half.svg (see scratchpad/parse-svg-pen.mjs). Each entry is
-// [radius, y] in inches, ordered bottom → top; a radius of 0 caps that end.
+// [radius, y] in the original design units; they are multiplied by SCALE when
+// the lathe is built (latheFromProfile), matching the scaled PEN_MESH anchors.
+// Ordered bottom → top; a radius of 0 caps that end.
 // All parts share the pen's local +Y axis with the nib at the bottom. Adjacent
 // pieces share their boundary ring (nib↔body at r0.0151, body↔eraser at
 // r0.0935). See PEN_MESH for the tip/top anchors the pose math relies on.
@@ -143,8 +150,8 @@ export const PEN_PROFILE = {
 };
 
 export const CURSOR = {
-    tabletSize: 0.6,
-    monitorSize: 0.8,
+    tabletSize: 0.6 * SCALE,
+    monitorSize: 0.8 * SCALE,
     rotation: 180,
     tipRotationY: 90,
 };
@@ -167,7 +174,7 @@ export const EXPORT = {
 export const CAMERA_INITIAL = {
     azimuthDeg: 310,
     elevationDeg: 30,
-    distance: 30,
+    distance: 30 * SCALE,   // 720 mm
 };
 
 /**

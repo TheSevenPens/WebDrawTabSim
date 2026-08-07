@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import { SCALE } from './config.js';
 
 // Textures Factory - Creates all textures used in Pen3DSim
 
@@ -32,9 +33,9 @@ export class TexturesFactory {
 
     // Create a checkerboard texture for the tablet
     static createTabletCheckerboardTexture(tabletWidth, tabletDepth, color1 = '#e4d8f0', color2 = '#c8b4dc') {
-        // Grid spacing is 0.25 inches, tablet is 16x9 inches
+        // Grid spacing 0.25 in (→ mm), tablet active area 384x216 mm → 64x36 squares
         // So we need 64x36 squares
-        const gridSpacing = 0.25;
+        const gridSpacing = 0.25 * SCALE;
         const squaresX = tabletWidth / gridSpacing; // 64
         const squaresZ = tabletDepth / gridSpacing; // 36
 

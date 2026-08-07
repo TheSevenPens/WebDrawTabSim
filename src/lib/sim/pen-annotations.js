@@ -2,7 +2,7 @@ import * as THREE from 'three';
 import { MaterialsFactory } from './materials.js';
 import { TexturesFactory } from './textures.js';
 import { Pen3DSim } from './Pen3DSim.js';
-import { ANNOTATION } from './config.js';
+import { ANNOTATION, SCALE } from './config.js';
 
 // pen-annotations.js — Annotation scene objects, geometry helpers, and visibility setters
 // Extends Pen3DSim.prototype (must be loaded after Pen3DSim.js)
@@ -135,19 +135,19 @@ Object.assign(Pen3DSim.prototype, {
             const spriteMaterial = MaterialsFactory.createSpriteMaterial(texture);
             const sprite = new THREE.Sprite(spriteMaterial);
             sprite.position.copy(position);
-            sprite.scale.set(2, 2, 1);
+            sprite.scale.set(2 * SCALE, 2 * SCALE, 1);
             return sprite;
         };
 
         const tabletTopY  = this.yOffset;
-        const arrowOffset = 0.5;
+        const arrowOffset = 0.5 * SCALE;
         const arrowPos = new THREE.Vector3(
             -this.tabletWidth  / 2 - arrowOffset,
             tabletTopY,
             -this.tabletDepth / 2 - arrowOffset
         );
 
-        const labelDistance = 3;
+        const labelDistance = 3 * SCALE;
         const xAxisColor = '#cc0055';
         const yAxisColor = '#00cc66';
         const zAxisColor = '#0055cc';
@@ -161,7 +161,7 @@ Object.assign(Pen3DSim.prototype, {
         this.scene.add(this.yLabel);
         this.scene.add(this.zLabel);
 
-        const arrowGap = 0.5;
+        const arrowGap = 0.5 * SCALE;
         this.xArrow = new THREE.ArrowHelper(new THREE.Vector3(1, 0, 0), arrowPos, labelDistance - arrowGap, xAxisColor);
         this.yArrow = new THREE.ArrowHelper(new THREE.Vector3(0, 1, 0), arrowPos, labelDistance - arrowGap, yAxisColor);
         this.zArrow = new THREE.ArrowHelper(new THREE.Vector3(0, 0, 1), arrowPos, labelDistance - arrowGap, zAxisColor);

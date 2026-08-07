@@ -1,7 +1,7 @@
 import * as THREE from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
 import { Pen3DSim } from './Pen3DSim.js';
-import { SCENE, CAMERA_INITIAL } from './config.js';
+import { SCENE, CAMERA_INITIAL, SCALE } from './config.js';
 
 // pen-scene.js — Scene, renderer, cameras, lighting, and camera settings
 // Extends Pen3DSim.prototype (must be loaded after Pen3DSim.js)
@@ -15,8 +15,8 @@ Object.assign(Pen3DSim.prototype, {
 
     initCameras() {
         const cameraAspectRatio = this.viewer.clientWidth / this.viewer.clientHeight;
-        const cameraNear = 0.1;
-        const cameraFar = 1000;
+        const cameraNear = 0.1 * SCALE;
+        const cameraFar = 1000 * SCALE;
 
         // Initial position from azimuth/elevation/distance around the origin,
         // so the camera readout starts at exactly these values.
@@ -31,7 +31,7 @@ Object.assign(Pen3DSim.prototype, {
         this.perspectiveCamera.position.set(rotatedX, camY, rotatedZ);
         this.perspectiveCamera.lookAt(0, 0, 0);
 
-        const orthoSize = 20;
+        const orthoSize = 20 * SCALE;
         this.orthographicCamera = new THREE.OrthographicCamera(
             -orthoSize * cameraAspectRatio,
             orthoSize * cameraAspectRatio,
@@ -62,8 +62,8 @@ Object.assign(Pen3DSim.prototype, {
         this.controls.enableDamping = true;
         this.controls.dampingFactor = 0.05;
         this.controls.screenSpacePanning = false;
-        this.controls.minDistance = 1;
-        this.controls.maxDistance = 100;
+        this.controls.minDistance = 1 * SCALE;
+        this.controls.maxDistance = 100 * SCALE;
         this.controls.maxPolarAngle = Math.PI / 2;
         this.controls.update();
     },
@@ -73,35 +73,38 @@ Object.assign(Pen3DSim.prototype, {
         const ambientLight = new THREE.AmbientLight(0xffffff, 0.88);
         this.scene.add(ambientLight);
 
-        // Warm key from above-front
+        // Warm key from above-front (position sets direction; scaled to keep the
+        // light outside the now-larger scene so the shadow frustum stays valid)
         const directionalLight = new THREE.DirectionalLight(0xfff5eb, 0.75);
-        directionalLight.position.set(8, 28, 12);
+        directionalLight.position.set(8 * SCALE, 28 * SCALE, 12 * SCALE);
         directionalLight.castShadow = true;
         // High-res map over a frustum tightened to the desk/tablet area so each
         // texel is small and the (unfiltered) pen shadow stays crisp.
         directionalLight.shadow.mapSize.width = 4096;
         directionalLight.shadow.mapSize.height = 4096;
-        directionalLight.shadow.camera.left = -24;
-        directionalLight.shadow.camera.right = 24;
-        directionalLight.shadow.camera.top = 24;
-        directionalLight.shadow.camera.bottom = -24;
-        directionalLight.shadow.camera.near = 0.1;
-        directionalLight.shadow.camera.far = 100;
-        directionalLight.shadow.bias = -0.0002;
+        directionalLight.shadow.camera.left = -24 * SCALE;
+        directionalLight.shadow.camera.right = 24 * SCALE;
+        directionalLight.shadow.camera.top = 24 * SCALE;
+        directionalLight.shadow.camera.bottom = -24 * SCALE;
+        directionalLight.shadow.camera.near = 0.1 * SCALE;
+        directionalLight.shadow.camera.far = 100 * SCALE;
+        directionalLight.shadow.bias = -0.0002;   // normalized depth — not scaled
         this.scene.add(directionalLight);
 
         // Cool fill from the front so the desk isn’t flat
         const fillLight = new THREE.DirectionalLight(0xe8f0ff, 0.45);
-        fillLight.position.set(-6, 12, 22);
+        fillLight.position.set(-6 * SCALE, 12 * SCALE, 22 * SCALE);
         this.scene.add(fillLight);
 
         // Soft bounce from behind to lift white walls
         const wallFill = new THREE.DirectionalLight(0xffffff, 0.3);
-        wallFill.position.set(0, 20, -30);
+        wallFill.position.set(0, 20 * SCALE, -30 * SCALE);
         this.scene.add(wallFill);
 
-        const pointLight = new THREE.PointLight(0xffffff, 0.2);
-        pointLight.position.set(-12, 14, -8);
+        // Point light has distance falloff (decay), so scaling its position ×SCALE
+        // would dim it by SCALE²; compensate the intensity to keep the same look.
+        const pointLight = new THREE.PointLight(0xffffff, 0.2 * SCALE * SCALE);
+        pointLight.position.set(-12 * SCALE, 14 * SCALE, -8 * SCALE);
         this.scene.add(pointLight);
     },
 

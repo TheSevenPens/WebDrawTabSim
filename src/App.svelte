@@ -5,16 +5,16 @@
   import AnnotationSettings from './lib/AnnotationSettings.svelte';
   import PointerTrackingSettings from './lib/PointerTrackingSettings.svelte';
   import { runParameterAnimation } from './lib/sim/animations.js';
-  import { DEMO_POSE, POINTER_DEFAULTS, ANIMATION, EXPORT } from './lib/sim/config.js';
+  import { DEFAULT_PEN, DEMO_POSE, POINTER_DEFAULTS, ANIMATION, EXPORT, SCALE } from './lib/sim/config.js';
 
   // ── DOM reference ──────────────────────────────────────────────────────────
   let viewer = $state();
   let sim;
 
   // ── Pen state (tablet coordinates) ────────────────────────────────────────
-  let distance       = $state(0);
-  let tabletX        = $state(8);
-  let tabletY        = $state(4.5);
+  let distance       = $state(DEFAULT_PEN.distance);
+  let tabletX        = $state(DEFAULT_PEN.tabletX);
+  let tabletY        = $state(DEFAULT_PEN.tabletY);
   let tiltAltitude   = $state(0);
   let tiltAzimuth    = $state(0);
   let barrelRotation = $state(0);
@@ -45,7 +45,7 @@
   let compNegTiltY        = $state(0);
   let scalingFactor       = $state(1);
   let edgeAttraction      = $state(0);
-  let edgeAttractionRange = $state(1);
+  let edgeAttractionRange = $state(POINTER_DEFAULTS.edgeAttractionRange);
   let mouseSensitivity    = $state(POINTER_DEFAULTS.mouseSensitivity);
 
   // ── Flyout / modal state ───────────────────────────────────────────────────
@@ -61,25 +61,26 @@
   let cameraDistance  = $state(0);
 
   // ── Camera views ───────────────────────────────────────────────────────────
+  // Preset views were authored in the original scale; scale to the mm world.
   const cameraViews = [
     {
       name: 'DEFAULT',
-      pos: { x: 1.30, y: 38.39, z: 61.98 },
-      target: { x: 1.83, y: 0, z: -3.93 },
+      pos: { x: 1.30 * SCALE, y: 38.39 * SCALE, z: 61.98 * SCALE },
+      target: { x: 1.83 * SCALE, y: 0, z: -3.93 * SCALE },
     },
     {
       name: 'DEFAULT_ZOOMED',
-      pos: { x: -0.91, y: 0.92, z: 0.80 },
-      target: { x: 0.26, y: 0, z: -0.18 },
+      pos: { x: -0.91 * SCALE, y: 0.92 * SCALE, z: 0.80 * SCALE },
+      target: { x: 0.26 * SCALE, y: 0, z: -0.18 * SCALE },
     },
     {
       name: 'TOP_DOWN',
-      pos: { x: 0.26, y: 28.07, z: -0.18 },
-      target: { x: 0.26, y: 0, z: -0.18 },
+      pos: { x: 0.26 * SCALE, y: 28.07 * SCALE, z: -0.18 * SCALE },
+      target: { x: 0.26 * SCALE, y: 0, z: -0.18 * SCALE },
     },
     {
       name: 'CURRENTDEFAULT',
-      pos: { x: -19.15, y: 15, z: 16.07 },
+      pos: { x: -19.15 * SCALE, y: 15 * SCALE, z: 16.07 * SCALE },
       target: { x: 0, y: 0, z: 0 },
     },
   ];

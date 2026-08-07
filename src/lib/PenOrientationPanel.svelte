@@ -20,11 +20,11 @@
   } = $props();
 </script>
 
-<SliderControl label="Z: (Hover distance)" bind:value={distance} min={0} max={1} step={0.05} decimals={2} unit=" in" oninput={onDistance} />
+<SliderControl label="Z: (Hover distance)" bind:value={distance} min={0} max={24} step={0.01} decimals={2} unit=" mm" oninput={onDistance} />
 
-<SliderControl label="X" bind:value={tabletX} min={0} max={16} step={0.1} decimals={1} unit=" in" oninput={onTabletX} />
+<SliderControl label="X" bind:value={tabletX} min={0} max={384} step={0.01} decimals={2} unit=" mm" oninput={onTabletX} />
 
-<SliderControl label="Y" bind:value={tabletY} min={0} max={9} step={0.1} decimals={1} unit=" in" oninput={onTabletY} />
+<SliderControl label="Y" bind:value={tabletY} min={0} max={216} step={0.01} decimals={2} unit=" mm" oninput={onTabletY} />
 
 <SliderControl label="Tilt altitude" bind:value={tiltAltitude} min={0} max={60} step={1} decimals={0} unit="°" oninput={onAltitude} />
 

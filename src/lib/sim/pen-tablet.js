@@ -2,7 +2,7 @@ import * as THREE from 'three';
 import { MaterialsFactory } from './materials.js';
 import { TexturesFactory } from './textures.js';
 import { Pen3DSim } from './Pen3DSim.js';
-import { TABLET, SCENE } from './config.js';
+import { TABLET, SCENE, SCALE } from './config.js';
 
 // pen-tablet.js — Tablet mesh, grid, desk, studio room
 // Extends Pen3DSim.prototype (must be loaded after Pen3DSim.js)
@@ -18,8 +18,8 @@ Object.assign(Pen3DSim.prototype, {
         tablet.receiveShadow = true;
         this.scene.add(tablet);
 
-        const deskHeight = 1;
-        const deskW = 60, deskD = 30, deskZ = -6.5;
+        const deskHeight = 1 * SCALE;
+        const deskW = 60 * SCALE, deskD = 30 * SCALE, deskZ = -6.5 * SCALE;
         const woodMap = TexturesFactory.createWoodGrainTexture();
         const deskGeometry = new THREE.BoxGeometry(deskW, deskHeight, deskD);
         const deskMesh = new THREE.Mesh(deskGeometry, MaterialsFactory.createDeskMaterial(woodMap));
@@ -29,12 +29,12 @@ Object.assign(Pen3DSim.prototype, {
         this.scene.add(deskMesh);
 
         // Desk legs — solid light wood (no grain)
-        const legHeight = 28;
-        const legSize = 1.5;
+        const legHeight = 28 * SCALE;
+        const legSize = 1.5 * SCALE;
         const legGeometry = new THREE.BoxGeometry(legSize, legHeight, legSize);
         const legMaterial = MaterialsFactory.createDeskLegMaterial();
         const legY = -deskHeight - legHeight / 2;
-        const legInset = 2;
+        const legInset = 2 * SCALE;
         const legPositions = [
             [-deskW / 2 + legInset, legY, deskZ - deskD / 2 + legInset],
             [ deskW / 2 - legInset, legY, deskZ - deskD / 2 + legInset],
@@ -57,20 +57,20 @@ Object.assign(Pen3DSim.prototype, {
 
         const gridGroup = new THREE.Group();
         const gridMaterial = MaterialsFactory.createGridMaterial();
-        const gridSpacing = 0.5;
+        const gridSpacing = 0.5 * SCALE;
 
         for (let x = -this.tabletWidth / 2; x <= this.tabletWidth / 2; x += gridSpacing) {
             const points = [
-                new THREE.Vector3(x, this.yOffset + 0.001, -this.tabletDepth / 2),
-                new THREE.Vector3(x, this.yOffset + 0.001,  this.tabletDepth / 2)
+                new THREE.Vector3(x, this.yOffset + 0.001 * SCALE, -this.tabletDepth / 2),
+                new THREE.Vector3(x, this.yOffset + 0.001 * SCALE,  this.tabletDepth / 2)
             ];
             gridGroup.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints(points), gridMaterial));
         }
 
         for (let z = -this.tabletDepth / 2; z <= this.tabletDepth / 2; z += gridSpacing) {
             const points = [
-                new THREE.Vector3(-this.tabletWidth / 2, this.yOffset + 0.001, z),
-                new THREE.Vector3( this.tabletWidth / 2, this.yOffset + 0.001, z)
+                new THREE.Vector3(-this.tabletWidth / 2, this.yOffset + 0.001 * SCALE, z),
+                new THREE.Vector3( this.tabletWidth / 2, this.yOffset + 0.001 * SCALE, z)
             ];
             gridGroup.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints(points), gridMaterial));
         }
@@ -82,15 +82,15 @@ Object.assign(Pen3DSim.prototype, {
         this.tabletCheckerboardVisible = false;
 
         // Floor + studio walls (no dark GridHelper)
-        const floorY = -29;
-        const roomW = 100;
-        const roomD = 80;
+        const floorY = -29 * SCALE;
+        const roomW = 100 * SCALE;
+        const roomD = 80 * SCALE;
         // Grow depth 50% toward the camera (+Z); keep the back wall fixed
         const roomDExtra = roomD * 0.5;
         const roomDFull = roomD + roomDExtra;
         const roomCenterZ = deskZ + roomDExtra / 2;
         const wallZBack = deskZ - roomD / 2;
-        const roomH = 90;
+        const roomH = 90 * SCALE;
         const wallMaterial = MaterialsFactory.createWallMaterial();
 
         const floorGeometry = new THREE.PlaneGeometry(roomW, roomDFull);
@@ -130,8 +130,8 @@ Object.assign(Pen3DSim.prototype, {
         this.scene.add(rightWall);
 
         // Lighter baseboards along each wall
-        const boardH = 5;
-        const boardDepth = 0.75;
+        const boardH = 5 * SCALE;
+        const boardDepth = 0.75 * SCALE;
         const boardMaterial = MaterialsFactory.createBaseboardMaterial();
         const boardY = floorY + boardH / 2;
         const wallXLeft = -roomW / 2;
@@ -168,7 +168,7 @@ Object.assign(Pen3DSim.prototype, {
         const tabletScreenGeometry = new THREE.PlaneGeometry(this.tabletWidth, this.tabletDepth);
         this.tabletScreen = new THREE.Mesh(tabletScreenGeometry, tabletScreenMaterial);
         this.tabletScreen.rotation.x = -Math.PI / 2;
-        this.tabletScreen.position.y = this.yOffset + 0.005;
+        this.tabletScreen.position.y = this.yOffset + 0.005 * SCALE;
         this.tabletScreen.visible = false;
         this.scene.add(this.tabletScreen);
     },

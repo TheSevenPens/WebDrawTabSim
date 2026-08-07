@@ -3,7 +3,7 @@ import { MaterialsFactory } from './materials.js';
 import { TexturesFactory } from './textures.js';
 import { Pen3DSim } from './Pen3DSim.js';
 import { createCursorArrowMesh } from './cursor-geometry.js';
-import { CURSOR } from './config.js';
+import { CURSOR, SCALE } from './config.js';
 
 // pen-monitor.js — Desk monitor mesh and screen cursor
 // Extends Pen3DSim.prototype (must be loaded after Pen3DSim.js)
@@ -11,20 +11,21 @@ import { CURSOR } from './config.js';
 Object.assign(Pen3DSim.prototype, {
 
     initMonitor() {
-        // Screen dimensions: 21" diagonal, 16:9 aspect ratio
-        const screenWidth  = 21 * 16 / Math.sqrt(16 * 16 + 9 * 9); // ≈ 18.30 in
-        const screenHeight = 21 *  9 / Math.sqrt(16 * 16 + 9 * 9); // ≈ 10.30 in
+        // Screen dimensions: 21" diagonal, 16:9 aspect ratio (in the mm world)
+        const diagonal     = 21 * SCALE;
+        const screenWidth  = diagonal * 16 / Math.sqrt(16 * 16 + 9 * 9);
+        const screenHeight = diagonal *  9 / Math.sqrt(16 * 16 + 9 * 9);
 
-        const bezelSize  = 0.4;
-        const bodyDepth  = 0.8;
-        const neckHeight = 5.0;
-        const neckWidth  = 1.2;
-        const neckDepth  = 0.5;
-        const baseHeight = 0.4;
-        const baseWidth  = 7.0;
-        const baseDepth  = 4.0;
+        const bezelSize  = 0.4 * SCALE;
+        const bodyDepth  = 0.8 * SCALE;
+        const neckHeight = 5.0 * SCALE;
+        const neckWidth  = 1.2 * SCALE;
+        const neckDepth  = 0.5 * SCALE;
+        const baseHeight = 0.4 * SCALE;
+        const baseWidth  = 7.0 * SCALE;
+        const baseDepth  = 4.0 * SCALE;
 
-        const monitorZ = -12;
+        const monitorZ = -12 * SCALE;
 
         const bezelWidth  = screenWidth  + bezelSize * 2;
         const bezelHeight = screenHeight + bezelSize * 2;
@@ -51,10 +52,10 @@ Object.assign(Pen3DSim.prototype, {
         this.monitorGroup.add(bodyMesh);
 
         const screenMesh = new THREE.Mesh(
-            new THREE.BoxGeometry(screenWidth, screenHeight, 0.05),
+            new THREE.BoxGeometry(screenWidth, screenHeight, 0.05 * SCALE),
             screenMaterial
         );
-        screenMesh.position.set(0, bodyCenterY, monitorZ + bodyDepth / 2 + 0.025);
+        screenMesh.position.set(0, bodyCenterY, monitorZ + bodyDepth / 2 + 0.025 * SCALE);
         this.monitorGroup.add(screenMesh);
 
         const neckMesh = new THREE.Mesh(
@@ -101,7 +102,7 @@ Object.assign(Pen3DSim.prototype, {
 
         const screenCursorX = normalizedX * (this.monitorScreenWidth  / 2);
         const screenCursorY = this.monitorBodyCenterY - normalizedZ * (this.monitorScreenHeight / 2);
-        const screenCursorZ = this.monitorZ + this.monitorBodyDepth / 2 + 0.08;
+        const screenCursorZ = this.monitorZ + this.monitorBodyDepth / 2 + 0.08 * SCALE;
 
         this.monitorCursor.position.set(screenCursorX, screenCursorY, screenCursorZ);
     },

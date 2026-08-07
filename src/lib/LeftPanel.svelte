@@ -120,9 +120,9 @@
     <button class="rot-btn" onclick={() => onRotateCamera(0, 5)} title="Raise 5°">▲ 5°</button>
     <button class="rot-btn" onclick={() => onRotateCamera(0, -5)} title="Lower 5°">▼ 5°</button>
 
-    <span class="cam-value">Dist: {cameraDistance}</span>
-    <button class="rot-btn" onclick={() => onChangeDistance(-5)} title="Move 5 closer">−5</button>
-    <button class="rot-btn" onclick={() => onChangeDistance(5)} title="Move 5 farther">+5</button>
+    <span class="cam-value">Dist: {cameraDistance} mm</span>
+    <button class="rot-btn" onclick={() => onChangeDistance(-25)} title="Move 25 mm closer">−25</button>
+    <button class="rot-btn" onclick={() => onChangeDistance(25)} title="Move 25 mm farther">+25</button>
   </div>
 
   <select class="action-btn" onchange={(e) => { const v = e.target.value; e.target.value = ''; onPointCameraAt(v); }} style="text-align:left;">

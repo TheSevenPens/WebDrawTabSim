@@ -2,7 +2,7 @@ import * as THREE from 'three';
 import { TexturesFactory } from './textures.js';
 import {
     TABLET, DEFAULT_PEN, DEMO_POSE, PEN_RANGES, POINTER_DEFAULTS,
-    ANNOTATION, CURSOR, EXPORT, ANIMATION, SCENE, clampValue,
+    ANNOTATION, CURSOR, EXPORT, ANIMATION, SCENE, SCALE, clampValue,
 } from './config.js';
 
 // Pen3DSim.js — Class skeleton: constructor, animate loop, and public API
@@ -311,7 +311,7 @@ export class Pen3DSim {
         if (this.tabletScreen) this.tabletScreen.visible = enabled;
         if (this.monitorGroup) this.monitorGroup.visible = !enabled;
         if (this.monitorCursor) this.monitorCursor.visible = !enabled;
-        if (this.digitizerGrid) this.digitizerGrid.position.y = enabled ? 0.008 : 0;
+        if (this.digitizerGrid) this.digitizerGrid.position.y = enabled ? 0.008 * SCALE : 0;
         this._refreshPen();
     }
 
