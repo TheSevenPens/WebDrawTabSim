@@ -111,16 +111,18 @@
     <option value="copy-hd">Copy 1080p to clipboard</option>
     <option value="copy-uhd">Copy 4K to clipboard</option>
   </select>
-  <div class="camera-rotation">
-    <div class="rotation-readout">Camera — Az: {cameraAzimuth}° · El: {cameraElevation}° · Dist: {cameraDistance}</div>
-    <div class="rotation-buttons">
-      <button class="rot-btn" onclick={() => onRotateCamera(-5, 0)} title="Rotate left 5°">◀ Az 5°</button>
-      <button class="rot-btn" onclick={() => onRotateCamera(5, 0)} title="Rotate right 5°">Az 5° ▶</button>
-      <button class="rot-btn" onclick={() => onRotateCamera(0, 5)} title="Raise 5°">▲ El 5°</button>
-      <button class="rot-btn" onclick={() => onRotateCamera(0, -5)} title="Lower 5°">▼ El 5°</button>
-      <button class="rot-btn" onclick={() => onChangeDistance(-5)} title="Move 5 closer">Dist −5</button>
-      <button class="rot-btn" onclick={() => onChangeDistance(5)} title="Move 5 farther">Dist +5</button>
-    </div>
+  <div class="camera-controls">
+    <span class="cam-value">Az: {cameraAzimuth}°</span>
+    <button class="rot-btn" onclick={() => onRotateCamera(-5, 0)} title="Rotate left 5°">◀ 5°</button>
+    <button class="rot-btn" onclick={() => onRotateCamera(5, 0)} title="Rotate right 5°">5° ▶</button>
+
+    <span class="cam-value">El: {cameraElevation}°</span>
+    <button class="rot-btn" onclick={() => onRotateCamera(0, 5)} title="Raise 5°">▲ 5°</button>
+    <button class="rot-btn" onclick={() => onRotateCamera(0, -5)} title="Lower 5°">▼ 5°</button>
+
+    <span class="cam-value">Dist: {cameraDistance}</span>
+    <button class="rot-btn" onclick={() => onChangeDistance(-5)} title="Move 5 closer">−5</button>
+    <button class="rot-btn" onclick={() => onChangeDistance(5)} title="Move 5 farther">+5</button>
   </div>
 
   <select class="action-btn" onchange={(e) => { const v = e.target.value; e.target.value = ''; onPointCameraAt(v); }} style="text-align:left;">
@@ -147,21 +149,20 @@
 </div>
 
 <style>
-  .camera-rotation {
+  .camera-controls {
+    display: grid;
+    grid-template-columns: auto 1fr 1fr;
+    gap: 4px;
+    align-items: center;
     margin: 4px 0;
   }
 
-  .rotation-readout {
-    font-size: 11px;
-    color: #aaa;
+  .cam-value {
+    font-size: 12px;
+    color: #ccc;
     font-family: monospace;
-    padding: 2px 0 4px;
-  }
-
-  .rotation-buttons {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 4px;
+    white-space: nowrap;
+    padding-right: 4px;
   }
 
   .rot-btn {
