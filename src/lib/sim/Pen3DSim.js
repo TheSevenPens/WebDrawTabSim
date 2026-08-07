@@ -89,6 +89,9 @@ export class Pen3DSim {
     animate() {
         const loop = () => {
             requestAnimationFrame(loop);
+            // Keep the orbit target on/above the tablet surface so that, with
+            // maxPolarAngle = 90°, the camera can never drop below the surface.
+            if (this.controls.target.y < this.yOffset) this.controls.target.y = this.yOffset;
             this.controls.update();
             this.renderer.render(this.scene, this.camera);
             if (this.onCameraUpdate) {

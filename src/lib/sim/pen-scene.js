@@ -27,9 +27,12 @@ Object.assign(Pen3DSim.prototype, {
         const camY = Math.cos(phi) * CAMERA_INITIAL.distance;
         const rotatedZ = sinPhiR * Math.cos(theta);
 
+        // Orbit around a target on the tablet surface (y = yOffset), shifting the
+        // whole rig up by it so azimuth/elevation/distance stay exact.
+        const targetY = this.yOffset;
         this.perspectiveCamera = new THREE.PerspectiveCamera(30, cameraAspectRatio, cameraNear, cameraFar);
-        this.perspectiveCamera.position.set(rotatedX, camY, rotatedZ);
-        this.perspectiveCamera.lookAt(0, 0, 0);
+        this.perspectiveCamera.position.set(rotatedX, camY + targetY, rotatedZ);
+        this.perspectiveCamera.lookAt(0, targetY, 0);
 
         const orthoSize = 20 * SCALE;
         this.orthographicCamera = new THREE.OrthographicCamera(
@@ -40,8 +43,8 @@ Object.assign(Pen3DSim.prototype, {
             cameraNear,
             cameraFar
         );
-        this.orthographicCamera.position.set(rotatedX, camY, rotatedZ);
-        this.orthographicCamera.lookAt(0, 0, 0);
+        this.orthographicCamera.position.set(rotatedX, camY + targetY, rotatedZ);
+        this.orthographicCamera.lookAt(0, targetY, 0);
 
         this.camera = this.perspectiveCamera;
         this.orthoSize = orthoSize;
@@ -64,7 +67,11 @@ Object.assign(Pen3DSim.prototype, {
         this.controls.screenSpacePanning = false;
         this.controls.minDistance = 1 * SCALE;
         this.controls.maxDistance = 100 * SCALE;
+        // Cap elevation at the horizon so the camera stays on/above the target
+        // plane; combined with the target being kept at/above the tablet surface
+        // (see animate loop), the camera can never go below the surface.
         this.controls.maxPolarAngle = Math.PI / 2;
+        this.controls.target.set(0, this.yOffset, 0);
         this.controls.update();
     },
 
