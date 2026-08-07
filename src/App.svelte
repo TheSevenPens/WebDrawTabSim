@@ -5,7 +5,7 @@
   import AnnotationSettings from './lib/AnnotationSettings.svelte';
   import PointerTrackingSettings from './lib/PointerTrackingSettings.svelte';
   import { runParameterAnimation } from './lib/sim/animations.js';
-  import { DEMO_POSE, POINTER_DEFAULTS, ANIMATION } from './lib/sim/config.js';
+  import { DEMO_POSE, POINTER_DEFAULTS, ANIMATION, EXPORT } from './lib/sim/config.js';
 
   // ── DOM reference ──────────────────────────────────────────────────────────
   let viewer = $state();
@@ -87,6 +87,29 @@
     const view = cameraViews.find(v => v.name === name);
     if (view) sim.setCameraView(view.pos, view.target);
     e.target.value = ''; // reset dropdown
+  }
+
+  // ── Export / copy image ────────────────────────────────────────────────────
+  let exportStatus = $state('');
+  let exportStatusTimer = null;
+
+  function flashExportStatus(msg) {
+    exportStatus = msg;
+    if (exportStatusTimer) clearTimeout(exportStatusTimer);
+    exportStatusTimer = setTimeout(() => { exportStatus = ''; }, 2500);
+  }
+
+  async function onExportAction(action) {
+    if (!sim || !action) return;
+    const { hd, uhd } = EXPORT;
+    try {
+      if (action === 'png-hd')        sim.exportAsPNG(hd.width, hd.height);
+      else if (action === 'png-uhd')  sim.exportAsPNG(uhd.width, uhd.height);
+      else if (action === 'copy-hd')  { await sim.copyPNGToClipboard(hd.width, hd.height); flashExportStatus('Copied 1080p to clipboard'); }
+      else if (action === 'copy-uhd') { await sim.copyPNGToClipboard(uhd.width, uhd.height); flashExportStatus('Copied 4K to clipboard'); }
+    } catch (err) {
+      flashExportStatus(`Copy failed: ${err.message}`);
+    }
   }
 
   // ── Animation cancel handles ───────────────────────────────────────────────
@@ -432,9 +455,13 @@
   {onViewChange}
   onToggleFlyout={toggleFlyout}
   onResetPen={resetPen}
-  onExportPNG={(w, h) => sim?.exportAsPNG(w, h)}
+  {onExportAction}
   onEditCamera={openCameraEdit}
 />
+
+{#if exportStatus}
+  <div class="export-toast">{exportStatus}</div>
+{/if}
 
 <!-- ═══════════════════════════════════════════════════════════════════════════
      3D Viewer
@@ -550,4 +577,21 @@
     <button class="action-btn" onclick={runAnimBarrel}>Anim Barrel</button>
   </div>
 </div>
+
+<style>
+  .export-toast {
+    position: fixed;
+    bottom: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: rgba(20, 22, 26, 0.92);
+    color: #eee;
+    padding: 8px 16px;
+    border-radius: 6px;
+    border: 1px solid #4a90d9;
+    font-size: 13px;
+    z-index: 1000;
+    pointer-events: none;
+  }
+</style>
 

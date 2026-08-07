@@ -30,7 +30,7 @@
     onViewChange,
     onToggleFlyout,
     onResetPen,
-    onExportPNG,
+    onExportAction,
     onEditCamera,
   } = $props();
 </script>
@@ -98,8 +98,13 @@
 
   <button class="action-btn" onclick={onResetPen}>Reset pen</button>
   <button class="action-btn" id="animations-flyout-btn" onclick={() => onToggleFlyout('animations')}>Animations</button>
-  <button class="action-btn" onclick={() => onExportPNG(1920, 1080)}>Export 1080p</button>
-  <button class="action-btn" onclick={() => onExportPNG(3840, 2160)}>Export 4K</button>
+  <select class="action-btn" onchange={(e) => { const v = e.target.value; e.target.value = ''; onExportAction(v); }} style="text-align:left;">
+    <option value="">Export / Copy...</option>
+    <option value="png-hd">Export 1080p PNG</option>
+    <option value="png-uhd">Export 4K PNG</option>
+    <option value="copy-hd">Copy 1080p to clipboard</option>
+    <option value="copy-uhd">Copy 4K to clipboard</option>
+  </select>
   <button class="action-btn" onclick={onEditCamera}>Edit camera JSON</button>
   <select class="action-btn" onchange={onViewChange} style="text-align:left;">
     <option value="">Views...</option>

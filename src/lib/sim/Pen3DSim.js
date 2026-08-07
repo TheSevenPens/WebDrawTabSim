@@ -360,7 +360,9 @@ export class Pen3DSim {
         return { ...DEFAULT_PEN };
     }
 
-    exportAsPNG(width = EXPORT.hd.width, height = EXPORT.hd.height) {
+    // Render the scene at the requested resolution (supersampled) and return a
+    // 2D canvas holding the downsampled image. Restores the live renderer size.
+    renderToCanvas(width, height) {
         const origWidth = this.viewer.clientWidth;
         const origHeight = this.viewer.clientHeight;
         const origPixelRatio = this.renderer.getPixelRatio();
@@ -377,15 +379,34 @@ export class Pen3DSim {
         const ctx = canvas.getContext('2d');
         ctx.drawImage(this.renderer.domElement, 0, 0, width, height);
 
-        const link = document.createElement('a');
-        link.download = `Pen3DSim-${width}x${height}.png`;
-        link.href = canvas.toDataURL('image/png');
-        link.click();
-
         this.renderer.setPixelRatio(origPixelRatio);
         this.renderer.setSize(origWidth, origHeight);
         this.perspectiveCamera.aspect = origWidth / origHeight;
         this.perspectiveCamera.updateProjectionMatrix();
+
+        return canvas;
+    }
+
+    exportAsPNG(width = EXPORT.hd.width, height = EXPORT.hd.height) {
+        const canvas = this.renderToCanvas(width, height);
+        const link = document.createElement('a');
+        link.download = `Pen3DSim-${width}x${height}.png`;
+        link.href = canvas.toDataURL('image/png');
+        link.click();
+    }
+
+    // Copy the rendered view to the clipboard as a PNG. Returns a promise that
+    // rejects if the browser blocks clipboard access. The ClipboardItem is built
+    // with a Blob promise so the write stays inside the user gesture (Safari).
+    async copyPNGToClipboard(width = EXPORT.hd.width, height = EXPORT.hd.height) {
+        if (!navigator.clipboard || typeof ClipboardItem === 'undefined') {
+            throw new Error('Clipboard image copy is not supported in this browser');
+        }
+        const canvas = this.renderToCanvas(width, height);
+        const item = new ClipboardItem({
+            'image/png': new Promise((resolve) => canvas.toBlob(resolve, 'image/png')),
+        });
+        await navigator.clipboard.write([item]);
     }
 
     onResize() {
