@@ -11,6 +11,8 @@
     axonometric    = $bindable(),
     penDisplayMode = $bindable(),
     darkTablet     = $bindable(),
+    sharpNib       = $bindable(),
+    onSharpNib,
     azimuthDisabled,
     tiltXDisplay,
     tiltYDisplay,
@@ -91,6 +93,15 @@
       <label style="display:flex;align-items:center;gap:8px;">
         <input type="checkbox" bind:checked={showCameraInfo} style="width:auto;margin:0;">
         <span>Camera info</span>
+      </label>
+    </div>
+  </div>
+
+  <div class="checkbox-grid">
+    <div class="control-group">
+      <label style="display:flex;align-items:center;gap:8px;">
+        <input type="checkbox" bind:checked={sharpNib} onchange={onSharpNib} style="width:auto;margin:0;">
+        <span>Sharp nib tip</span>
       </label>
     </div>
   </div>

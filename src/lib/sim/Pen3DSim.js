@@ -51,6 +51,7 @@ export class Pen3DSim {
         this.edgeAttractionRange = POINTER_DEFAULTS.edgeAttractionRange;
         this.mouseSensitivity = POINTER_DEFAULTS.mouseSensitivity;
         this.penDisplayMode = false;
+        this.nibShape = 'rounded';   // 'rounded' | 'sharp'
         this.onCameraUpdate = null;
 
         // Constants (tablet coordinate dimensions)

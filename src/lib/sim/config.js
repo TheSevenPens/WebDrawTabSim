@@ -99,7 +99,7 @@ export const ANNOTATION = {
 };
 
 export const PEN_MESH = {
-    tipHeight: 0.5 * SCALE,      // nib tip sits at local y = -tipHeight (pen contact point)
+    tipHeight: 0.52083 * SCALE,  // nib tip at local y = -tipHeight (contact point); 0.5 mm longer → ≈12.5 mm
     tipRadius: 0.1 * SCALE,      // legacy; retained for reference
     barrelHeight: 4 * SCALE,     // pen top sits at local y = +barrelHeight (eraser apex)
     barrelRadius: 0.15 * SCALE,  // legacy; retained for reference
@@ -131,9 +131,15 @@ export const PEN_CHECKER = {
 // pieces share their boundary ring (nib↔body at r0.0151, body↔eraser at
 // r0.0935). See PEN_MESH for the tip/top anchors the pose math relies on.
 export const PEN_PROFILE = {
-    // Tiny rounded drawing nib protruding from the body's front face.
-    nib: [
-        [0.0000, -0.5000], [0.0094, -0.4975], [0.0143, -0.4909], [0.0151, -0.4540],
+    // Drawing nib profiles (bottom → top). Both share the tip apex at -0.52083
+    // so the contact point matches PEN_MESH.tipHeight regardless of shape.
+    //   rounded — original bullet-nose tip (radius grows fast off the apex)
+    //   sharp   — slender point (radius grows slowly off the apex)
+    nibRounded: [
+        [0.0000, -0.52083], [0.0094, -0.51833], [0.0143, -0.51173], [0.0151, -0.4540],
+    ],
+    nibSharp: [
+        [0.0000, -0.52083], [0.0094, -0.4975], [0.0143, -0.4909], [0.0151, -0.4540],
     ],
     // Main body: flat nib-cone face → tapered front → widest grip → long taper
     // → shoulder lip under the eraser.

@@ -63,7 +63,7 @@ Object.assign(Pen3DSim.prototype, {
         // share the pen's local +Y axis (nib at the bottom), so the existing
         // pose/tilt/barrel math is unaffected.
         const nib = new THREE.Mesh(
-            latheFromProfile(PEN_PROFILE.nib, segments),
+            latheFromProfile(this.nibProfileFor(this.nibShape), segments),
             MaterialsFactory.createPenNibMaterial()
         );
 
@@ -146,6 +146,19 @@ Object.assign(Pen3DSim.prototype, {
         this._altitudeQuat       = new THREE.Quaternion();
         this._azimuthQuat        = new THREE.Quaternion();
         this._barrelQuat         = new THREE.Quaternion();
+    },
+
+    nibProfileFor(shape) {
+        return shape === 'sharp' ? PEN_PROFILE.nibSharp : PEN_PROFILE.nibRounded;
+    },
+
+    // Swap the nib tip between 'rounded' and 'sharp'. Both profiles share the
+    // same tip apex, so the contact point / pen pose are unaffected.
+    setNibShape(shape) {
+        this.nibShape = shape;
+        if (!this.penTipMesh) return;
+        if (this.penTipMesh.geometry) this.penTipMesh.geometry.dispose();
+        this.penTipMesh.geometry = latheFromProfile(this.nibProfileFor(shape), PEN_MESH.latheSegments);
     },
 
     createCursorArrow() {
