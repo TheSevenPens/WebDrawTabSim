@@ -56,6 +56,9 @@
   let cameraEditError = $state('');
   let cameraPos       = $state({ x: 0, y: 0, z: 0 });
   let cameraTarget    = $state({ x: 0, y: 0, z: 0 });
+  let cameraAzimuth   = $state(0);
+  let cameraElevation = $state(0);
+  let cameraDistance  = $state(0);
 
   // ── Camera views ───────────────────────────────────────────────────────────
   const cameraViews = [
@@ -97,6 +100,18 @@
     exportStatus = msg;
     if (exportStatusTimer) clearTimeout(exportStatusTimer);
     exportStatusTimer = setTimeout(() => { exportStatus = ''; }, 2500);
+  }
+
+  function onRotateCamera(deltaAzimuth, deltaElevation) {
+    sim?.rotateCamera(deltaAzimuth, deltaElevation);
+  }
+
+  function onChangeDistance(delta) {
+    sim?.changeCameraDistance(delta);
+  }
+
+  function onPointCameraAt(name) {
+    sim?.pointCameraAt(name);
   }
 
   async function onExportAction(action) {
@@ -156,8 +171,15 @@
   onMount(() => {
     sim = new Pen3DSim(viewer);
 
-    // Live camera info callback
+    // Live camera info callback. Rotation always updates (guarded so idle
+    // frames don't churn); position/target only when the info panel is shown.
     sim.onCameraUpdate = (info) => {
+      const az = Math.round(info.azimuth);
+      const el = Math.round(info.elevation);
+      const dist = Math.round(info.distance * 10) / 10;
+      if (az !== cameraAzimuth)     cameraAzimuth = az;
+      if (el !== cameraElevation)   cameraElevation = el;
+      if (dist !== cameraDistance)  cameraDistance = dist;
       if (!showCameraInfo) return;
       cameraPos    = { x: info.posX, y: info.posY, z: info.posZ };
       cameraTarget = { x: info.targetX, y: info.targetY, z: info.targetZ };
@@ -451,6 +473,12 @@
   bind:showCameraInfo
   {cameraPos}
   {cameraTarget}
+  {cameraAzimuth}
+  {cameraElevation}
+  {cameraDistance}
+  {onRotateCamera}
+  {onChangeDistance}
+  {onPointCameraAt}
   {cameraViews}
   {onViewChange}
   onToggleFlyout={toggleFlyout}

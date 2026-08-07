@@ -26,6 +26,12 @@
     showCameraInfo = $bindable(),
     cameraPos,
     cameraTarget,
+    cameraAzimuth,
+    cameraElevation,
+    cameraDistance,
+    onRotateCamera,
+    onChangeDistance,
+    onPointCameraAt,
     cameraViews,
     onViewChange,
     onToggleFlyout,
@@ -105,6 +111,32 @@
     <option value="copy-hd">Copy 1080p to clipboard</option>
     <option value="copy-uhd">Copy 4K to clipboard</option>
   </select>
+  <div class="camera-rotation">
+    <div class="rotation-readout">Camera — Az: {cameraAzimuth}° · El: {cameraElevation}° · Dist: {cameraDistance}</div>
+    <div class="rotation-buttons">
+      <button class="rot-btn" onclick={() => onRotateCamera(-5, 0)} title="Rotate left 5°">◀ Az 5°</button>
+      <button class="rot-btn" onclick={() => onRotateCamera(5, 0)} title="Rotate right 5°">Az 5° ▶</button>
+      <button class="rot-btn" onclick={() => onRotateCamera(0, 5)} title="Raise 5°">▲ El 5°</button>
+      <button class="rot-btn" onclick={() => onRotateCamera(0, -5)} title="Lower 5°">▼ El 5°</button>
+      <button class="rot-btn" onclick={() => onChangeDistance(-5)} title="Move 5 closer">Dist −5</button>
+      <button class="rot-btn" onclick={() => onChangeDistance(5)} title="Move 5 farther">Dist +5</button>
+    </div>
+  </div>
+
+  <select class="action-btn" onchange={(e) => { const v = e.target.value; e.target.value = ''; onPointCameraAt(v); }} style="text-align:left;">
+    <option value="">Point camera at...</option>
+    <option value="pen-tip">Pen tip</option>
+    <option value="center">Active area: center</option>
+    <option value="corner-fl">Corner: front-left</option>
+    <option value="corner-fr">Corner: front-right</option>
+    <option value="corner-bl">Corner: back-left</option>
+    <option value="corner-br">Corner: back-right</option>
+    <option value="edge-front">Edge midpoint: front</option>
+    <option value="edge-back">Edge midpoint: back</option>
+    <option value="edge-left">Edge midpoint: left</option>
+    <option value="edge-right">Edge midpoint: right</option>
+  </select>
+
   <button class="action-btn" onclick={onEditCamera}>Edit camera JSON</button>
   <select class="action-btn" onchange={onViewChange} style="text-align:left;">
     <option value="">Views...</option>
@@ -113,3 +145,41 @@
     {/each}
   </select>
 </div>
+
+<style>
+  .camera-rotation {
+    margin: 4px 0;
+  }
+
+  .rotation-readout {
+    font-size: 11px;
+    color: #aaa;
+    font-family: monospace;
+    padding: 2px 0 4px;
+  }
+
+  .rotation-buttons {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 4px;
+  }
+
+  .rot-btn {
+    padding: 5px 4px;
+    font-size: 12px;
+    background: #3a3f47;
+    color: #eee;
+    border: 1px solid #555;
+    border-radius: 4px;
+    cursor: pointer;
+  }
+
+  .rot-btn:hover {
+    background: #4a5059;
+    border-color: #777;
+  }
+
+  .rot-btn:active {
+    background: #2f333a;
+  }
+</style>

@@ -93,9 +93,13 @@ export class Pen3DSim {
             if (this.onCameraUpdate) {
                 const pos = this.camera.position;
                 const target = this.controls.target;
+                const azimuth = ((THREE.MathUtils.radToDeg(this.controls.getAzimuthalAngle()) % 360) + 360) % 360;
+                const elevation = 90 - THREE.MathUtils.radToDeg(this.controls.getPolarAngle());
+                const distance = pos.distanceTo(target);
                 this.onCameraUpdate({
                     posX: pos.x, posY: pos.y, posZ: pos.z,
                     targetX: target.x, targetY: target.y, targetZ: target.z,
+                    azimuth, elevation, distance,
                 });
             }
         };
@@ -325,6 +329,69 @@ export class Pen3DSim {
     setCameraView(pos, target) {
         this.camera.position.set(pos.x, pos.y, pos.z);
         this.controls.target.set(target.x, target.y, target.z);
+        this.controls.update();
+    }
+
+    // Orbit the camera around its target by the given deltas (degrees).
+    // +azimuth rotates right (around world Y); +elevation raises the camera.
+    rotateCamera(deltaAzimuthDeg = 0, deltaElevationDeg = 0) {
+        const offset = this.camera.position.clone().sub(this.controls.target);
+        const spherical = new THREE.Spherical().setFromVector3(offset);
+        spherical.theta += THREE.MathUtils.degToRad(deltaAzimuthDeg);
+        // Elevation up = polar angle down, so subtract.
+        spherical.phi -= THREE.MathUtils.degToRad(deltaElevationDeg);
+        const eps = 0.0001;
+        const minPhi = (this.controls.minPolarAngle ?? 0) + eps;
+        const maxPhi = (this.controls.maxPolarAngle ?? Math.PI) - eps;
+        spherical.phi = Math.max(minPhi, Math.min(maxPhi, spherical.phi));
+        spherical.makeSafe();
+        offset.setFromSpherical(spherical);
+        this.camera.position.copy(this.controls.target).add(offset);
+        this.camera.lookAt(this.controls.target);
+        this.controls.update();
+    }
+
+    // Move the camera toward/away from its target by a fixed distance delta
+    // (negative = closer, positive = farther). Clamped to the OrbitControls
+    // min/max distance. In axonometric mode the orthographic zoom is scaled
+    // inversely, since ortho scale is independent of distance.
+    changeCameraDistance(delta) {
+        const offset = this.camera.position.clone().sub(this.controls.target);
+        const oldDist = offset.length();
+        const minD = this.controls.minDistance ?? 0.01;
+        const maxD = this.controls.maxDistance ?? Infinity;
+        const newDist = Math.max(minD, Math.min(maxD, oldDist + delta));
+        offset.setLength(newDist);
+        this.camera.position.copy(this.controls.target).add(offset);
+        if (this.camera.isOrthographicCamera && newDist > 0) {
+            this.camera.zoom = Math.max(0.05, Math.min(100, this.camera.zoom * (oldDist / newDist)));
+            this.camera.updateProjectionMatrix();
+        }
+        this.controls.update();
+    }
+
+    // Aim the camera at a named point on the tablet's active area (or the pen
+    // tip) by moving the orbit target there; the camera keeps its position and
+    // re-aims. Points are in world space on the digitizer surface (y = yOffset).
+    pointCameraAt(name) {
+        const hw = this.tabletWidth / 2;   // half of the active-area width
+        const hd = this.tabletDepth / 2;   // half of the active-area depth
+        const y = this.yOffset;            // digitizer surface height
+        let p;
+        switch (name) {
+            case 'pen-tip':    p = this.penTipWorld ? this.penTipWorld.clone() : new THREE.Vector3(0, y, 0); break;
+            case 'center':     p = new THREE.Vector3(  0, y,   0); break;
+            case 'corner-fl':  p = new THREE.Vector3(-hw, y, -hd); break;
+            case 'corner-fr':  p = new THREE.Vector3( hw, y, -hd); break;
+            case 'corner-bl':  p = new THREE.Vector3(-hw, y,  hd); break;
+            case 'corner-br':  p = new THREE.Vector3( hw, y,  hd); break;
+            case 'edge-front': p = new THREE.Vector3(  0, y, -hd); break;
+            case 'edge-back':  p = new THREE.Vector3(  0, y,  hd); break;
+            case 'edge-left':  p = new THREE.Vector3(-hw, y,   0); break;
+            case 'edge-right': p = new THREE.Vector3( hw, y,   0); break;
+            default: return;
+        }
+        this.controls.target.copy(p);
         this.controls.update();
     }
 
