@@ -83,8 +83,8 @@ Object.assign(Pen3DSim.prototype, {
 
         // Floor + studio walls (no dark GridHelper)
         const floorY = -29 * SCALE;
-        const roomW = 100 * SCALE;
-        const roomD = 80 * SCALE;
+        const roomW = 200 * SCALE;
+        const roomD = 160 * SCALE;
         // Grow depth 50% toward the camera (+Z); keep the back wall fixed
         const roomDExtra = roomD * 0.5;
         const roomDFull = roomD + roomDExtra;
