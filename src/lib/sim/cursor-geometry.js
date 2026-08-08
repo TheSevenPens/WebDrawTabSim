@@ -37,8 +37,8 @@ export function createCursorArrowMesh(cursorSize) {
  * @returns {{ mesh: THREE.Mesh, geometry: THREE.ShapeGeometry }}
  */
 export function createCrosshairCursorMesh(cursorSize) {
-    const s = cursorSize * 0.8;    // 20% smaller than the arrow cursor
-    const t = s * 0.07;            // arm half-thickness
+    const s = cursorSize * 0.64;   // ~64% of the arrow cursor size
+    const t = s * 0.049;           // arm half-thickness (~30% thinner)
     const gap = s * 0.12;          // half-width of the empty center
     const len = s * 0.5;           // arm length beyond the gap
 
