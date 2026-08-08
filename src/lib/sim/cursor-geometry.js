@@ -39,8 +39,9 @@ export function createCursorArrowMesh(cursorSize) {
 export function createCrosshairCursorMesh(cursorSize) {
     const s = cursorSize * 0.64;   // ~64% of the arrow cursor size
     const t = s * 0.049;           // arm half-thickness (~30% thinner)
-    const gap = s * 0.12;          // half-width of the empty center
+    const gap = s * 0.12;          // half-width of the center span
     const len = s * 0.5;           // arm length beyond the gap
+    const t2 = t * 0.315;          // thin center hairs (crossing the middle)
 
     const rect = (x0, y0, x1, y1) => {
         const s = new THREE.Shape();
@@ -57,16 +58,14 @@ export function createCrosshairCursorMesh(cursorSize) {
         rect(-t, -(gap + len), t, -gap),           // down
         rect(gap, -t, gap + len, t),               // right
         rect(-(gap + len), -t, -gap, t),           // left
+        rect(-gap, -t2, gap, t2),                  // thin horizontal hair across center
+        rect(-t2, -gap, t2, gap),                  // thin vertical hair across center
     ];
 
+    // No black outline here (unlike the arrow cursor) — the crosshair reads as
+    // clean white hairs.
     const geometry = new THREE.ShapeGeometry(shapes);
     const mesh = new THREE.Mesh(geometry, MaterialsFactory.createCursorMaterial());
-
-    const outline = new THREE.LineSegments(
-        new THREE.EdgesGeometry(geometry),
-        MaterialsFactory.createCursorOutlineMaterial()
-    );
-    mesh.add(outline);
 
     return { mesh, geometry };
 }
