@@ -20,9 +20,8 @@ Object.assign(Pen3DSim.prototype, {
 
         const deskHeight = 1 * SCALE;
         const deskW = 60 * SCALE, deskD = 30 * SCALE, deskZ = -6.5 * SCALE;
-        const woodMap = TexturesFactory.createWoodGrainTexture();
         const deskGeometry = new THREE.BoxGeometry(deskW, deskHeight, deskD);
-        const deskMesh = new THREE.Mesh(deskGeometry, MaterialsFactory.createDeskMaterial(woodMap));
+        const deskMesh = new THREE.Mesh(deskGeometry, MaterialsFactory.createDeskMaterial());
         deskMesh.position.set(0, -deskHeight / 2, deskZ);
         deskMesh.receiveShadow = true;
         deskMesh.castShadow = true;

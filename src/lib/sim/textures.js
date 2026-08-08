@@ -91,52 +91,6 @@ export class TexturesFactory {
         return new THREE.CanvasTexture(canvas);
     }
 
-    /**
-     * Subtle procedural wood grain for the desk top (light maple).
-     * Grain runs along the desk depth (V) so strips read as planks from above.
-     */
-    static createWoodGrainTexture() {
-        const W = 512, H = 512;
-        const canvas = document.createElement('canvas');
-        canvas.width = W;
-        canvas.height = H;
-        const ctx = canvas.getContext('2d');
-
-        ctx.fillStyle = '#d4b896';
-        ctx.fillRect(0, 0, W, H);
-
-        for (let i = 0; i < 48; i++) {
-            const x = (i / 48) * W + (Math.sin(i * 1.7) * 3);
-            const alpha = 0.04 + (i % 5) * 0.012;
-            ctx.strokeStyle = `rgba(160, 120, 70, ${alpha})`;
-            ctx.lineWidth = 1 + (i % 3) * 0.5;
-            ctx.beginPath();
-            ctx.moveTo(x, 0);
-            for (let y = 0; y <= H; y += 8) {
-                ctx.lineTo(x + Math.sin(y * 0.04 + i) * 2.5, y);
-            }
-            ctx.stroke();
-        }
-
-        // Soft plank separators
-        for (let p = 1; p < 6; p++) {
-            const y = (p / 6) * H;
-            ctx.strokeStyle = 'rgba(140, 105, 60, 0.08)';
-            ctx.lineWidth = 2;
-            ctx.beginPath();
-            ctx.moveTo(0, y);
-            ctx.lineTo(W, y);
-            ctx.stroke();
-        }
-
-        const texture = new THREE.CanvasTexture(canvas);
-        texture.colorSpace = THREE.SRGBColorSpace;
-        texture.wrapS = THREE.RepeatWrapping;
-        texture.wrapT = THREE.RepeatWrapping;
-        texture.repeat.set(4, 2);
-        return texture;
-    }
-
     // Create a text label texture for axis markers
     static createTextLabelTexture(text, color) {
         const canvas = document.createElement('canvas');
