@@ -85,14 +85,15 @@ Object.assign(Pen3DSim.prototype, {
         const directionalLight = new THREE.DirectionalLight(0xfff5eb, 0.75);
         directionalLight.position.set(8 * SCALE, 28 * SCALE, 12 * SCALE);
         directionalLight.castShadow = true;
-        // High-res map over a frustum tightened to the desk/tablet area so each
-        // texel is small and the (unfiltered) pen shadow stays crisp.
-        directionalLight.shadow.mapSize.width = 4096;
-        directionalLight.shadow.mapSize.height = 4096;
-        directionalLight.shadow.camera.left = -24 * SCALE;
-        directionalLight.shadow.camera.right = 24 * SCALE;
-        directionalLight.shadow.camera.top = 24 * SCALE;
-        directionalLight.shadow.camera.bottom = -24 * SCALE;
+        // Frustum wide enough to cover the whole desk (incl. its legs) so their
+        // shadows aren't clipped; the map is scaled with it so the (unfiltered)
+        // pen shadow keeps the same small-texel crispness.
+        directionalLight.shadow.mapSize.width = 8192;
+        directionalLight.shadow.mapSize.height = 8192;
+        directionalLight.shadow.camera.left = -48 * SCALE;
+        directionalLight.shadow.camera.right = 48 * SCALE;
+        directionalLight.shadow.camera.top = 48 * SCALE;
+        directionalLight.shadow.camera.bottom = -48 * SCALE;
         directionalLight.shadow.camera.near = 0.1 * SCALE;
         directionalLight.shadow.camera.far = 100 * SCALE;
         directionalLight.shadow.bias = -0.0002;   // normalized depth — not scaled
