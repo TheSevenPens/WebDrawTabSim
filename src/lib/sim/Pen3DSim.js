@@ -52,6 +52,7 @@ export class Pen3DSim {
         this.mouseSensitivity = POINTER_DEFAULTS.mouseSensitivity;
         this.penDisplayMode = false;
         this.nibShape = 'rounded';   // 'rounded' | 'sharp'
+        this.cursorMode = 'mouse';   // 'mouse' | 'crosshairs' | 'none'
         this.onCameraUpdate = null;
         this.viewportAspect = 16 / 9;   // target render aspect (width / height)
 
@@ -256,9 +257,21 @@ export class Pen3DSim {
         this._refreshPen();
     }
 
-    setCursorVisible(visible) {
-        if (this.cursorArrow)   this.cursorArrow.visible   = visible;
-        if (this.monitorCursor) this.monitorCursor.visible = visible && !this.penDisplayMode;
+    // Select the pointer cursor: 'mouse' (arrow), 'crosshairs', or 'none'.
+    setCursorMode(mode) {
+        this.cursorMode = mode;
+        this._applyCursorMode();
+    }
+
+    // Show whichever cursor matches the mode; the monitor copies are also gated
+    // off in pen-display mode (the cursor lives on the tablet screen instead).
+    _applyCursorMode() {
+        const showMouse = this.cursorMode === 'mouse';
+        const showCross = this.cursorMode === 'crosshairs';
+        if (this.cursorArrow)      this.cursorArrow.visible      = showMouse;
+        if (this.cursorCrosshair)  this.cursorCrosshair.visible  = showCross;
+        if (this.monitorCursor)    this.monitorCursor.visible    = showMouse && !this.penDisplayMode;
+        if (this.monitorCrosshair) this.monitorCrosshair.visible = showCross && !this.penDisplayMode;
     }
 
     setPenShadowVisible(visible) {
@@ -318,7 +331,7 @@ export class Pen3DSim {
         this.penDisplayMode = enabled;
         if (this.tabletScreen) this.tabletScreen.visible = enabled;
         if (this.monitorGroup) this.monitorGroup.visible = !enabled;
-        if (this.monitorCursor) this.monitorCursor.visible = !enabled;
+        this._applyCursorMode();
         if (this.digitizerGrid) this.digitizerGrid.position.y = enabled ? 0.008 * SCALE : 0;
         this._refreshPen();
     }

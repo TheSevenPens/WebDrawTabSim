@@ -29,7 +29,7 @@
   let showTiltY        = $state(false);
   let showBarrel       = $state(false);
   let showAxis         = $state(false);
-  let showCursor       = $state(true);
+  let cursorMode       = $state('mouse'); // 'mouse' | 'crosshairs' | 'none'
   let showPenShadow    = $state(true);
   let showCheckerboard = $state(false);
   let axonometric      = $state(false);
@@ -197,7 +197,7 @@
 
     // Apply initial checkbox state
     sim.setAzimuthAnnotationsVisible(showAzimuth);
-    sim.setCursorVisible(showCursor);
+    sim.setCursorMode(cursorMode);
     sim.setPenShadowVisible(showPenShadow);
     sim.setAxisMarkersVisible(showAxis);
 
@@ -258,7 +258,7 @@
   function onShowTiltY()        { sim.setTiltYAnnotationsVisible(showTiltY); }
   function onShowBarrel()       { sim.setBarrelAnnotationsVisible(showBarrel); }
   function onShowAxis()         { sim.setAxisMarkersVisible(showAxis); }
-  function onShowCursor()       { sim.setCursorVisible(showCursor); }
+  function onCursorMode()       { sim.setCursorMode(cursorMode); }
   function onShowPenShadow()    { sim.setPenShadowVisible(showPenShadow); }
   function onShowCheckerboard() { sim.setTabletCheckerboardVisible(showCheckerboard); }
   function onAxonometric()      { sim.setAxonometricView(axonometric); }
@@ -273,26 +273,28 @@
   }
 
   function allAnnotationsOn() {
-    showAltitude = showAzimuth = showTiltX = showTiltY = showBarrel = showAxis = showCursor = showPenShadow = true;
+    showAltitude = showAzimuth = showTiltX = showTiltY = showBarrel = showAxis = showPenShadow = true;
+    cursorMode = 'mouse';
     sim.setAltitudeAnnotationsVisible(true);
     sim.setAzimuthAnnotationsVisible(true);
     sim.setTiltXAnnotationsVisible(true);
     sim.setTiltYAnnotationsVisible(true);
     sim.setBarrelAnnotationsVisible(true);
     sim.setAxisMarkersVisible(true);
-    sim.setCursorVisible(true);
+    sim.setCursorMode('mouse');
     sim.setPenShadowVisible(true);
   }
 
   function allAnnotationsOff() {
-    showAltitude = showAzimuth = showTiltX = showTiltY = showBarrel = showAxis = showCursor = showPenShadow = false;
+    showAltitude = showAzimuth = showTiltX = showTiltY = showBarrel = showAxis = showPenShadow = false;
+    cursorMode = 'none';
     sim.setAltitudeAnnotationsVisible(false);
     sim.setAzimuthAnnotationsVisible(false);
     sim.setTiltXAnnotationsVisible(false);
     sim.setTiltYAnnotationsVisible(false);
     sim.setBarrelAnnotationsVisible(false);
     sim.setAxisMarkersVisible(false);
-    sim.setCursorVisible(false);
+    sim.setCursorMode('none');
     sim.setPenShadowVisible(false);
   }
 
@@ -465,8 +467,8 @@
 <!-- Scene tab contents, passed to LeftPanel as snippets (state stays here). -->
 {#snippet sceneAnnTab()}
   <AnnotationSettings
-    bind:showCursor
-    {onShowCursor}
+    bind:cursorMode
+    {onCursorMode}
   />
 {/snippet}
 

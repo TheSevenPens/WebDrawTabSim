@@ -2,7 +2,7 @@ import * as THREE from 'three';
 import { MaterialsFactory } from './materials.js';
 import { TexturesFactory } from './textures.js';
 import { Pen3DSim } from './Pen3DSim.js';
-import { createCursorArrowMesh } from './cursor-geometry.js';
+import { createCursorArrowMesh, createCrosshairCursorMesh } from './cursor-geometry.js';
 import { PEN_MESH, PEN_PROFILE, PEN_CHECKER, CURSOR, ANNOTATION, POINTER_DEFAULTS, SCALE } from './config.js';
 
 // pen-pen.js — Pen mesh, cursor arrow, and the core updatePenTransform loop
@@ -129,9 +129,11 @@ Object.assign(Pen3DSim.prototype, {
         this.penAxisLine = new THREE.Line(this.penAxisLineGeometry, MaterialsFactory.createDashedLineMaterial(0xffffff));
         this.scene.add(this.penAxisLine);
 
-        // Cursor arrow
+        // Cursor arrow + crosshair (only one is visible at a time; see setCursorMode)
         this.cursorArrow = this.createCursorArrow();
         this.scene.add(this.cursorArrow);
+        this.cursorCrosshair = this.createCursorCrosshair();
+        this.scene.add(this.cursorCrosshair);
 
         // Reusable world-space vectors
         this.penTopLocal         = new THREE.Vector3(0,  barrelHeight, 0);
@@ -183,6 +185,15 @@ Object.assign(Pen3DSim.prototype, {
         this.updateCursorRotation();
 
         mesh.position.set(0, this.yOffset, 0);
+        return mesh;
+    },
+
+    createCursorCrosshair() {
+        const { mesh } = createCrosshairCursorMesh(CURSOR.tabletSize);
+        // Lay the XY-plane crosshair flat on the digitizer surface (XZ plane).
+        mesh.rotation.x = -Math.PI / 2;
+        mesh.position.set(0, this.yOffset, 0);
+        mesh.visible = false;
         return mesh;
     },
 
@@ -358,6 +369,7 @@ Object.assign(Pen3DSim.prototype, {
 
         const cursorY = this.yOffset + (this.penDisplayMode ? 0.01 : 0.002) * SCALE;
         this.cursorArrow.position.set(worldCursorX, cursorY, worldCursorZ);
+        this.cursorCrosshair.position.set(worldCursorX, cursorY, worldCursorZ);
         this.updateMonitorCursor(worldCursorX, worldCursorZ);
     },
 

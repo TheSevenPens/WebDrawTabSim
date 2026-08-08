@@ -2,7 +2,7 @@ import * as THREE from 'three';
 import { MaterialsFactory } from './materials.js';
 import { TexturesFactory } from './textures.js';
 import { Pen3DSim } from './Pen3DSim.js';
-import { createCursorArrowMesh } from './cursor-geometry.js';
+import { createCursorArrowMesh, createCrosshairCursorMesh } from './cursor-geometry.js';
 import { CURSOR, SCALE } from './config.js';
 
 // pen-monitor.js — Desk monitor mesh and screen cursor
@@ -85,12 +85,21 @@ Object.assign(Pen3DSim.prototype, {
 
         this.monitorCursor = this.createMonitorCursor();
         this.scene.add(this.monitorCursor);
+        this.monitorCrosshair = this.createMonitorCrosshair();
+        this.scene.add(this.monitorCrosshair);
     },
 
     createMonitorCursor() {
         const { mesh } = createCursorArrowMesh(CURSOR.monitorSize);
         // ShapeGeometry is in the XY plane (facing +Z). Rotate so tip points northwest.
         mesh.rotation.z = -3 * Math.PI / 4;
+        return mesh;
+    },
+
+    createMonitorCrosshair() {
+        // Already in the XY plane facing the viewer; symmetric, so no rotation.
+        const { mesh } = createCrosshairCursorMesh(CURSOR.monitorSize);
+        mesh.visible = false;
         return mesh;
     },
 
@@ -105,6 +114,7 @@ Object.assign(Pen3DSim.prototype, {
         const screenCursorZ = this.monitorZ + this.monitorBodyDepth / 2 + 0.08 * SCALE;
 
         this.monitorCursor.position.set(screenCursorX, screenCursorY, screenCursorZ);
+        this.monitorCrosshair.position.set(screenCursorX, screenCursorY, screenCursorZ);
     },
 
 });
