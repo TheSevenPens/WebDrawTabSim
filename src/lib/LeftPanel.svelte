@@ -259,9 +259,25 @@
   }
 
   .collapse-chevron {
-    font-size: 10px;
-    color: #999;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex: none;
+    width: 26px;
+    height: 26px;
+    font-size: 18px;
+    line-height: 1;
+    color: #ddd;
+    background: #3a3f47;
+    border: 1px solid #666;
+    border-radius: 4px;
     margin-left: 8px;
+  }
+
+  .section-header:hover .collapse-chevron {
+    color: #fff;
+    background: #4a5059;
+    border-color: #888;
   }
 
   .tabs {
