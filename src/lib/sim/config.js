@@ -110,7 +110,7 @@ export const PEN_MESH = {
 // hand-drawn wacpen-half.svg profile: eraser tail, graphite body, dark nib.
 export const PEN_COLORS = {
     eraser: 0x676c73,  // tail dome (slightly lighter graphite)
-    body:   0x565b62,  // matte graphite barrel (used when checkerboard is off)
+    body:   0xaa33bb,  // darker check of the barrel checkerboard (used when checkerboard is off)
     nib:    0x141518,  // dark drawing nib tip
 };
 

@@ -54,8 +54,10 @@ Object.assign(Pen3DSim.prototype, {
         this.renderer = new THREE.WebGLRenderer({ antialias: true, preserveDrawingBuffer: true, logarithmicDepthBuffer: true });
         this.renderer.setSize(this.viewer.clientWidth, this.viewer.clientHeight);
         this.renderer.shadowMap.enabled = true;
-        // Basic (unfiltered) shadow map for crisp, hard-edged shadows.
-        this.renderer.shadowMap.type = THREE.BasicShadowMap;
+        // PCF-filtered shadow map: keeps edges crisp at this texel density while
+        // anti-aliasing the stair-stepping that BasicShadowMap left on the small
+        // pen shadow.
+        this.renderer.shadowMap.type = THREE.PCFSoftShadowMap;
         this.renderer.outputColorSpace = THREE.SRGBColorSpace;
         this.viewer.appendChild(this.renderer.domElement);
     },
