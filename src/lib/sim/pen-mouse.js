@@ -20,6 +20,15 @@ Object.assign(Pen3DSim.prototype, {
         this.renderer.domElement.addEventListener('mousemove',  (e) => this.handleMouseMove(e), true);
         this.renderer.domElement.addEventListener('mouseup',    (e) => this.handleMouseUp(e),   true);
         this.renderer.domElement.addEventListener('mouseleave', (e) => this.handleMouseUp(e));
+        this.renderer.domElement.addEventListener('wheel', (e) => this.handleWheel(e), { passive: false });
+    },
+
+    // Fixed-step wheel zoom: 20 mm per notch, same as the camera distance
+    // buttons. Scroll up = closer, scroll down = farther.
+    handleWheel(e) {
+        if (!this.controls.enabled) return;   // e.g. while space-dragging the pen
+        e.preventDefault();
+        this.changeCameraDistance(e.deltaY > 0 ? 20 : -20);
     },
 
     handleKeyDown(e) {

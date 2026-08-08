@@ -65,7 +65,10 @@ Object.assign(Pen3DSim.prototype, {
         this.controls.enableDamping = true;
         this.controls.dampingFactor = 0.05;
         this.controls.screenSpacePanning = false;
-        this.controls.minDistance = 1 * SCALE;
+        // Replace OrbitControls' multiplicative wheel zoom with our own fixed
+        // 20 mm step (see handleWheel), matching the camera distance buttons.
+        this.controls.enableZoom = false;
+        this.controls.minDistance = 20;   // mm (matches the 20 mm zoom step)
         this.controls.maxDistance = 100 * SCALE;
         // Cap elevation at the horizon so the camera stays on/above the target
         // plane; combined with the target being kept at/above the tablet surface
