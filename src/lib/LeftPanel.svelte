@@ -37,6 +37,7 @@
     onAxonometric,
     penAnnTab,
     sceneAnnTab,
+    animationsTab,
     showCameraInfo = $bindable(),
     cameraPos,
     cameraTarget,
@@ -60,7 +61,7 @@
 
   // Per-section collapse state (all expanded by default).
   let collapsed = $state({
-    pen: false, mapping: false, pointer: false, camera: false, tablet: false, other: false,
+    pen: false, mapping: false, pointer: false, camera: false, tablet: false, animations: false, other: false,
   });
 </script>
 
@@ -190,6 +191,11 @@
   </div>
   {/if}
 
+  {@render sectionHeader('animations', 'Animations')}
+  {#if !collapsed.animations}
+  {@render animationsTab()}
+  {/if}
+
   {@render sectionHeader('other', 'Other')}
   {#if !collapsed.other}
   <div class="control-group">
@@ -210,7 +216,6 @@
       <span>Axonometric</span>
     </label>
   </div>
-  <button class="action-btn" id="animations-flyout-btn" onclick={() => onToggleFlyout('animations')}>Animations</button>
   <select class="action-btn" onchange={(e) => { const v = e.target.value; e.target.value = ''; onExportAction(v); }} style="text-align:left;">
     <option value="">Export / Copy...</option>
     <option value="png-hd">Export 1080p PNG</option>

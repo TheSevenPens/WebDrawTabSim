@@ -490,6 +490,14 @@
   />
 {/snippet}
 
+{#snippet animationsTab()}
+  <button class="action-btn" onclick={runDemo}>Demo</button>
+  <button class="action-btn" onclick={runAnimAll}>Anim Rot all</button>
+  <button class="action-btn" onclick={runAnimAltitude}>Anim Tilt Altitude</button>
+  <button class="action-btn" onclick={runAnimAzimuth}>Anim Tilt Azimuth</button>
+  <button class="action-btn" onclick={runAnimBarrel}>Anim Barrel</button>
+{/snippet}
+
 {#snippet penAnnTab()}
   <div style="display:flex;gap:16px;">
     <!-- Left column: rotation annotations -->
@@ -538,6 +546,7 @@
   {onPenDisplayMode}
   {penAnnTab}
   {sceneAnnTab}
+  {animationsTab}
   bind:axonometric
   {onAxonometric}
   {onDarkTablet}
@@ -633,23 +642,6 @@
       {onEdgeAttractionRange}
       {onMouseSensitivity}
     />
-  </div>
-</div>
-
-<!-- ═══════════════════════════════════════════════════════════════════════════
-     Animations flyout
-     ═══════════════════════════════════════════════════════════════════════════ -->
-<div id="animations-flyout" class="flyout-panel" class:open={openFlyout === 'animations'}>
-  <div class="flyout-header">
-    <h3>Animations</h3>
-    <button class="flyout-close-btn" onclick={() => openFlyout = null}>×</button>
-  </div>
-  <div class="flyout-content">
-    <button class="action-btn" onclick={runDemo}>Demo</button>
-    <button class="action-btn" onclick={runAnimAll}>Anim Rot all</button>
-    <button class="action-btn" onclick={runAnimAltitude}>Anim Tilt Altitude</button>
-    <button class="action-btn" onclick={runAnimAzimuth}>Anim Tilt Azimuth</button>
-    <button class="action-btn" onclick={runAnimBarrel}>Anim Barrel</button>
   </div>
 </div>
 
