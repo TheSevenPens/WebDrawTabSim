@@ -45,6 +45,8 @@
     onToggleFlyout,
     onResetPen,
     onExportAction,
+    aspectRatio,
+    onAspectRatio,
     onEditCamera,
   } = $props();
 
@@ -178,6 +180,14 @@
       <option value={view.name}>{view.name}</option>
     {/each}
   </select>
+  <div class="control-group" style="display:flex;align-items:center;gap:8px;">
+    <span style="white-space:nowrap;color:#fff;font-size:12px;">Aspect:</span>
+    <select class="action-btn" style="flex:1;width:auto;margin-top:0;text-align:left;" value={aspectRatio} onchange={(e) => onAspectRatio(e.target.value)}>
+      <option value="16 / 9">16:9</option>
+      <option value="1 / 1">1:1</option>
+      <option value="2 / 3">2:3</option>
+    </select>
+  </div>
 </div>
 
 <style>

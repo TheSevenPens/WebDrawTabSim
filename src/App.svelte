@@ -36,6 +36,7 @@
   let penDisplayMode   = $state(false);
   let darkTablet       = $state(false);
   let sharpNib         = $state(false);
+  let aspectRatio      = $state('16 / 9'); // CSS aspect-ratio for #viewer
 
   // ── Pointer-tracking state ─────────────────────────────────────────────────
   let cursorOffsetX       = $state(0);
@@ -116,14 +117,21 @@
     sim?.pointCameraAt(name);
   }
 
+  // Export dimensions follow the selected viewport aspect: the vertical
+  // resolution stays 1080 ("1080p") / 2160 ("4K"), width is derived from it.
+  function exportDims(height) {
+    const [aw, ah] = aspectRatio.split('/').map(Number);
+    return [Math.round(height * (aw / ah)), height];
+  }
+
   async function onExportAction(action) {
     if (!sim || !action) return;
     const { hd, uhd } = EXPORT;
     try {
-      if (action === 'png-hd')        sim.exportAsPNG(hd.width, hd.height);
-      else if (action === 'png-uhd')  sim.exportAsPNG(uhd.width, uhd.height);
-      else if (action === 'copy-hd')  { await sim.copyPNGToClipboard(hd.width, hd.height); flashExportStatus('Copied 1080p to clipboard'); }
-      else if (action === 'copy-uhd') { await sim.copyPNGToClipboard(uhd.width, uhd.height); flashExportStatus('Copied 4K to clipboard'); }
+      if (action === 'png-hd')        sim.exportAsPNG(...exportDims(hd.height));
+      else if (action === 'png-uhd')  sim.exportAsPNG(...exportDims(uhd.height));
+      else if (action === 'copy-hd')  { await sim.copyPNGToClipboard(...exportDims(hd.height)); flashExportStatus('Copied 1080p to clipboard'); }
+      else if (action === 'copy-uhd') { await sim.copyPNGToClipboard(...exportDims(uhd.height)); flashExportStatus('Copied 4K to clipboard'); }
     } catch (err) {
       flashExportStatus(`Copy failed: ${err.message}`);
     }
@@ -257,6 +265,12 @@
   function onPenDisplayMode()   { sim.setPenDisplayMode(penDisplayMode); }
   function onDarkTablet()       { sim.setDarkTablet(darkTablet); }
   function onSharpNib()         { sim.setNibShape(sharpNib ? 'sharp' : 'rounded'); }
+
+  function onAspectRatio(value) {
+    aspectRatio = value;
+    const [aw, ah] = value.split('/').map(Number);
+    sim?.setViewportAspect(aw, ah);   // re-fit the canvas to the new aspect
+  }
 
   function allAnnotationsOn() {
     showAltitude = showAzimuth = showTiltX = showTiltY = showBarrel = showAxis = showCursor = showPenShadow = true;
@@ -512,6 +526,8 @@
   onToggleFlyout={toggleFlyout}
   onResetPen={resetPen}
   {onExportAction}
+  {aspectRatio}
+  {onAspectRatio}
   onEditCamera={openCameraEdit}
 />
 

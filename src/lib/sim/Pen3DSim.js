@@ -53,6 +53,7 @@ export class Pen3DSim {
         this.penDisplayMode = false;
         this.nibShape = 'rounded';   // 'rounded' | 'sharp'
         this.onCameraUpdate = null;
+        this.viewportAspect = 16 / 9;   // target render aspect (width / height)
 
         // Constants (tablet coordinate dimensions)
         this.tabletWidth = TABLET.width;
@@ -75,6 +76,9 @@ export class Pen3DSim {
         this.initPen();
         this.initAnnotations();
         this.initAxisMarkers();
+
+        // Size the canvas to the target aspect within the viewer before drawing.
+        this.onResize();
 
         // Start render loop
         this.animate();
@@ -434,8 +438,6 @@ export class Pen3DSim {
     // Render the scene at the requested resolution (supersampled) and return a
     // 2D canvas holding the downsampled image. Restores the live renderer size.
     renderToCanvas(width, height) {
-        const origWidth = this.viewer.clientWidth;
-        const origHeight = this.viewer.clientHeight;
         const origPixelRatio = this.renderer.getPixelRatio();
 
         this.renderer.setPixelRatio(EXPORT.supersample);
@@ -450,10 +452,9 @@ export class Pen3DSim {
         const ctx = canvas.getContext('2d');
         ctx.drawImage(this.renderer.domElement, 0, 0, width, height);
 
+        // Restore the live render size + aspect (canvas fitted to the viewer).
         this.renderer.setPixelRatio(origPixelRatio);
-        this.renderer.setSize(origWidth, origHeight);
-        this.perspectiveCamera.aspect = origWidth / origHeight;
-        this.perspectiveCamera.updateProjectionMatrix();
+        this.onResize();
 
         return canvas;
     }
@@ -480,14 +481,30 @@ export class Pen3DSim {
         await navigator.clipboard.write([item]);
     }
 
+    // Set the target render aspect (width / height) and re-fit the canvas.
+    setViewportAspect(width, height) {
+        if (width > 0 && height > 0) this.viewportAspect = width / height;
+        this.onResize();
+    }
+
     onResize() {
-        const aspect = this.viewer.clientWidth / this.viewer.clientHeight;
+        const cw = this.viewer.clientWidth;
+        const ch = this.viewer.clientHeight;
+        const aspect = this.viewportAspect || (cw / ch);
+
+        // Largest box of `aspect` that fits inside the viewer (letterboxed).
+        let w = cw;
+        let h = cw / aspect;
+        if (h > ch) { h = ch; w = ch * aspect; }
+        w = Math.max(1, Math.floor(w));
+        h = Math.max(1, Math.floor(h));
+
         this.perspectiveCamera.aspect = aspect;
         this.perspectiveCamera.updateProjectionMatrix();
         this.orthographicCamera.left   = -this.orthoSize * aspect;
         this.orthographicCamera.right  =  this.orthoSize * aspect;
         this.orthographicCamera.updateProjectionMatrix();
-        this.renderer.setSize(this.viewer.clientWidth, this.viewer.clientHeight);
+        this.renderer.setSize(w, h);
     }
 
     // ── Animation helpers ─────────────────────────────────────────────────────

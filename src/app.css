@@ -94,11 +94,20 @@ input[type="range"] {
 
 #viewer {
     flex: 1;
+    min-width: 0;
+    min-height: 0;
     position: relative;
-    aspect-ratio: 16 / 9;
+    display: flex;
+    align-items: center;
+    justify-content: center;
     max-height: 100vh;
-    align-self: center;
     margin: 50px;
+}
+
+/* The canvas is sized in JS to the largest box of the chosen aspect ratio
+   that fits, then centered here (letterboxed against the page background). */
+#viewer canvas {
+    display: block;
 }
 
 #info {
