@@ -17,15 +17,15 @@ src/main.js
     ├── AnnotationSettings.svelte     ← annotations flyout
     ├── PointerTrackingSettings.svelte
     │   └── SliderControl.svelte
-    └── [flyouts, camera JSON modal, #viewer]
+    └── [flyouts, #viewer]
 ```
 
 | Component | Responsibility |
 |---|---|
-| `App.svelte` | Owns reactive state; bridges UI → `Pen3DSim`; flyouts, animations, camera modal |
-| `LeftPanel.svelte` | Control panel chrome and action buttons |
-| `PenOrientationPanel.svelte` | Primary pen sliders + Tilt X/Y read-outs |
-| `AnnotationSettings.svelte` | Annotation visibility + All On/Off |
+| `App.svelte` | Owns reactive state; bridges UI → `Pen3DSim`; flyouts, animations |
+| `LeftPanel.svelte` | Control panel chrome, section headers, camera and action controls |
+| `PenOrientationPanel.svelte` | Tabbed pen controls (position, orientation, format, annotations) |
+| `AnnotationSettings.svelte` | Cursor mode dropdown (mouse / crosshairs / none) |
 | `PointerTrackingSettings.svelte` | Cursor pipeline + mouse sensitivity sliders |
 | `SliderControl.svelte` | Labelled range input with click-to-edit value |
 

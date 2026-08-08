@@ -31,7 +31,7 @@ npm run preview  # preview the production build
 |---|---|
 | [docs/OVERVIEW.md](./docs/OVERVIEW.md) | Purpose and feature summary |
 | [docs/CONCEPTS.md](./docs/CONCEPTS.md) | Glossary: orientation, coordinates, annotations |
-| [docs/CONTROLS.md](./docs/CONTROLS.md) | UI, Space+drag, animations, export, camera JSON |
+| [docs/CONTROLS.md](./docs/CONTROLS.md) | UI panel, Space+drag, camera, animations, export |
 | [docs/CURSOR_PIPELINE.md](./docs/CURSOR_PIPELINE.md) | How cursor position is computed |
 | [docs/ARCHITECTURE.md](./docs/ARCHITECTURE.md) | Svelte + Three.js code structure |
 | [docs/FUTURES.md](./docs/FUTURES.md) | Known gaps and ideas |
