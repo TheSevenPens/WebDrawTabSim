@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import { SCENE, PEN_COLORS } from './config.js';
+import { SCENE, PEN_COLORS, SCALE } from './config.js';
 
 // Materials Factory - Creates all materials used in Pen3DSim
 
@@ -36,12 +36,13 @@ export class MaterialsFactory {
         });
     }
 
-    // Create a dashed line material (for dotted arcs, circles)
+    // Create a dashed line material (for dotted arcs, circles). dashSize/gapSize
+    // are in world mm, so the original design-unit values are scaled by SCALE.
     static createDashedLineMaterial(color, linewidth = 2) {
         return new THREE.LineDashedMaterial({
             color: color,
-            dashSize: 0.04,
-            gapSize: 0.025,
+            dashSize: 0.04 * SCALE,
+            gapSize: 0.025 * SCALE,
             linewidth: linewidth
         });
     }
@@ -66,9 +67,9 @@ export class MaterialsFactory {
         return this.createStandardMaterial(SCENE.deskGrainDark, 0.85, 0.02);
     }
 
-    // Wall material — matte white studio (slight emissive so walls stay bright)
+    // Wall material — matte studio paint (slight emissive so walls stay bright)
     static createWallMaterial() {
-        const material = this.createStandardMaterial(0xffffff, 0.98, 0.0);
+        const material = this.createStandardMaterial(SCENE.wall, 0.98, 0.0);
         material.emissive = new THREE.Color(0xf5f4f0);
         material.emissiveIntensity = 0.22;
         return material;
@@ -103,11 +104,6 @@ export class MaterialsFactory {
         return this.createStandardMaterial(SCENE.tablet, 0.92, 0.0);
     }
 
-    // Tablet wireframe material
-    static createTabletWireframeMaterial() {
-        return this.createLineBasicMaterial(0x808080, 1);
-    }
-
     // Grid material — soft contrast against the tablet body
     static createGridMaterial() {
         return new THREE.LineBasicMaterial({
@@ -115,11 +111,6 @@ export class MaterialsFactory {
             transparent: true,
             opacity: 0.55,
         });
-    }
-
-    // Pen tip/barrel material (with texture) — legacy, retained for reference
-    static createPenMaterial(texture) {
-        return this.createStandardMaterial(0xffffff, 0.8, 0.1, texture);
     }
 
     // Pen part materials — three pieces revolved from the SVG profile.

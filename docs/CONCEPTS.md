@@ -8,7 +8,7 @@ Drawing tablets report pen orientation as angles relative to the digitizer surfa
 
 | Term | Meaning | UI range |
 |---|---|---|
-| **Hover distance (Z)** | Height of the pen tip above the digitizer surface | 0–1 in |
+| **Hover distance (Z)** | Height of the pen tip above the digitizer surface | 0–24 mm |
 | **Tilt altitude** | Angle from vertical. `0°` = upright; larger values lean the pen | 0–60° |
 | **Tilt azimuth** | Direction of the lean around the tablet surface. Only meaningful when altitude ≠ 0 | 0–359° |
 | **Barrel rotation** | Spin around the pen’s long axis (how the barrel is twisted) | 0–359° |
@@ -30,11 +30,11 @@ When altitude is `0`, azimuth is disabled in the UI — there is no lean directi
 
 ### Tablet coordinates (API / teaching space)
 
-Inches on the digitizer active area:
+Millimetres on the digitizer active area (`SCALE = 24` maps the original 16×9 inch design):
 
 ```
-tabletX   0 – 16    left → right
-tabletY   0 – 9     front → back (toward the monitor)
+tabletX   0 – 384   left → right
+tabletY   0 – 216   front → back (toward the monitor)
 tabletZ   ≥ 0       tip height above the surface (hover distance)
 ```
 
@@ -42,12 +42,12 @@ All sliders, mouse-drag, and the public `Pen3DSim` setters use tablet coordinate
 
 ### World coordinates (Three.js)
 
-Y-up scene space, also in inches:
+Y-up scene space, also in millimetres (1 world unit = 1 mm):
 
 ```
-worldX = tabletX − tabletWidth/2     (±8)
-worldY = yOffset + tabletZ           (surface at yOffset ≈ 0.175)
-worldZ = tabletY − tabletDepth/2     (±4.5)
+worldX = tabletX − tabletWidth/2     (±192)
+worldY = yOffset + tabletZ           (surface at yOffset ≈ tablet thickness / 2)
+worldZ = tabletY − tabletDepth/2     (±108)
 ```
 
 `yOffset` is half the tablet body thickness — the world Y of the digitizer plane.

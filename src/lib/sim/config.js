@@ -33,6 +33,78 @@ export const SCENE = {
     /** Digitizer grid on dark tablet — slightly lighter lavender */
     gridDark: 0x6e5a82,
     monitorBezel: 0x2a2a2e,
+    /** Tablet checkerboard overlay (light tablet body) */
+    tabletCheckLight1: 0xe4d8f0,
+    tabletCheckLight2: 0xc8b4dc,
+    /** Tablet checkerboard overlay (dark tablet body) */
+    tabletCheckDark1: 0x5c4a6e,
+    tabletCheckDark2: 0x3a2c48,
+};
+
+/** Desk slab + legs (world mm). Monitor and tablet sit on top of this. */
+export const DESK = {
+    height: 1 * SCALE,
+    width: 60 * SCALE,
+    depth: 30 * SCALE,
+    z: -6.5 * SCALE,
+    legHeight: 28 * SCALE,
+    legSize: 1.5 * SCALE,
+    /** Legs are inset this far from each desk edge */
+    legInset: 2 * SCALE,
+};
+
+/** Studio floor, walls, and baseboards. */
+export const ROOM = {
+    floorY: -29 * SCALE,
+    width: 200 * SCALE,
+    depth: 160 * SCALE,
+    /** Fraction of `depth` the room grows toward the camera (+Z); the back wall stays fixed */
+    depthExtraTowardCamera: 0.5,
+    height: 90 * SCALE,
+    baseboardHeight: 5 * SCALE,
+    baseboardDepth: 0.75 * SCALE,
+};
+
+/** Scene lighting rig: soft ambient + warm key (shadow-casting) + cool fill + wall bounce + point accent. */
+export const LIGHTING = {
+    ambient: { color: 0xffffff, intensity: 0.88 },
+    key: {
+        color: 0xfff5eb,
+        intensity: 0.75,
+        position: [8 * SCALE, 28 * SCALE, 12 * SCALE],
+        shadow: {
+            mapSize: 4096,
+            /** Half-width/height of the (square) orthographic shadow frustum — wide enough to cover the whole desk incl. legs */
+            frustum: 48 * SCALE,
+            near: 0.1 * SCALE,
+            far: 100 * SCALE,
+            bias: -0.0002,   // normalized depth — not scaled
+        },
+    },
+    fill: { color: 0xe8f0ff, intensity: 0.45, position: [-6 * SCALE, 12 * SCALE, 22 * SCALE] },
+    wallFill: { color: 0xffffff, intensity: 0.3, position: [0, 20 * SCALE, -30 * SCALE] },
+    /** Point light has distance falloff (decay), so its intensity is pre-compensated by
+     *  SCALE² in pen-scene.js to counteract scaling its position by SCALE. */
+    point: { color: 0xffffff, intensity: 0.2, position: [-12 * SCALE, 14 * SCALE, -8 * SCALE] },
+};
+
+/** External desk monitor: body/bezel/neck/base dimensions and screen placement. */
+export const MONITOR = {
+    diagonal: 21 * SCALE,   // 16:9 aspect; screenWidth/Height derived in pen-monitor.js
+    bezelSize: 0.4 * SCALE,
+    bodyDepth: 0.8 * SCALE,
+    neckHeight: 5.0 * SCALE,
+    neckWidth: 1.2 * SCALE,
+    neckDepth: 0.5 * SCALE,
+    baseHeight: 0.4 * SCALE,
+    baseWidth: 7.0 * SCALE,
+    baseDepth: 4.0 * SCALE,
+    z: -12 * SCALE,
+    screenThickness: 0.05 * SCALE,
+    /** Gap between the body's front face and the screen plane */
+    screenOffset: 0.025 * SCALE,
+    /** Cursor Z offset in front of the screen plane (avoids z-fighting) */
+    cursorOffset: 0.08 * SCALE,
 };
 
 export const DEFAULT_PEN = {
@@ -100,9 +172,7 @@ export const ANNOTATION = {
 
 export const PEN_MESH = {
     tipHeight: 0.52083 * SCALE,  // nib tip at local y = -tipHeight (contact point); 0.5 mm longer → ≈12.5 mm
-    tipRadius: 0.1 * SCALE,      // legacy; retained for reference
     barrelHeight: 4 * SCALE,     // pen top sits at local y = +barrelHeight (eraser apex)
-    barrelRadius: 0.15 * SCALE,  // legacy; retained for reference
     latheSegments: 48,           // radial resolution of the revolved pen parts
 };
 
@@ -162,12 +232,13 @@ export const CURSOR = {
     tipRotationY: 90,
 };
 
+/** Individual-axis sweep ends; kept equal to DEMO_POSE so all animations agree. */
 export const ANIMATION = {
     durationMs: 8000,
     startDelayMs: 500,
-    altitudeEnd: 45,
-    azimuthEnd: 252,
-    barrelEnd: 316,
+    altitudeEnd: DEMO_POSE.tiltAltitude,
+    azimuthEnd: DEMO_POSE.tiltAzimuth,
+    barrelEnd: DEMO_POSE.barrelRotation,
 };
 
 export const EXPORT = {

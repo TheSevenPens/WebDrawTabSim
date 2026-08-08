@@ -19,7 +19,7 @@ flowchart LR
   tip --> scale --> offset --> comp --> edge --> place --> mon
 ```
 
-All intermediate results are in **world** XZ on the tablet surface (inches). Tablet-direction offsets map as: tablet X → world X, tablet Y → world Z.
+All intermediate results are in **world** XZ on the tablet surface (millimetres). Tablet-direction offsets map as: tablet X → world X, tablet Y → world Z.
 
 ## Stages
 
@@ -40,7 +40,7 @@ else:
 
 ### 3. Cursor offset
 
-Add constant `cursorOffsetX` / `cursorOffsetY` (inches).
+Add constant `cursorOffsetX` / `cursorOffsetY` (millimetres).
 
 ### 4. Tilt compensation
 
@@ -88,4 +88,4 @@ With the current formula, **front** of the tablet (negative world Z) maps toward
 
 ## Teaching tip
 
-Leave pointer-tracking at defaults to show “cursor under tip.” Then change one stage at a time (offset → compensation → scaling → edge) so students see each driver behavior in isolation. Turn on the tablet checkerboard annotation to measure shifts in inches.
+Leave pointer-tracking at defaults to show “cursor under tip.” Then change one stage at a time (offset → compensation → scaling → edge) so students see each driver behavior in isolation. Turn on the tablet checkerboard annotation to measure shifts in millimetres.

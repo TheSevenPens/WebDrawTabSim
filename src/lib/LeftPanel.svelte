@@ -1,5 +1,18 @@
 <script>
   import PenOrientationPanel from './PenOrientationPanel.svelte';
+  import CheckboxControl from './CheckboxControl.svelte';
+  import SelectControl from './SelectControl.svelte';
+
+  const deviceTypeOptions = [
+    { value: 'tablet', label: 'pen tablet' },
+    { value: 'display', label: 'pen display' },
+  ];
+
+  const aspectOptions = [
+    { value: '16 / 9', label: '16:9' },
+    { value: '1 / 1', label: '1:1' },
+    { value: '2 / 3', label: '2:3' },
+  ];
 
   let {
     distance       = $bindable(),
@@ -38,9 +51,6 @@
     penAnnTab,
     sceneAnnTab,
     animationsTab,
-    showCameraInfo = $bindable(),
-    cameraPos,
-    cameraTarget,
     cameraAzimuth,
     cameraElevation,
     cameraDistance,
@@ -54,7 +64,6 @@
     onExportAction,
     aspectRatio,
     onAspectRatio,
-    onEditCamera,
   } = $props();
 
   let activeCamTab = $state('dir'); // 'dir' | 'targ'
@@ -110,13 +119,6 @@
   {#if !collapsed.pointer}
   {@render sceneAnnTab()}
 
-  {#if showCameraInfo}
-  <div class="camera-info" style="font-size:11px;line-height:1.4;padding:4px 0;font-family:monospace;color:#aaa;">
-    <div>Pos: {cameraPos.x.toFixed(2)}, {cameraPos.y.toFixed(2)}, {cameraPos.z.toFixed(2)}</div>
-    <div>Target: {cameraTarget.x.toFixed(2)}, {cameraTarget.y.toFixed(2)}, {cameraTarget.z.toFixed(2)}</div>
-  </div>
-  {/if}
-
   <button class="action-btn" onclick={onResetPen}>Reset pen</button>
   {/if}
 
@@ -164,31 +166,15 @@
 
   {@render sectionHeader('tablet', 'Tablet')}
   {#if !collapsed.tablet}
-  <div class="control-group">
-    <label style="display:flex;align-items:center;gap:8px;">
-      <input type="checkbox" bind:checked={showCheckerboard} onchange={onShowCheckerboard} style="width:auto;margin:0;">
-      <span>Tablet checkerboard</span>
-    </label>
-  </div>
-  <div class="control-group">
-    <label style="display:flex;align-items:center;gap:8px;">
-      <input type="checkbox" bind:checked={showGrid} onchange={onShowGrid} style="width:auto;margin:0;">
-      <span>Active area grid</span>
-    </label>
-  </div>
-  <div class="control-group" style="display:flex;align-items:center;gap:8px;">
-    <span style="white-space:nowrap;color:#fff;font-size:12px;">Device type:</span>
-    <select class="action-btn" style="flex:1;width:auto;margin-top:0;text-align:left;" value={penDisplayMode ? 'display' : 'tablet'} onchange={(e) => { penDisplayMode = e.target.value === 'display'; onPenDisplayMode(); }}>
-      <option value="tablet">pen tablet</option>
-      <option value="display">pen display</option>
-    </select>
-  </div>
-  <div class="control-group">
-    <label style="display:flex;align-items:center;gap:8px;">
-      <input type="checkbox" bind:checked={darkTablet} onchange={onDarkTablet} style="width:auto;margin:0;">
-      <span>Dark tablet</span>
-    </label>
-  </div>
+  <CheckboxControl label="Tablet checkerboard" bind:checked={showCheckerboard} onchange={onShowCheckerboard} />
+  <CheckboxControl label="Active area grid" bind:checked={showGrid} onchange={onShowGrid} />
+  <SelectControl
+    label="Device type:"
+    value={penDisplayMode ? 'display' : 'tablet'}
+    onchange={(e) => { penDisplayMode = e.target.value === 'display'; onPenDisplayMode(); }}
+    options={deviceTypeOptions}
+  />
+  <CheckboxControl label="Dark tablet" bind:checked={darkTablet} onchange={onDarkTablet} />
   {/if}
 
   {@render sectionHeader('animations', 'Animations')}
@@ -198,24 +184,9 @@
 
   {@render sectionHeader('other', 'Other')}
   {#if !collapsed.other}
-  <div class="control-group">
-    <label style="display:flex;align-items:center;gap:8px;">
-      <input type="checkbox" bind:checked={showAxis} onchange={onShowAxis} style="width:auto;margin:0;">
-      <span>Axis</span>
-    </label>
-  </div>
-  <div class="control-group">
-    <label style="display:flex;align-items:center;gap:8px;">
-      <input type="checkbox" bind:checked={showMonitor} onchange={onShowMonitor} style="width:auto;margin:0;">
-      <span>Monitor</span>
-    </label>
-  </div>
-  <div class="control-group">
-    <label style="display:flex;align-items:center;gap:8px;">
-      <input type="checkbox" bind:checked={axonometric} onchange={onAxonometric} style="width:auto;margin:0;">
-      <span>Axonometric</span>
-    </label>
-  </div>
+  <CheckboxControl label="Axis" bind:checked={showAxis} onchange={onShowAxis} />
+  <CheckboxControl label="Monitor" bind:checked={showMonitor} onchange={onShowMonitor} />
+  <CheckboxControl label="Axonometric" bind:checked={axonometric} onchange={onAxonometric} />
   <select class="action-btn" onchange={(e) => { const v = e.target.value; e.target.value = ''; onExportAction(v); }} style="text-align:left;">
     <option value="">Export / Copy...</option>
     <option value="png-hd">Export 1080p PNG</option>
@@ -229,14 +200,7 @@
       <option value={view.name}>{view.name}</option>
     {/each}
   </select>
-  <div class="control-group" style="display:flex;align-items:center;gap:8px;">
-    <span style="white-space:nowrap;color:#fff;font-size:12px;">Aspect:</span>
-    <select class="action-btn" style="flex:1;width:auto;margin-top:0;text-align:left;" value={aspectRatio} onchange={(e) => onAspectRatio(e.target.value)}>
-      <option value="16 / 9">16:9</option>
-      <option value="1 / 1">1:1</option>
-      <option value="2 / 3">2:3</option>
-    </select>
-  </div>
+  <SelectControl label="Aspect:" value={aspectRatio} onchange={(e) => onAspectRatio(e.target.value)} options={aspectOptions} />
   {/if}
 </div>
 

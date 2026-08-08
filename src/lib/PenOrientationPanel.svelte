@@ -1,5 +1,13 @@
 <script>
   import SliderControl from './SliderControl.svelte';
+  import CheckboxControl from './CheckboxControl.svelte';
+  import SelectControl from './SelectControl.svelte';
+  import { PEN_RANGES } from './sim/config.js';
+
+  const bodyFormatOptions = [
+    { value: 'checkerboard', label: 'checkerboard pattern' },
+    { value: 'solid', label: 'solid color' },
+  ];
 
   let {
     distance       = $bindable(),
@@ -35,33 +43,17 @@
 </div>
 
 {#if activeTab === 'pos'}
-  <SliderControl inline label="Z" title="Hover distance" bind:value={distance} min={0} max={24} step={0.01} decimals={2} unit=" mm" oninput={onDistance} />
-  <SliderControl inline label="X" title="Tablet X position" bind:value={tabletX} min={0} max={384} step={0.01} decimals={2} unit=" mm" oninput={onTabletX} />
-  <SliderControl inline label="Y" title="Tablet Y position" bind:value={tabletY} min={0} max={216} step={0.01} decimals={2} unit=" mm" oninput={onTabletY} />
+  <SliderControl inline label="Z" title="Hover distance" bind:value={distance} min={PEN_RANGES.distance.min} max={PEN_RANGES.distance.max} step={0.01} decimals={2} unit=" mm" oninput={onDistance} />
+  <SliderControl inline label="X" title="Tablet X position" bind:value={tabletX} min={PEN_RANGES.tabletX.min} max={PEN_RANGES.tabletX.max} step={0.01} decimals={2} unit=" mm" oninput={onTabletX} />
+  <SliderControl inline label="Y" title="Tablet Y position" bind:value={tabletY} min={PEN_RANGES.tabletY.min} max={PEN_RANGES.tabletY.max} step={0.01} decimals={2} unit=" mm" oninput={onTabletY} />
 {:else if activeTab === 'or'}
-  <SliderControl inline label="Al" title="Tilt altitude" bind:value={tiltAltitude} min={0} max={60} step={1} decimals={0} unit="°" oninput={onAltitude} />
-  <SliderControl inline label="Az" title="Tilt azimuth" bind:value={tiltAzimuth} min={0} max={359} step={1} decimals={0} unit="°" disabled={azimuthDisabled} oninput={onAzimuth} />
-  <SliderControl inline label="Br" title="Barrel rotation" bind:value={barrelRotation} min={0} max={359} step={1} decimals={0} unit="°" oninput={onBarrel} />
+  <SliderControl inline label="Al" title="Tilt altitude" bind:value={tiltAltitude} min={PEN_RANGES.tiltAltitude.min} max={PEN_RANGES.tiltAltitude.max} step={1} decimals={0} unit="°" oninput={onAltitude} />
+  <SliderControl inline label="Az" title="Tilt azimuth" bind:value={tiltAzimuth} min={PEN_RANGES.tiltAzimuth.min} max={PEN_RANGES.tiltAzimuth.max} step={1} decimals={0} unit="°" disabled={azimuthDisabled} oninput={onAzimuth} />
+  <SliderControl inline label="Br" title="Barrel rotation" bind:value={barrelRotation} min={PEN_RANGES.barrelRotation.min} max={PEN_RANGES.barrelRotation.max} step={1} decimals={0} unit="°" oninput={onBarrel} />
 {:else if activeTab === 'fmt'}
-  <div class="control-group" style="display:flex;align-items:center;gap:8px;">
-    <span style="white-space:nowrap;color:#fff;font-size:12px;">Body:</span>
-    <select class="action-btn" style="flex:1;width:auto;margin-top:0;text-align:left;" bind:value={penBodyFormat} onchange={onPenBodyFormat}>
-      <option value="checkerboard">checkerboard pattern</option>
-      <option value="solid">solid color</option>
-    </select>
-  </div>
-  <div class="control-group">
-    <label style="display:flex;align-items:center;gap:8px;">
-      <input type="checkbox" bind:checked={sharpNib} onchange={onSharpNib} style="width:auto;margin:0;">
-      <span>Sharp nib tip</span>
-    </label>
-  </div>
-  <div class="control-group">
-    <label style="display:flex;align-items:center;gap:8px;">
-      <input type="checkbox" bind:checked={showPenShadow} onchange={onShowPenShadow} style="width:auto;margin:0;">
-      <span>Pen shadow</span>
-    </label>
-  </div>
+  <SelectControl label="Body:" bind:value={penBodyFormat} onchange={onPenBodyFormat} options={bodyFormatOptions} />
+  <CheckboxControl label="Sharp nib tip" bind:checked={sharpNib} onchange={onSharpNib} />
+  <CheckboxControl label="Pen shadow" bind:checked={showPenShadow} onchange={onShowPenShadow} />
 {:else}
   {@render penAnnTab()}
 {/if}

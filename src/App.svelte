@@ -2,8 +2,9 @@
   import { onMount } from 'svelte';
   import { Pen3DSim } from './lib/sim/index.js';
   import LeftPanel from './lib/LeftPanel.svelte';
-  import AnnotationSettings from './lib/AnnotationSettings.svelte';
+  import CursorModeControl from './lib/CursorModeControl.svelte';
   import PointerTrackingSettings from './lib/PointerTrackingSettings.svelte';
+  import CheckboxControl from './lib/CheckboxControl.svelte';
   import { runParameterAnimation } from './lib/sim/animations.js';
   import { DEFAULT_PEN, DEMO_POSE, POINTER_DEFAULTS, ANIMATION, EXPORT, SCALE } from './lib/sim/config.js';
 
@@ -18,8 +19,6 @@
   let tiltAltitude   = $state(0);
   let tiltAzimuth    = $state(0);
   let barrelRotation = $state(0);
-  let tiltXDisplay   = $state('0.0');
-  let tiltYDisplay   = $state('0.0');
   let azimuthDisabled = $state(true);
 
   // ── Annotation / display state ─────────────────────────────────────────────
@@ -58,12 +57,6 @@
 
   // ── Flyout / modal state ───────────────────────────────────────────────────
   let openFlyout      = $state(null); // 'pointer-tracking' | 'annotations' | 'animations' | null
-  let showCameraInfo  = $state(false);
-  let showCameraEdit  = $state(false);
-  let cameraJsonText  = $state('');
-  let cameraEditError = $state('');
-  let cameraPos       = $state({ x: 0, y: 0, z: 0 });
-  let cameraTarget    = $state({ x: 0, y: 0, z: 0 });
   let cameraAzimuth   = $state(0);
   let cameraElevation = $state(0);
   let cameraDistance  = $state(0);
@@ -153,11 +146,6 @@
     azimuthDisabled = tiltAltitude === 0;
   }
 
-  function setTiltXY(result) {
-    tiltXDisplay = result.tiltX.toFixed(1);
-    tiltYDisplay = result.tiltY.toFixed(1);
-  }
-
   function toggleFlyout(name) {
     openFlyout = openFlyout === name ? null : name;
   }
@@ -187,8 +175,8 @@
   onMount(() => {
     sim = new Pen3DSim(viewer);
 
-    // Live camera info callback. Rotation always updates (guarded so idle
-    // frames don't churn); position/target only when the info panel is shown.
+    // Live camera readout for the rotation/distance controls (guarded so idle
+    // frames don't churn reactive state).
     sim.onCameraUpdate = (info) => {
       const az = Math.round(info.azimuth);
       const el = Math.round(info.elevation);
@@ -196,9 +184,6 @@
       if (az !== cameraAzimuth)     cameraAzimuth = az;
       if (el !== cameraElevation)   cameraElevation = el;
       if (dist !== cameraDistance)  cameraDistance = dist;
-      if (!showCameraInfo) return;
-      cameraPos    = { x: info.posX, y: info.posY, z: info.posZ };
-      cameraTarget = { x: info.targetX, y: info.targetY, z: info.targetZ };
     };
 
     // Apply initial checkbox state
@@ -240,14 +225,12 @@
   function onTabletY()        { sim.setTabletPositionY(tabletY); }
 
   function onAltitude() {
-    const result = sim.setTiltAltitude(tiltAltitude);
-    setTiltXY(result);
+    sim.setTiltAltitude(tiltAltitude);
     updateAzimuthState();
   }
 
   function onAzimuth() {
-    const result = sim.setTiltAzimuth(tiltAzimuth);
-    setTiltXY(result);
+    sim.setTiltAzimuth(tiltAzimuth);
   }
 
   function onBarrel()            { sim.setBarrelRotation(barrelRotation); }
@@ -288,32 +271,6 @@
     aspectRatio = value;
     const [aw, ah] = value.split('/').map(Number);
     sim?.setViewportAspect(aw, ah);   // re-fit the canvas to the new aspect
-  }
-
-  function allAnnotationsOn() {
-    showAltitude = showAzimuth = showTiltX = showTiltY = showBarrel = showAxis = showPenShadow = true;
-    cursorMode = 'mouse';
-    sim.setAltitudeAnnotationsVisible(true);
-    sim.setAzimuthAnnotationsVisible(true);
-    sim.setTiltXAnnotationsVisible(true);
-    sim.setTiltYAnnotationsVisible(true);
-    sim.setBarrelAnnotationsVisible(true);
-    sim.setAxisMarkersVisible(true);
-    sim.setCursorMode('mouse');
-    sim.setPenShadowVisible(true);
-  }
-
-  function allAnnotationsOff() {
-    showAltitude = showAzimuth = showTiltX = showTiltY = showBarrel = showAxis = showPenShadow = false;
-    cursorMode = 'none';
-    sim.setAltitudeAnnotationsVisible(false);
-    sim.setAzimuthAnnotationsVisible(false);
-    sim.setTiltXAnnotationsVisible(false);
-    sim.setTiltYAnnotationsVisible(false);
-    sim.setBarrelAnnotationsVisible(false);
-    sim.setAxisMarkersVisible(false);
-    sim.setCursorMode('none');
-    sim.setPenShadowVisible(false);
   }
 
   // ── Reset ──────────────────────────────────────────────────────────────────
@@ -358,8 +315,7 @@
     sim.setTiltXAnnotationsVisible(true);
     sim.setTiltYAnnotationsVisible(true);
     sim.setBarrelAnnotationsVisible(true);
-    const result = sim.setTiltAzimuth(demo.tiltAzimuth);
-    setTiltXY(result);
+    sim.setTiltAzimuth(demo.tiltAzimuth);
   }
 
   // ── Anim all ───────────────────────────────────────────────────────────────
@@ -388,8 +344,7 @@
         barrelRotation = current.barrelRotation;
         tabletX = current.tabletX;
         tabletY = current.tabletY;
-        const result = sim.setTiltAzimuth(current.tiltAzimuth);
-        setTiltXY(result);
+        sim.setTiltAzimuth(current.tiltAzimuth);
         if (progress >= 1) cancelMainAnimation = null;
       });
     }, ANIMATION.startDelayMs);
@@ -405,9 +360,8 @@
       apply: (value) => {
         tiltAltitude = value;
         tiltAzimuth = curAzimuth;
-        const result = sim.setTiltAltitude(tiltAltitude);
+        sim.setTiltAltitude(tiltAltitude);
         sim.setTiltAzimuth(curAzimuth);
-        setTiltXY(result);
         updateAzimuthState();
       },
     });
@@ -423,8 +377,7 @@
         tiltAltitude = curAlt;
         tiltAzimuth = value;
         sim.setTiltAltitude(curAlt);
-        const result = sim.setTiltAzimuth(tiltAzimuth);
-        setTiltXY(result);
+        sim.setTiltAzimuth(tiltAzimuth);
         updateAzimuthState();
       },
     });
@@ -442,41 +395,10 @@
     });
   }
 
-  // ── Camera settings edit (inline error, no alert) ──────────────────────────
-
-  function openCameraEdit() {
-    cameraEditError = '';
-    try {
-      cameraJsonText = sim.getCameraSettingsJSON();
-      showCameraEdit = true;
-    } catch (error) {
-      cameraEditError = `Error loading camera settings: ${error.message}`;
-      showCameraEdit = true;
-    }
-  }
-
-  function closeCameraEdit() {
-    showCameraEdit = false;
-    cameraEditError = '';
-  }
-
-  function applyCameraEdit() {
-    try {
-      sim.setCameraSettingsJSON(cameraJsonText);
-      cameraEditError = '';
-      showCameraEdit = false;
-    } catch (error) {
-      cameraEditError = `Error applying camera settings: ${error.message}`;
-    }
-  }
-
   // ── Keyboard ───────────────────────────────────────────────────────────────
 
   function handleKeyDown(e) {
-    if (e.key === 'Escape') {
-      if (showCameraEdit) closeCameraEdit();
-      else openFlyout = null;
-    }
+    if (e.key === 'Escape') openFlyout = null;
   }
 </script>
 
@@ -484,7 +406,7 @@
 
 <!-- Scene tab contents, passed to LeftPanel as snippets (state stays here). -->
 {#snippet sceneAnnTab()}
-  <AnnotationSettings
+  <CursorModeControl
     bind:cursorMode
     {onCursorMode}
   />
@@ -502,17 +424,17 @@
   <div style="display:flex;gap:16px;">
     <!-- Left column: rotation annotations -->
     <div style="flex:1;">
-      <div class="control-group"><label style="display:flex;align-items:center;gap:8px;"><input type="checkbox" bind:checked={showAltitude} onchange={onShowAltitude} style="width:auto;margin:0;"><span>Tilt altitude</span></label></div>
-      <div class="control-group"><label style="display:flex;align-items:center;gap:8px;"><input type="checkbox" bind:checked={showAzimuth}  onchange={onShowAzimuth}  style="width:auto;margin:0;"><span>Tilt azimuth</span></label></div>
-      <div class="control-group"><label style="display:flex;align-items:center;gap:8px;"><input type="checkbox" bind:checked={showTiltX}    onchange={onShowTiltX}    style="width:auto;margin:0;"><span>Tilt X</span></label></div>
-      <div class="control-group"><label style="display:flex;align-items:center;gap:8px;"><input type="checkbox" bind:checked={showTiltY}    onchange={onShowTiltY}    style="width:auto;margin:0;"><span>Tilt Y</span></label></div>
-      <div class="control-group"><label style="display:flex;align-items:center;gap:8px;"><input type="checkbox" bind:checked={showBarrel}   onchange={onShowBarrel}   style="width:auto;margin:0;"><span>Barrel rotation</span></label></div>
+      <CheckboxControl label="Tilt altitude"   bind:checked={showAltitude}   onchange={onShowAltitude} />
+      <CheckboxControl label="Tilt azimuth"    bind:checked={showAzimuth}    onchange={onShowAzimuth} />
+      <CheckboxControl label="Tilt X"          bind:checked={showTiltX}      onchange={onShowTiltX} />
+      <CheckboxControl label="Tilt Y"          bind:checked={showTiltY}      onchange={onShowTiltY} />
+      <CheckboxControl label="Barrel rotation" bind:checked={showBarrel}     onchange={onShowBarrel} />
     </div>
     <!-- Right column: line annotations -->
     <div style="flex:1;">
-      <div class="control-group"><label style="display:flex;align-items:center;gap:8px;"><input type="checkbox" bind:checked={showPenTopLine} onchange={onShowPenTopLine} style="width:auto;margin:0;"><span>Pen top line</span></label></div>
-      <div class="control-group"><label style="display:flex;align-items:center;gap:8px;"><input type="checkbox" bind:checked={showPenAxisLine} onchange={onShowPenAxisLine} style="width:auto;margin:0;"><span>Pen axis line</span></label></div>
-      <div class="control-group"><label style="display:flex;align-items:center;gap:8px;"><input type="checkbox" bind:checked={showPenTipLine} onchange={onShowPenTipLine} style="width:auto;margin:0;"><span>Pen tip line</span></label></div>
+      <CheckboxControl label="Pen top line"  bind:checked={showPenTopLine}  onchange={onShowPenTopLine} />
+      <CheckboxControl label="Pen axis line" bind:checked={showPenAxisLine} onchange={onShowPenAxisLine} />
+      <CheckboxControl label="Pen tip line"  bind:checked={showPenTipLine}  onchange={onShowPenTipLine} />
     </div>
   </div>
 {/snippet}
@@ -558,9 +480,6 @@
   {onShowAxis}
   bind:showMonitor
   {onShowMonitor}
-  bind:showCameraInfo
-  {cameraPos}
-  {cameraTarget}
   {cameraAzimuth}
   {cameraElevation}
   {cameraDistance}
@@ -574,7 +493,6 @@
   {onExportAction}
   {aspectRatio}
   {onAspectRatio}
-  onEditCamera={openCameraEdit}
 />
 
 {#if exportStatus}
@@ -585,31 +503,6 @@
      3D Viewer
      ═══════════════════════════════════════════════════════════════════════════ -->
 <div id="viewer" bind:this={viewer}></div>
-
-<!-- ═══════════════════════════════════════════════════════════════════════════
-     Camera settings modal (inline errors, no alert)
-     ═══════════════════════════════════════════════════════════════════════════ -->
-{#if showCameraEdit}
-<div
-  id="camera-edit-modal"
-  style="display:flex;"
-  role="presentation"
-  onclick={(e) => { if (e.target === e.currentTarget) closeCameraEdit(); }}
-  onkeydown={(e) => { if (e.key === 'Escape') closeCameraEdit(); }}
->
-  <div class="modal-content" role="dialog" aria-modal="true" aria-labelledby="camera-edit-title">
-    <h2 id="camera-edit-title">Camera Settings</h2>
-    <textarea id="camera-json-editor" bind:value={cameraJsonText} spellcheck="false"></textarea>
-    {#if cameraEditError}
-      <p class="camera-edit-error">{cameraEditError}</p>
-    {/if}
-    <div class="modal-actions">
-      <button id="camera-edit-cancel" type="button" onclick={closeCameraEdit}>Cancel</button>
-      <button id="camera-edit-ok" type="button" onclick={applyCameraEdit}>Apply</button>
-    </div>
-  </div>
-</div>
-{/if}
 
 <!-- ═══════════════════════════════════════════════════════════════════════════
      Pointer tracking flyout
