@@ -58,6 +58,12 @@ Object.assign(Pen3DSim.prototype, {
         // anti-aliasing the stair-stepping that BasicShadowMap left on the small
         // pen shadow.
         this.renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+        // Shadows are static except when the pen (or monitor visibility) changes,
+        // so don't re-render the shadow map every frame. Callers flip
+        // shadowMap.needsUpdate via markShadowsDirty() when geometry moves; the
+        // continuous render loop otherwise just re-composites the cached map.
+        this.renderer.shadowMap.autoUpdate = false;
+        this.renderer.shadowMap.needsUpdate = true;   // render once at startup
         this.renderer.outputColorSpace = THREE.SRGBColorSpace;
         this.viewer.appendChild(this.renderer.domElement);
     },
@@ -91,10 +97,11 @@ Object.assign(Pen3DSim.prototype, {
         directionalLight.position.set(8 * SCALE, 28 * SCALE, 12 * SCALE);
         directionalLight.castShadow = true;
         // Frustum wide enough to cover the whole desk (incl. its legs) so their
-        // shadows aren't clipped; the map is scaled with it so the (unfiltered)
-        // pen shadow keeps the same small-texel crispness.
-        directionalLight.shadow.mapSize.width = 8192;
-        directionalLight.shadow.mapSize.height = 8192;
+        // shadows aren't clipped. 4096 over this frustum is ~0.56 mm/texel, which
+        // PCF filtering keeps smooth on the small pen shadow while costing 4× less
+        // to render than 8192 (updated only when markShadowsDirty() fires).
+        directionalLight.shadow.mapSize.width = 4096;
+        directionalLight.shadow.mapSize.height = 4096;
         directionalLight.shadow.camera.left = -48 * SCALE;
         directionalLight.shadow.camera.right = 48 * SCALE;
         directionalLight.shadow.camera.top = 48 * SCALE;

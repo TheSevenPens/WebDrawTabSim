@@ -165,6 +165,7 @@ Object.assign(Pen3DSim.prototype, {
         if (!this.penTipMesh) return;
         if (this.penTipMesh.geometry) this.penTipMesh.geometry.dispose();
         this.penTipMesh.geometry = latheFromProfile(this.nibProfileFor(shape), PEN_MESH.latheSegments);
+        this.markShadowsDirty();   // nib silhouette changed
     },
 
     // Switch the pen body between the checkerboard wrap and a solid graphite
@@ -246,6 +247,7 @@ Object.assign(Pen3DSim.prototype, {
         this.updatePenPose(distance, altitude, azimuth, barrel);
         this.updateCursorFromPen(altitude, azimuth);
         this.updateAnnotations(distance, altitude, azimuth, barrel);
+        this.markShadowsDirty();   // the pen moved → refresh its shadow
     },
 
     // -------------------------------------------------------------------------

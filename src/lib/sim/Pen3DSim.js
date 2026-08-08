@@ -283,6 +283,7 @@ export class Pen3DSim {
         this.monitorVisible = visible;
         if (this.monitorGroup) this.monitorGroup.visible = visible && !this.penDisplayMode;
         this._applyCursorMode();
+        this.markShadowsDirty();   // the monitor casts a shadow
     }
 
     // The yellow dashed line dropping from the pen top down to the surface.
@@ -306,11 +307,18 @@ export class Pen3DSim {
         if (this.digitizerGrid) this.digitizerGrid.visible = visible;
     }
 
+    // Re-render the shadow map on the next frame. Call whenever shadow-casting
+    // geometry moves or its visibility changes (the map is not auto-updated).
+    markShadowsDirty() {
+        if (this.renderer) this.renderer.shadowMap.needsUpdate = true;
+    }
+
     setPenShadowVisible(visible) {
         const meshes = this.penShadowMeshes || [this.penTipMesh, this.penBarrelMesh];
         for (const mesh of meshes) {
             if (mesh) mesh.castShadow = visible;
         }
+        this.markShadowsDirty();
     }
 
     setTabletCheckerboardVisible(visible) {
