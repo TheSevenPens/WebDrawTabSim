@@ -51,6 +51,7 @@ export class Pen3DSim {
         this.edgeAttractionRange = POINTER_DEFAULTS.edgeAttractionRange;
         this.mouseSensitivity = POINTER_DEFAULTS.mouseSensitivity;
         this.penDisplayMode = false;
+        this.monitorVisible = true;   // external monitor shown (Other → Monitor)
         this.nibShape = 'rounded';   // 'rounded' | 'sharp'
         this.penBodyFormat = 'checkerboard';   // 'checkerboard' | 'solid'
         this.cursorMode = 'mouse';   // 'mouse' | 'crosshairs' | 'none'
@@ -271,13 +272,33 @@ export class Pen3DSim {
         const showCross = this.cursorMode === 'crosshairs';
         if (this.cursorArrow)      this.cursorArrow.visible      = showMouse;
         if (this.cursorCrosshair)  this.cursorCrosshair.visible  = showCross;
-        if (this.monitorCursor)    this.monitorCursor.visible    = showMouse && !this.penDisplayMode;
-        if (this.monitorCrosshair) this.monitorCrosshair.visible = showCross && !this.penDisplayMode;
+        const monitorOn = this.monitorVisible && !this.penDisplayMode;
+        if (this.monitorCursor)    this.monitorCursor.visible    = showMouse && monitorOn;
+        if (this.monitorCrosshair) this.monitorCrosshair.visible = showCross && monitorOn;
+    }
+
+    // Show/hide the external monitor (body + screen + its cursor). Pen-display
+    // mode still force-hides the monitor regardless of this toggle.
+    setMonitorVisible(visible) {
+        this.monitorVisible = visible;
+        if (this.monitorGroup) this.monitorGroup.visible = visible && !this.penDisplayMode;
+        this._applyCursorMode();
     }
 
     // The yellow dashed line dropping from the pen top down to the surface.
     setPenTopLineVisible(visible) {
         if (this.penLine) this.penLine.visible = visible;
+    }
+
+    // The white dashed line from the pen tip along the pen axis to the surface.
+    setPenAxisLineVisible(visible) {
+        if (this.penAxisLine) this.penAxisLine.visible = visible;
+    }
+
+    // The yellow dotted line dropping vertically from the pen tip to the surface
+    // point directly below it.
+    setPenTipLineVisible(visible) {
+        if (this.penTipLine) this.penTipLine.visible = visible;
     }
 
     // The thin line grid over the digitizer active area.
@@ -341,7 +362,7 @@ export class Pen3DSim {
     setPenDisplayMode(enabled) {
         this.penDisplayMode = enabled;
         if (this.tabletScreen) this.tabletScreen.visible = enabled;
-        if (this.monitorGroup) this.monitorGroup.visible = !enabled;
+        if (this.monitorGroup) this.monitorGroup.visible = this.monitorVisible && !enabled;
         this._applyCursorMode();
         if (this.digitizerGrid) this.digitizerGrid.position.y = enabled ? 0.008 * SCALE : 0;
         this._refreshPen();

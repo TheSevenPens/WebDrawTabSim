@@ -16,6 +16,8 @@
     onShowGrid,
     showAxis       = $bindable(),
     onShowAxis,
+    showMonitor    = $bindable(),
+    onShowMonitor,
     sharpNib       = $bindable(),
     onSharpNib,
     penBodyFormat  = $bindable(),
@@ -170,6 +172,12 @@
     <label style="display:flex;align-items:center;gap:8px;">
       <input type="checkbox" bind:checked={showAxis} onchange={onShowAxis} style="width:auto;margin:0;">
       <span>Axis</span>
+    </label>
+  </div>
+  <div class="control-group">
+    <label style="display:flex;align-items:center;gap:8px;">
+      <input type="checkbox" bind:checked={showMonitor} onchange={onShowMonitor} style="width:auto;margin:0;">
+      <span>Monitor</span>
     </label>
   </div>
   <div class="control-group">

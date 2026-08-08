@@ -29,11 +29,14 @@
   let showTiltY        = $state(false);
   let showBarrel       = $state(false);
   let showPenTopLine   = $state(true);   // yellow drop line from the pen top
+  let showPenAxisLine  = $state(true);   // white tip → surface axis line
+  let showPenTipLine   = $state(true);   // yellow vertical tip → surface-below line
   let showAxis         = $state(false);
   let cursorMode       = $state('mouse'); // 'mouse' | 'crosshairs' | 'none'
   let showPenShadow    = $state(true);
   let showCheckerboard = $state(false);
   let showGrid         = $state(true);   // active-area line grid
+  let showMonitor      = $state(true);   // external monitor visibility
   let axonometric      = $state(false);
   let penDisplayMode   = $state(false);
   let darkTablet       = $state(false);
@@ -202,10 +205,13 @@
     sim.setAzimuthAnnotationsVisible(showAzimuth);
     sim.setCursorMode(cursorMode);
     sim.setPenTopLineVisible(showPenTopLine);
+    sim.setPenAxisLineVisible(showPenAxisLine);
+    sim.setPenTipLineVisible(showPenTipLine);
     sim.setPenBodyFormat(penBodyFormat);
     sim.setGridVisible(showGrid);
     sim.setPenShadowVisible(showPenShadow);
     sim.setAxisMarkersVisible(showAxis);
+    sim.setMonitorVisible(showMonitor);
 
     // Sync slider values when mouse-drag moves the pen
     viewer.addEventListener('tabletPositionChanged', (e) => {
@@ -264,7 +270,10 @@
   function onShowTiltY()        { sim.setTiltYAnnotationsVisible(showTiltY); }
   function onShowBarrel()       { sim.setBarrelAnnotationsVisible(showBarrel); }
   function onShowPenTopLine()   { sim.setPenTopLineVisible(showPenTopLine); }
+  function onShowPenAxisLine()  { sim.setPenAxisLineVisible(showPenAxisLine); }
+  function onShowPenTipLine()   { sim.setPenTipLineVisible(showPenTipLine); }
   function onShowAxis()         { sim.setAxisMarkersVisible(showAxis); }
+  function onShowMonitor()      { sim.setMonitorVisible(showMonitor); }
   function onCursorMode()       { sim.setCursorMode(cursorMode); }
   function onShowPenShadow()    { sim.setPenShadowVisible(showPenShadow); }
   function onShowCheckerboard() { sim.setTabletCheckerboardVisible(showCheckerboard); }
@@ -488,6 +497,8 @@
   <div class="control-group"><label style="display:flex;align-items:center;gap:8px;"><input type="checkbox" bind:checked={showTiltY}    onchange={onShowTiltY}    style="width:auto;margin:0;"><span>Tilt Y</span></label></div>
   <div class="control-group"><label style="display:flex;align-items:center;gap:8px;"><input type="checkbox" bind:checked={showBarrel}   onchange={onShowBarrel}   style="width:auto;margin:0;"><span>Barrel rotation</span></label></div>
   <div class="control-group"><label style="display:flex;align-items:center;gap:8px;"><input type="checkbox" bind:checked={showPenTopLine} onchange={onShowPenTopLine} style="width:auto;margin:0;"><span>Pen top line</span></label></div>
+  <div class="control-group"><label style="display:flex;align-items:center;gap:8px;"><input type="checkbox" bind:checked={showPenAxisLine} onchange={onShowPenAxisLine} style="width:auto;margin:0;"><span>Pen axis line</span></label></div>
+  <div class="control-group"><label style="display:flex;align-items:center;gap:8px;"><input type="checkbox" bind:checked={showPenTipLine} onchange={onShowPenTipLine} style="width:auto;margin:0;"><span>Pen tip line</span></label></div>
 {/snippet}
 
 
@@ -528,6 +539,8 @@
   {onShowGrid}
   bind:showAxis
   {onShowAxis}
+  bind:showMonitor
+  {onShowMonitor}
   bind:showCameraInfo
   {cameraPos}
   {cameraTarget}
