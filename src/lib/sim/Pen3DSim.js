@@ -52,6 +52,7 @@ export class Pen3DSim {
         this.mouseSensitivity = POINTER_DEFAULTS.mouseSensitivity;
         this.penDisplayMode = false;
         this.nibShape = 'rounded';   // 'rounded' | 'sharp'
+        this.penBodyFormat = 'checkerboard';   // 'checkerboard' | 'solid'
         this.cursorMode = 'mouse';   // 'mouse' | 'crosshairs' | 'none'
         this.onCameraUpdate = null;
         this.viewportAspect = 16 / 9;   // target render aspect (width / height)

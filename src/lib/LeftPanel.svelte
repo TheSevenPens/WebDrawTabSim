@@ -18,6 +18,8 @@
     onShowAxis,
     sharpNib       = $bindable(),
     onSharpNib,
+    penBodyFormat  = $bindable(),
+    onPenBodyFormat,
     showPenShadow  = $bindable(),
     onShowPenShadow,
     azimuthDisabled,
@@ -67,6 +69,7 @@
     bind:tiltAzimuth
     bind:barrelRotation
     bind:sharpNib
+    bind:penBodyFormat
     {azimuthDisabled}
     {onDistance}
     {onTabletX}
@@ -75,6 +78,7 @@
     {onAzimuth}
     {onBarrel}
     {onSharpNib}
+    {onPenBodyFormat}
     bind:showPenShadow
     {onShowPenShadow}
     {penAnnTab}

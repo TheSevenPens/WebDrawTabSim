@@ -3,7 +3,7 @@ import { MaterialsFactory } from './materials.js';
 import { TexturesFactory } from './textures.js';
 import { Pen3DSim } from './Pen3DSim.js';
 import { createCursorArrowMesh, createCrosshairCursorMesh } from './cursor-geometry.js';
-import { PEN_MESH, PEN_PROFILE, PEN_CHECKER, CURSOR, ANNOTATION, POINTER_DEFAULTS, SCALE } from './config.js';
+import { PEN_MESH, PEN_PROFILE, PEN_CHECKER, PEN_COLORS, CURSOR, ANNOTATION, POINTER_DEFAULTS, SCALE } from './config.js';
 
 // pen-pen.js — Pen mesh, cursor arrow, and the core updatePenTransform loop
 // Extends Pen3DSim.prototype (must be loaded after Pen3DSim.js)
@@ -82,10 +82,14 @@ Object.assign(Pen3DSim.prototype, {
 
         const bodyGeometry = latheFromProfile(PEN_PROFILE.body, segments);
         remapLatheVByArcLength(bodyGeometry, PEN_PROFILE.body);
+        const bodyChecker = makeChecker(PEN_CHECKER.repeatLength);
         const body = new THREE.Mesh(
             bodyGeometry,
-            MaterialsFactory.createPenBodyMaterial(makeChecker(PEN_CHECKER.repeatLength))
+            MaterialsFactory.createPenBodyMaterial(bodyChecker)
         );
+        // Kept so the body can switch between checkerboard and solid color.
+        this.penBodyMaterial = body.material;
+        this.penBodyCheckerTexture = bodyChecker;
 
         const eraserGeometry = latheFromProfile(PEN_PROFILE.eraser, segments);
         remapLatheVByArcLength(eraserGeometry, PEN_PROFILE.eraser);
@@ -161,6 +165,22 @@ Object.assign(Pen3DSim.prototype, {
         if (!this.penTipMesh) return;
         if (this.penTipMesh.geometry) this.penTipMesh.geometry.dispose();
         this.penTipMesh.geometry = latheFromProfile(this.nibProfileFor(shape), PEN_MESH.latheSegments);
+    },
+
+    // Switch the pen body between the checkerboard wrap and a solid graphite
+    // color. Mutates the existing material so shadows/refs stay intact.
+    setPenBodyFormat(format) {
+        this.penBodyFormat = format;
+        const mat = this.penBodyMaterial;
+        if (!mat) return;
+        if (format === 'solid') {
+            mat.map = null;
+            mat.color.setHex(PEN_COLORS.body);
+        } else {
+            mat.map = this.penBodyCheckerTexture;
+            mat.color.setHex(0xffffff);
+        }
+        mat.needsUpdate = true;
     },
 
     createCursorArrow() {

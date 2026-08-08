@@ -9,6 +9,7 @@
     tiltAzimuth    = $bindable(),
     barrelRotation = $bindable(),
     sharpNib       = $bindable(),
+    penBodyFormat  = $bindable(),
     azimuthDisabled,
     onDistance,
     onTabletX,
@@ -17,6 +18,7 @@
     onAzimuth,
     onBarrel,
     onSharpNib,
+    onPenBodyFormat,
     showPenShadow  = $bindable(),
     onShowPenShadow,
     penAnnTab,
@@ -41,6 +43,13 @@
   <SliderControl inline label="Az" title="Tilt azimuth" bind:value={tiltAzimuth} min={0} max={359} step={1} decimals={0} unit="°" disabled={azimuthDisabled} oninput={onAzimuth} />
   <SliderControl inline label="Br" title="Barrel rotation" bind:value={barrelRotation} min={0} max={359} step={1} decimals={0} unit="°" oninput={onBarrel} />
 {:else if activeTab === 'fmt'}
+  <div class="control-group" style="display:flex;align-items:center;gap:8px;">
+    <span style="white-space:nowrap;color:#fff;font-size:12px;">Body:</span>
+    <select class="action-btn" style="flex:1;width:auto;margin-top:0;text-align:left;" bind:value={penBodyFormat} onchange={onPenBodyFormat}>
+      <option value="checkerboard">checkerboard pattern</option>
+      <option value="solid">solid color</option>
+    </select>
+  </div>
   <div class="control-group">
     <label style="display:flex;align-items:center;gap:8px;">
       <input type="checkbox" bind:checked={sharpNib} onchange={onSharpNib} style="width:auto;margin:0;">

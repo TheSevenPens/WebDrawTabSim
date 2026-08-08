@@ -38,6 +38,7 @@
   let penDisplayMode   = $state(false);
   let darkTablet       = $state(false);
   let sharpNib         = $state(false);
+  let penBodyFormat    = $state('checkerboard'); // 'checkerboard' | 'solid'
   let aspectRatio      = $state('16 / 9'); // CSS aspect-ratio for #viewer
 
   // ── Pointer-tracking state ─────────────────────────────────────────────────
@@ -201,6 +202,7 @@
     sim.setAzimuthAnnotationsVisible(showAzimuth);
     sim.setCursorMode(cursorMode);
     sim.setPenTopLineVisible(showPenTopLine);
+    sim.setPenBodyFormat(penBodyFormat);
     sim.setGridVisible(showGrid);
     sim.setPenShadowVisible(showPenShadow);
     sim.setAxisMarkersVisible(showAxis);
@@ -271,6 +273,7 @@
   function onPenDisplayMode()   { sim.setPenDisplayMode(penDisplayMode); }
   function onDarkTablet()       { sim.setDarkTablet(darkTablet); }
   function onSharpNib()         { sim.setNibShape(sharpNib ? 'sharp' : 'rounded'); }
+  function onPenBodyFormat()    { sim.setPenBodyFormat(penBodyFormat); }
 
   function onAspectRatio(value) {
     aspectRatio = value;
@@ -502,6 +505,8 @@
   bind:darkTablet
   bind:sharpNib
   {onSharpNib}
+  bind:penBodyFormat
+  {onPenBodyFormat}
   bind:showPenShadow
   {onShowPenShadow}
   {azimuthDisabled}
