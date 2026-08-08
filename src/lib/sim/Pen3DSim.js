@@ -274,6 +274,11 @@ export class Pen3DSim {
         if (this.monitorCrosshair) this.monitorCrosshair.visible = showCross && !this.penDisplayMode;
     }
 
+    // The yellow dashed line dropping from the pen top down to the surface.
+    setPenTopLineVisible(visible) {
+        if (this.penLine) this.penLine.visible = visible;
+    }
+
     setPenShadowVisible(visible) {
         const meshes = this.penShadowMeshes || [this.penTipMesh, this.penBarrelMesh];
         for (const mesh of meshes) {

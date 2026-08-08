@@ -28,6 +28,7 @@
   let showTiltX        = $state(false);
   let showTiltY        = $state(false);
   let showBarrel       = $state(false);
+  let showPenTopLine   = $state(true);   // yellow drop line from the pen top
   let showAxis         = $state(false);
   let cursorMode       = $state('mouse'); // 'mouse' | 'crosshairs' | 'none'
   let showPenShadow    = $state(true);
@@ -198,6 +199,7 @@
     // Apply initial checkbox state
     sim.setAzimuthAnnotationsVisible(showAzimuth);
     sim.setCursorMode(cursorMode);
+    sim.setPenTopLineVisible(showPenTopLine);
     sim.setPenShadowVisible(showPenShadow);
     sim.setAxisMarkersVisible(showAxis);
 
@@ -257,6 +259,7 @@
   function onShowTiltX()        { sim.setTiltXAnnotationsVisible(showTiltX); }
   function onShowTiltY()        { sim.setTiltYAnnotationsVisible(showTiltY); }
   function onShowBarrel()       { sim.setBarrelAnnotationsVisible(showBarrel); }
+  function onShowPenTopLine()   { sim.setPenTopLineVisible(showPenTopLine); }
   function onShowAxis()         { sim.setAxisMarkersVisible(showAxis); }
   function onCursorMode()       { sim.setCursorMode(cursorMode); }
   function onShowPenShadow()    { sim.setPenShadowVisible(showPenShadow); }
@@ -478,6 +481,7 @@
   <div class="control-group"><label style="display:flex;align-items:center;gap:8px;"><input type="checkbox" bind:checked={showTiltX}    onchange={onShowTiltX}    style="width:auto;margin:0;"><span>Tilt X</span></label></div>
   <div class="control-group"><label style="display:flex;align-items:center;gap:8px;"><input type="checkbox" bind:checked={showTiltY}    onchange={onShowTiltY}    style="width:auto;margin:0;"><span>Tilt Y</span></label></div>
   <div class="control-group"><label style="display:flex;align-items:center;gap:8px;"><input type="checkbox" bind:checked={showBarrel}   onchange={onShowBarrel}   style="width:auto;margin:0;"><span>Barrel rotation</span></label></div>
+  <div class="control-group"><label style="display:flex;align-items:center;gap:8px;"><input type="checkbox" bind:checked={showPenTopLine} onchange={onShowPenTopLine} style="width:auto;margin:0;"><span>Pen top line</span></label></div>
 {/snippet}
 
 
