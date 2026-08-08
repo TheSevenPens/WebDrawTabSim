@@ -56,7 +56,7 @@
   let mouseSensitivity    = $state(POINTER_DEFAULTS.mouseSensitivity);
 
   // ── Flyout / modal state ───────────────────────────────────────────────────
-  let openFlyout      = $state(null); // 'pointer-tracking' | 'annotations' | 'animations' | null
+  let openFlyout      = $state(null); // 'pointer-tracking' | null
   let cameraAzimuth   = $state(0);
   let cameraElevation = $state(0);
   let cameraDistance  = $state(0);

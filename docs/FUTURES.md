@@ -14,7 +14,7 @@
 
 - **Real tablet input**: Detect an actual drawing tablet (via Pointer Events API) and display its live pen state in the simulator.
 - **Presets / snapshots**: Let users save and load combinations of pen parameters and camera settings by name.
-- **Export pen state as JSON**: Complement the existing camera settings export with a full pen-state export/import.
+- **Export pen state as JSON**: Add pen-state export/import (camera JSON I/O was removed with the unused edit modal).
 - **Video/GIF recording**: Extend the existing PNG export to capture animations as video.
 - **Comparison mode**: Side-by-side view of two different pen orientations.
 - **Help panel**: In-app documentation explaining each parameter (tilt altitude vs. azimuth, what barrel rotation means, etc.).
