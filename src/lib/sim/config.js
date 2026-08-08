@@ -178,7 +178,7 @@ export const EXPORT = {
 
 // Initial camera orbit around the origin (matches the Az/El/Dist readout).
 export const CAMERA_INITIAL = {
-    azimuthDeg: 310,
+    azimuthDeg: 0,
     elevationDeg: 30,
     distance: 30 * SCALE,   // 720 mm
 };
