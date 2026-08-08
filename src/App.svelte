@@ -33,6 +33,7 @@
   let cursorMode       = $state('mouse'); // 'mouse' | 'crosshairs' | 'none'
   let showPenShadow    = $state(true);
   let showCheckerboard = $state(false);
+  let showGrid         = $state(true);   // active-area line grid
   let axonometric      = $state(false);
   let penDisplayMode   = $state(false);
   let darkTablet       = $state(false);
@@ -200,6 +201,7 @@
     sim.setAzimuthAnnotationsVisible(showAzimuth);
     sim.setCursorMode(cursorMode);
     sim.setPenTopLineVisible(showPenTopLine);
+    sim.setGridVisible(showGrid);
     sim.setPenShadowVisible(showPenShadow);
     sim.setAxisMarkersVisible(showAxis);
 
@@ -264,6 +266,7 @@
   function onCursorMode()       { sim.setCursorMode(cursorMode); }
   function onShowPenShadow()    { sim.setPenShadowVisible(showPenShadow); }
   function onShowCheckerboard() { sim.setTabletCheckerboardVisible(showCheckerboard); }
+  function onShowGrid()         { sim.setGridVisible(showGrid); }
   function onAxonometric()      { sim.setAxonometricView(axonometric); }
   function onPenDisplayMode()   { sim.setPenDisplayMode(penDisplayMode); }
   function onDarkTablet()       { sim.setDarkTablet(darkTablet); }
@@ -516,6 +519,8 @@
   {onDarkTablet}
   bind:showCheckerboard
   {onShowCheckerboard}
+  bind:showGrid
+  {onShowGrid}
   bind:showAxis
   {onShowAxis}
   bind:showCameraInfo

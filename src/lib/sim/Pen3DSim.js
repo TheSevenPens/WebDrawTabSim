@@ -279,6 +279,11 @@ export class Pen3DSim {
         if (this.penLine) this.penLine.visible = visible;
     }
 
+    // The thin line grid over the digitizer active area.
+    setGridVisible(visible) {
+        if (this.digitizerGrid) this.digitizerGrid.visible = visible;
+    }
+
     setPenShadowVisible(visible) {
         const meshes = this.penShadowMeshes || [this.penTipMesh, this.penBarrelMesh];
         for (const mesh of meshes) {

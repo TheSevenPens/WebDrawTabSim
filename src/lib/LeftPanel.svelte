@@ -12,6 +12,8 @@
     darkTablet     = $bindable(),
     showCheckerboard = $bindable(),
     onShowCheckerboard,
+    showGrid       = $bindable(),
+    onShowGrid,
     showAxis       = $bindable(),
     onShowAxis,
     sharpNib       = $bindable(),
@@ -137,6 +139,12 @@
     <label style="display:flex;align-items:center;gap:8px;">
       <input type="checkbox" bind:checked={showCheckerboard} onchange={onShowCheckerboard} style="width:auto;margin:0;">
       <span>Tablet checkerboard</span>
+    </label>
+  </div>
+  <div class="control-group">
+    <label style="display:flex;align-items:center;gap:8px;">
+      <input type="checkbox" bind:checked={showGrid} onchange={onShowGrid} style="width:auto;margin:0;">
+      <span>Active area grid</span>
     </label>
   </div>
   <div class="control-group" style="display:flex;align-items:center;gap:8px;">
