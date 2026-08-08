@@ -13,7 +13,7 @@ It is useful for:
 
 ## Notable Features
 
-- **Multiple camera modes** — interactive orbit, axonometric toggle, camera settings import/export (JSON)
+- **Multiple camera modes** — interactive orbit, axonometric toggle, live Az/El/Dist controls and named views
 - **Animations** — demo preset and per-parameter animated sweeps (altitude, azimuth, barrel) with cancellation support
 - **PNG export** — export the current 3D view at 1080p (1920x1080) or 4K (3840x2160). Exports are rendered at 2x internally and downsampled for crisp lines and edges
 - **Pointer tracking** — cursor offset, tilt compensation, scaling, edge attraction, and mouse-drag sensitivity

@@ -1,7 +1,7 @@
 import * as THREE from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
 import { Pen3DSim } from './Pen3DSim.js';
-import { SCENE, CAMERA_INITIAL, SCALE } from './config.js';
+import { SCENE, CAMERA_INITIAL, LIGHTING, SCALE } from './config.js';
 
 // pen-scene.js — Scene, renderer, cameras, lighting, and camera settings
 // Extends Pen3DSim.prototype (must be loaded after Pen3DSim.js)
@@ -88,159 +88,45 @@ Object.assign(Pen3DSim.prototype, {
 
     initLighting() {
         // Soft ambient so light wood and white walls stay bright
-        const ambientLight = new THREE.AmbientLight(0xffffff, 0.88);
+        const ambientLight = new THREE.AmbientLight(LIGHTING.ambient.color, LIGHTING.ambient.intensity);
         this.scene.add(ambientLight);
 
         // Warm key from above-front (position sets direction; scaled to keep the
         // light outside the now-larger scene so the shadow frustum stays valid)
-        const directionalLight = new THREE.DirectionalLight(0xfff5eb, 0.75);
-        directionalLight.position.set(8 * SCALE, 28 * SCALE, 12 * SCALE);
+        const key = LIGHTING.key;
+        const directionalLight = new THREE.DirectionalLight(key.color, key.intensity);
+        directionalLight.position.set(...key.position);
         directionalLight.castShadow = true;
         // Frustum wide enough to cover the whole desk (incl. its legs) so their
         // shadows aren't clipped. 4096 over this frustum is ~0.56 mm/texel, which
         // PCF filtering keeps smooth on the small pen shadow while costing 4× less
         // to render than 8192 (updated only when markShadowsDirty() fires).
-        directionalLight.shadow.mapSize.width = 4096;
-        directionalLight.shadow.mapSize.height = 4096;
-        directionalLight.shadow.camera.left = -48 * SCALE;
-        directionalLight.shadow.camera.right = 48 * SCALE;
-        directionalLight.shadow.camera.top = 48 * SCALE;
-        directionalLight.shadow.camera.bottom = -48 * SCALE;
-        directionalLight.shadow.camera.near = 0.1 * SCALE;
-        directionalLight.shadow.camera.far = 100 * SCALE;
-        directionalLight.shadow.bias = -0.0002;   // normalized depth — not scaled
+        directionalLight.shadow.mapSize.width = key.shadow.mapSize;
+        directionalLight.shadow.mapSize.height = key.shadow.mapSize;
+        directionalLight.shadow.camera.left = -key.shadow.frustum;
+        directionalLight.shadow.camera.right = key.shadow.frustum;
+        directionalLight.shadow.camera.top = key.shadow.frustum;
+        directionalLight.shadow.camera.bottom = -key.shadow.frustum;
+        directionalLight.shadow.camera.near = key.shadow.near;
+        directionalLight.shadow.camera.far = key.shadow.far;
+        directionalLight.shadow.bias = key.shadow.bias;
         this.scene.add(directionalLight);
 
         // Cool fill from the front so the desk isn’t flat
-        const fillLight = new THREE.DirectionalLight(0xe8f0ff, 0.45);
-        fillLight.position.set(-6 * SCALE, 12 * SCALE, 22 * SCALE);
+        const fillLight = new THREE.DirectionalLight(LIGHTING.fill.color, LIGHTING.fill.intensity);
+        fillLight.position.set(...LIGHTING.fill.position);
         this.scene.add(fillLight);
 
-        // Soft bounce from behind to lift white walls
-        const wallFill = new THREE.DirectionalLight(0xffffff, 0.3);
-        wallFill.position.set(0, 20 * SCALE, -30 * SCALE);
+        // Soft bounce from behind to lift the walls
+        const wallFill = new THREE.DirectionalLight(LIGHTING.wallFill.color, LIGHTING.wallFill.intensity);
+        wallFill.position.set(...LIGHTING.wallFill.position);
         this.scene.add(wallFill);
 
         // Point light has distance falloff (decay), so scaling its position ×SCALE
         // would dim it by SCALE²; compensate the intensity to keep the same look.
-        const pointLight = new THREE.PointLight(0xffffff, 0.2 * SCALE * SCALE);
-        pointLight.position.set(-12 * SCALE, 14 * SCALE, -8 * SCALE);
+        const pointLight = new THREE.PointLight(LIGHTING.point.color, LIGHTING.point.intensity * SCALE * SCALE);
+        pointLight.position.set(...LIGHTING.point.position);
         this.scene.add(pointLight);
-    },
-
-    getCameraSettings() {
-        try {
-            const cam = this.camera;
-            const pos = cam.position;
-            const rot = cam.rotation;
-            const isPerspective = cam === this.perspectiveCamera;
-            const target = this.controls.target || new THREE.Vector3(0, 0, 0);
-            const distance = pos.distanceTo(target);
-
-            let settings = `Type: ${isPerspective ? 'Perspective' : 'Orthographic'}\n`;
-            settings += `Position: (${pos.x.toFixed(2)}, ${pos.y.toFixed(2)}, ${pos.z.toFixed(2)})\n`;
-            settings += `Rotation: (${(rot.x * 180 / Math.PI).toFixed(2)}°, ${(rot.y * 180 / Math.PI).toFixed(2)}°, ${(rot.z * 180 / Math.PI).toFixed(2)}°)\n`;
-
-            if (isPerspective) {
-                settings += `FOV: ${cam.fov.toFixed(1)}°\n`;
-                settings += `Aspect: ${cam.aspect.toFixed(3)}\n`;
-            } else {
-                settings += `Size: ${this.orthoSize.toFixed(2)}\n`;
-                settings += `Aspect: ${cam.aspect.toFixed(3)}\n`;
-            }
-
-            settings += `Near: ${cam.near.toFixed(2)}, Far: ${cam.far.toFixed(0)}\n`;
-            settings += `Distance: ${distance.toFixed(2)}\n`;
-            settings += `Target: (${target.x.toFixed(2)}, ${target.y.toFixed(2)}, ${target.z.toFixed(2)})`;
-
-            return settings;
-        } catch (error) {
-            return `Error getting camera settings: ${error.message}`;
-        }
-    },
-
-    getCameraSettingsJSON() {
-        try {
-            const cam = this.camera;
-            const pos = cam.position;
-            const rot = cam.rotation;
-            const isPerspective = cam === this.perspectiveCamera;
-            const target = this.controls.target || new THREE.Vector3(0, 0, 0);
-
-            const settings = {
-                type: isPerspective ? 'perspective' : 'orthographic',
-                position: { x: pos.x, y: pos.y, z: pos.z },
-                rotation: { x: rot.x, y: rot.y, z: rot.z },
-                target:   { x: target.x, y: target.y, z: target.z },
-                near: cam.near,
-                far: cam.far,
-                aspect: cam.aspect
-            };
-
-            if (isPerspective) {
-                settings.fov = cam.fov;
-            } else {
-                settings.size = this.orthoSize;
-            }
-
-            return JSON.stringify(settings, null, 2);
-        } catch (error) {
-            throw new Error(`Error getting camera settings: ${error.message}`);
-        }
-    },
-
-    setCameraSettingsJSON(jsonString) {
-        try {
-            const settings = JSON.parse(jsonString);
-
-            if (!settings.position || !settings.rotation || !settings.target) {
-                throw new Error('Missing required fields: position, rotation, or target');
-            }
-
-            const usePerspective = settings.type === 'perspective' || (settings.type !== 'orthographic' && this.camera === this.perspectiveCamera);
-
-            if (usePerspective && this.camera !== this.perspectiveCamera) {
-                this.perspectiveCamera.position.copy(this.orthographicCamera.position);
-                this.perspectiveCamera.rotation.copy(this.orthographicCamera.rotation);
-                this.camera = this.perspectiveCamera;
-                this.controls.object = this.camera;
-            } else if (!usePerspective && this.camera !== this.orthographicCamera) {
-                this.orthographicCamera.position.copy(this.perspectiveCamera.position);
-                this.orthographicCamera.rotation.copy(this.perspectiveCamera.rotation);
-                this.camera = this.orthographicCamera;
-                this.controls.object = this.camera;
-            }
-
-            this.camera.position.set(settings.position.x, settings.position.y, settings.position.z);
-            this.camera.rotation.set(settings.rotation.x, settings.rotation.y, settings.rotation.z);
-
-            if (settings.target) {
-                this.controls.target.set(settings.target.x, settings.target.y, settings.target.z);
-            }
-
-            if (usePerspective && settings.fov !== undefined) {
-                this.perspectiveCamera.fov = settings.fov;
-                this.perspectiveCamera.updateProjectionMatrix();
-            } else if (!usePerspective && settings.size !== undefined) {
-                this.orthoSize = settings.size;
-                const aspect = this.camera.aspect;
-                this.orthographicCamera.left   = -this.orthoSize * aspect;
-                this.orthographicCamera.right  =  this.orthoSize * aspect;
-                this.orthographicCamera.top    =  this.orthoSize;
-                this.orthographicCamera.bottom = -this.orthoSize;
-                this.orthographicCamera.updateProjectionMatrix();
-            }
-
-            if (settings.near   !== undefined) this.camera.near   = settings.near;
-            if (settings.far    !== undefined) this.camera.far    = settings.far;
-            if (settings.aspect !== undefined) this.camera.aspect = settings.aspect;
-            this.camera.updateProjectionMatrix();
-
-            this.controls.update();
-            return true;
-        } catch (error) {
-            throw new Error(`Error applying camera settings: ${error.message}`);
-        }
     },
 
 });

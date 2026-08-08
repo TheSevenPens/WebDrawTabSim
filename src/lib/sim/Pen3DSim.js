@@ -8,20 +8,22 @@ import {
 // Pen3DSim.js — Class skeleton: constructor, animate loop, and public API
 // All init/handle/geometry/update methods live in companion files:
 //   pen-scene.js      — scene, cameras, renderer, lighting, camera settings
-//   pen-tablet.js     — tablet mesh and grid
+//   pen-room.js       — desk (slab + legs) and studio room (floor, walls, baseboards)
+//   pen-tablet.js     — tablet body, digitizer grid, embedded tablet screen
+//   pen-monitor.js    — external monitor mesh and screen cursor
 //   pen-pen.js        — pen mesh, cursor arrow, updatePenTransform
-//   pen-annotations.js — annotation geometry, axis markers, math helpers
+//   pen-annotations.js — annotation geometry, updateAnnotations, axis markers, math helpers
 //   pen-mouse.js      — spacebar + mouse drag control
 //
 // Coordinate systems used throughout this codebase:
-//   Tablet coords  — the logical pen/tablet API space (inches):
-//                    tabletX  0–16  left → right
-//                    tabletY  0–9   front → back (depth)
+//   Tablet coords  — the logical pen/tablet API space (millimetres):
+//                    tabletX  0–384 left → right
+//                    tabletY  0–216 front → back (depth)
 //                    tabletZ  ≥0    height of pen tip above surface (distance)
-//   World coords   — Three.js scene space (inches):
-//                    worldX   ±8    = tabletX − tabletWidth/2
-//                    worldY   ≥0.05 = tabletSurfaceY + tabletZ   (Y is up)
-//                    worldZ   ±4.5  = tabletY − tabletDepth/2
+//   World coords   — Three.js scene space (1 unit = 1 mm):
+//                    worldX   ±192  = tabletX − tabletWidth/2
+//                    worldY   ≥…    = tabletSurfaceY + tabletZ   (Y is up)
+//                    worldZ   ±108  = tabletY − tabletDepth/2
 
 export class Pen3DSim {
     constructor(viewerElement) {
@@ -74,6 +76,8 @@ export class Pen3DSim {
         this.initRenderer();
         this.initControls();
         this.initLighting();
+        this.initDesk();
+        this.initRoom();
         this.initTablet();
         this.initMonitor();
         this.initPen();
@@ -326,8 +330,9 @@ export class Pen3DSim {
         this.tabletCheckerboardVisible = visible;
         if (visible) {
             const dark = this.darkTablet;
-            const c1 = dark ? '#5c4a6e' : '#e4d8f0';
-            const c2 = dark ? '#3a2c48' : '#c8b4dc';
+            const hexToCss = (hex) => '#' + hex.toString(16).padStart(6, '0');
+            const c1 = hexToCss(dark ? SCENE.tabletCheckDark1 : SCENE.tabletCheckLight1);
+            const c2 = hexToCss(dark ? SCENE.tabletCheckDark2 : SCENE.tabletCheckLight2);
             // Rebuild so light/dark mode always matches
             if (this.tabletCheckerboardTexture) {
                 this.tabletCheckerboardTexture.dispose();

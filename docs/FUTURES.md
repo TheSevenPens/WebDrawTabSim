@@ -7,14 +7,14 @@
 
 ## Code Quality
 
-- **Large annotation update path**: `updateAnnotations()` in `pen-pen.js` is still sizable after the pose/cursor/annotation split; further extraction of per-annotation updaters would help.
+- **Large annotation update path**: `updateAnnotations()` in `pen-annotations.js` is still sizable after the pose/cursor/annotation split; further extraction of per-annotation updaters would help.
 - **No tests**: No test files exist. Adding Vitest tests for the coordinate math and state logic would improve reliability.
 
 ## Suggested Features
 
 - **Real tablet input**: Detect an actual drawing tablet (via Pointer Events API) and display its live pen state in the simulator.
 - **Presets / snapshots**: Let users save and load combinations of pen parameters and camera settings by name.
-- **Export pen state as JSON**: Complement the existing camera settings export with a full pen-state export/import.
+- **Export pen state as JSON**: Add pen-state export/import (camera JSON I/O was removed with the unused edit modal).
 - **Video/GIF recording**: Extend the existing PNG export to capture animations as video.
 - **Comparison mode**: Side-by-side view of two different pen orientations.
 - **Help panel**: In-app documentation explaining each parameter (tilt altitude vs. azimuth, what barrel rotation means, etc.).
@@ -23,13 +23,13 @@
 ## UX Improvements
 
 - **Mobile / touch support**: `pen-mouse.js` only handles keyboard + mouse events. Touch devices can view but not interact with pen positioning.
-- **Responsive layout**: The control panel is fixed at 250px and doesn't adapt to small screens.
+- **Responsive layout**: The control panel is fixed at 400px and doesn't adapt to small screens.
 - **Light mode**: Currently dark-only. A theme toggle would help with accessibility and embedding in light-themed docs.
 - **Undo/redo**: All state changes are immediate with no way to step back.
 
 ## Accessibility
 
-- **Minimal ARIA attributes**: Sliders lack `aria-valuemin`/`aria-valuemax`/`aria-valuenow`. The camera modal has no `role="dialog"` or focus trap.
+- **Minimal ARIA attributes**: Sliders lack `aria-valuemin`/`aria-valuemax`/`aria-valuenow`.
 - **No visible focus indicators**: `app.css` has no `:focus-visible` styles, making keyboard navigation difficult.
 - **3D canvas not accessible**: The WebGL viewer has no text alternative for screen readers.
 - **Color contrast**: Some UI text (e.g. light gray on dark background) may not meet WCAG 4.5:1 contrast requirements.
@@ -37,4 +37,5 @@
 ## Code Modernization
 
 - **TypeScript migration**: The project is pure JavaScript. TypeScript would add type safety, especially around the coordinate math and Three.js API usage.
-- Shared defaults now live in `src/lib/sim/config.js` (tablet size, demo pose, ranges, colors, animation timings). Keep new magic numbers out of companion files when possible.
+- Shared defaults live in `src/lib/sim/config.js` (tablet, desk/room, lighting, monitor, demo pose, ranges, colors, timings). Keep new magic numbers out of companion files when possible.
+- **App ↔ panel prop drilling**: Many 1:1 `onFoo → sim.setFoo` wrappers remain after CheckboxControl/SelectControl; further bridge helpers are tracked in #61.

@@ -3,6 +3,11 @@ import { SCALE } from './config.js';
 
 // Textures Factory - Creates all textures used in Pen3DSim
 
+// Lazily-created, module-level singleton so the tablet screen (pen-tablet.js)
+// and the external monitor (pen-monitor.js) share one canvas/texture instead
+// of each generating and uploading its own copy of the same desktop image.
+let sharedDesktopTexture = null;
+
 export class TexturesFactory {
     // Create a checkerboard texture for the pen
     static createCheckerboardTexture() {
@@ -89,6 +94,15 @@ export class TexturesFactory {
         ctx.fillRect(0, H - taskbarH, W, taskbarH);
 
         return new THREE.CanvasTexture(canvas);
+    }
+
+    // Shared desktop texture for the tablet screen and monitor — created once
+    // on first use and reused thereafter (see `sharedDesktopTexture` above).
+    static getSharedDesktopTexture() {
+        if (!sharedDesktopTexture) {
+            sharedDesktopTexture = this.createDesktopTexture();
+        }
+        return sharedDesktopTexture;
     }
 
     // Create a text label texture for axis markers

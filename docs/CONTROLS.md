@@ -15,7 +15,7 @@ The camera can never drop below the tablet surface: the polar angle is capped at
 
 Space+drag maps screen pixels to tablet millimetres using **Mouse drag sensitivity** (Pointer tracking flyout).
 
-The left panel is grouped into headers: **Pen**, **Mapping**, **Pointer**, **Camera**, **Tablet**, **Other**.
+The left panel is grouped into collapsible headers: **Pen**, **Mapping**, **Pointer**, **Camera**, **Tablet**, **Animations**, **Other**.
 
 ## Pen
 
@@ -28,6 +28,7 @@ Tabbed controls (`pen pos`, `Pen Or`, `pen fmt`, `pen ann`). Slider numeric valu
 | **Pen Or** | **Al** | Tilt altitude — lean from vertical |
 | **Pen Or** | **Az** | Tilt azimuth — lean direction (disabled when altitude is 0) |
 | **Pen Or** | **Br** | Barrel rotation — twist around the pen axis |
+| **pen fmt** | **Body** | `checkerboard pattern` (barrel + eraser both show the check wrap, for spotting rotation) or `solid color` (both revert to matte graphite) |
 | **pen fmt** | **Sharp nib tip** | Swap the rounded nib for a sharp one (shared apex, so the contact point is unchanged) |
 | **pen fmt** | **Pen shadow** | Toggle the pen's cast shadow |
 | **pen ann** | **Tilt altitude / azimuth**, **Tilt X / Y**, **Barrel rotation** | Show the matching orientation annotation |
@@ -62,13 +63,26 @@ The initial view is azimuth 0°, elevation 30°, distance 720 mm.
 | **Device type** | `pen tablet` (external monitor shows the cursor) or `pen display` (cursor on the embedded screen) |
 | **Dark tablet** | Darken the tablet body |
 
+## Animations
+
+Collapsible left-panel section (not a flyout).
+
+| Button | Effect |
+|---|---|
+| **Demo** | Jump to the shared demo pose and turn key annotations on |
+| **Anim Rot all** | Ease from defaults to the same demo pose (~8 s) |
+| **Anim Tilt Altitude** | Sweep altitude 0→45° |
+| **Anim Tilt Azimuth** | Sweep azimuth 0→242° |
+| **Anim Barrel** | Sweep barrel 0→318° |
+
+Demo and Anim Rot all share `DEMO_POSE` in `src/lib/sim/config.js`; the individual sweeps' end angles (`ANIMATION.azimuthEnd`/`barrelEnd`/`altitudeEnd`) are kept equal to it. Starting a new parameter animation cancels the previous one.
+
 ## Other
 
 | Control | Effect |
 |---|---|
 | **Axis** | Show the X/Y/Z axis markers |
 | **Axonometric** | Switch between perspective and orthographic camera |
-| **Animations** | Open the animations flyout (see below) |
 | **Export / Copy…** | Export or copy a PNG (see Export) |
 | **Views…** | Jump to named camera presets (DEFAULT, TOP_DOWN, etc.) |
 | **Aspect** | Viewport aspect ratio: `16:9`, `1:1`, or `2:3` (the render is fitted and centered) |
@@ -89,18 +103,6 @@ Models driver-style cursor behavior (not pen pose). See [CURSOR_PIPELINE.md](./C
 | Edge attraction | Push/pull near edges (`+` = away from edge) |
 | Edge attraction range | Distance from edge where attraction applies |
 | Mouse drag sensitivity | Space+drag distance per screen pixel |
-
-### Animations
-
-| Button | Effect |
-|---|---|
-| **Demo** | Jump to the shared demo pose and turn key annotations on |
-| **Anim Rot all** | Ease from defaults to the same demo pose (~8 s) |
-| **Anim Tilt Altitude** | Sweep altitude 0→45° |
-| **Anim Tilt Azimuth** | Sweep azimuth 0→252° |
-| **Anim Barrel** | Sweep barrel 0→316° |
-
-Demo and Anim Rot all share `DEMO_POSE` in `src/lib/sim/config.js`. Starting a new parameter animation cancels the previous one.
 
 ## Export
 

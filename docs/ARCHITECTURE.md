@@ -14,9 +14,10 @@ src/main.js
     ├── LeftPanel.svelte              ← #control-panel
     │   └── PenOrientationPanel.svelte
     │       └── SliderControl.svelte
-    ├── AnnotationSettings.svelte     ← annotations flyout
+    ├── CursorModeControl.svelte      ← cursor-mode dropdown (used in Pointer tab)
     ├── PointerTrackingSettings.svelte
     │   └── SliderControl.svelte
+    ├── CheckboxControl.svelte / SelectControl.svelte  ← shared labeled inputs
     └── [flyouts, #viewer]
 ```
 
@@ -25,9 +26,10 @@ src/main.js
 | `App.svelte` | Owns reactive state; bridges UI → `Pen3DSim`; flyouts, animations |
 | `LeftPanel.svelte` | Control panel chrome, section headers, camera and action controls |
 | `PenOrientationPanel.svelte` | Tabbed pen controls (position, orientation, format, annotations) |
-| `AnnotationSettings.svelte` | Cursor mode dropdown (mouse / crosshairs / none) |
+| `CursorModeControl.svelte` | Cursor mode dropdown (mouse / crosshairs / none) — formerly `AnnotationSettings.svelte` |
 | `PointerTrackingSettings.svelte` | Cursor pipeline + mouse sensitivity sliders |
 | `SliderControl.svelte` | Labelled range input with click-to-edit value |
+| `CheckboxControl.svelte` / `SelectControl.svelte` | Shared labeled checkbox / dropdown matching the dark panel style |
 
 ### State flow
 
@@ -46,13 +48,14 @@ When Space+drag moves the pen, the sim dispatches `tabletPositionChanged` on the
 ```
 index.js
 ├── Pen3DSim.js         ← class skeleton, public API, clamped setters
-├── config.js           ← TABLET, DEFAULT_PEN, DEMO_POSE, ranges, colors, timings
+├── config.js           ← TABLET, DESK, ROOM, LIGHTING, MONITOR, DEFAULT_PEN, DEMO_POSE, ranges, colors, timings
 ├── cursor-geometry.js  ← shared arrow silhouette for tablet + monitor cursors
 ├── pen-scene.js        ← scene, cameras, renderer, lights, OrbitControls, camera JSON
-├── pen-tablet.js       ← tablet body, digitizer grid, desk, floor, embedded screen
+├── pen-room.js         ← desk (slab + legs), floor, walls, baseboards
+├── pen-tablet.js       ← tablet body, digitizer grid, embedded screen
 ├── pen-monitor.js      ← external monitor + screen cursor
-├── pen-pen.js          ← pen mesh; updatePenPose / updateCursorFromPen / updateAnnotations
-├── pen-annotations.js  ← annotation helpers, pie/tube updates, tilt math, axis markers
+├── pen-pen.js          ← pen mesh; updatePenPose / updateCursorFromPen / updatePenTransform orchestrator
+├── pen-annotations.js  ← annotation helpers, pie/tube updates, tilt math, axis markers, updateAnnotations
 ├── pen-mouse.js        ← Space + drag → tablet X/Y
 ├── materials.js        ← MaterialsFactory
 ├── textures.js         ← procedural canvas textures
@@ -65,7 +68,7 @@ Companions call `Object.assign(Pen3DSim.prototype, { … })`. **Import order is 
 
 ```
 initScene → initCameras → initRenderer → initControls → initLighting
-→ initTablet → initMonitor → initPen → initAnnotations → initAxisMarkers
+→ initDesk → initRoom → initTablet → initMonitor → initPen → initAnnotations → initAxisMarkers
 → animate() → updatePenTransform() → initMouseControl()
 ```
 
@@ -93,7 +96,7 @@ Setters clamp through `PEN_RANGES` / `clampValue` in `config.js`.
 ## Tablet body vs digitizer
 
 **Tablet body** — visual plastic slab with bezel (`digitizer + bodyMargin` → 19×12×0.35 in).  
-**Digitizer** — 16×9 in sensing area as a line grid at `yOffset`. All coordinate math uses digitizer space.
+**Digitizer** — 384×216 mm sensing area as a line grid at `yOffset`. All coordinate math uses digitizer space.
 
 ```
 TABLET.thickness  (config.js)     → single source of truth
@@ -104,8 +107,8 @@ yOffset = thickness / 2           → digitizer plane world Y
 
 ## Coordinate systems
 
-**Tablet (API):** X 0–16, Y 0–9, Z ≥ 0 (inches).  
-**World (Three.js Y-up):**
+**Tablet (API):** X 0–384, Y 0–216, Z ≥ 0 (millimetres; `SCALE = 24` maps the original 16×9 inch design).  
+**World (Three.js Y-up, 1 unit = 1 mm):**
 
 ```
 worldX = tabletX − width/2
@@ -133,7 +136,7 @@ Temporarily resizes the renderer to 1920×1080 or 3840×2160 with pixel ratio `E
 
 ## Z-fighting
 
-Tablet body, digitizer grid, cursor, and (in pen display mode) embedded screen sit very close together. The renderer uses **`logarithmicDepthBuffer: true`** so tiny Y offsets (0.001"–0.01") sort correctly at all zoom levels.
+Tablet body, digitizer grid, cursor, and (in pen display mode) embedded screen sit very close together. The renderer uses **`logarithmicDepthBuffer: true`** so tiny Y offsets (fractions of a millimetre) sort correctly at all zoom levels.
 
 ---
 
