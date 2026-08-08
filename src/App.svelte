@@ -491,14 +491,22 @@
 {/snippet}
 
 {#snippet penAnnTab()}
-  <div class="control-group"><label style="display:flex;align-items:center;gap:8px;"><input type="checkbox" bind:checked={showAltitude} onchange={onShowAltitude} style="width:auto;margin:0;"><span>Tilt altitude</span></label></div>
-  <div class="control-group"><label style="display:flex;align-items:center;gap:8px;"><input type="checkbox" bind:checked={showAzimuth}  onchange={onShowAzimuth}  style="width:auto;margin:0;"><span>Tilt azimuth</span></label></div>
-  <div class="control-group"><label style="display:flex;align-items:center;gap:8px;"><input type="checkbox" bind:checked={showTiltX}    onchange={onShowTiltX}    style="width:auto;margin:0;"><span>Tilt X</span></label></div>
-  <div class="control-group"><label style="display:flex;align-items:center;gap:8px;"><input type="checkbox" bind:checked={showTiltY}    onchange={onShowTiltY}    style="width:auto;margin:0;"><span>Tilt Y</span></label></div>
-  <div class="control-group"><label style="display:flex;align-items:center;gap:8px;"><input type="checkbox" bind:checked={showBarrel}   onchange={onShowBarrel}   style="width:auto;margin:0;"><span>Barrel rotation</span></label></div>
-  <div class="control-group"><label style="display:flex;align-items:center;gap:8px;"><input type="checkbox" bind:checked={showPenTopLine} onchange={onShowPenTopLine} style="width:auto;margin:0;"><span>Pen top line</span></label></div>
-  <div class="control-group"><label style="display:flex;align-items:center;gap:8px;"><input type="checkbox" bind:checked={showPenAxisLine} onchange={onShowPenAxisLine} style="width:auto;margin:0;"><span>Pen axis line</span></label></div>
-  <div class="control-group"><label style="display:flex;align-items:center;gap:8px;"><input type="checkbox" bind:checked={showPenTipLine} onchange={onShowPenTipLine} style="width:auto;margin:0;"><span>Pen tip line</span></label></div>
+  <div style="display:flex;gap:16px;">
+    <!-- Left column: rotation annotations -->
+    <div style="flex:1;">
+      <div class="control-group"><label style="display:flex;align-items:center;gap:8px;"><input type="checkbox" bind:checked={showAltitude} onchange={onShowAltitude} style="width:auto;margin:0;"><span>Tilt altitude</span></label></div>
+      <div class="control-group"><label style="display:flex;align-items:center;gap:8px;"><input type="checkbox" bind:checked={showAzimuth}  onchange={onShowAzimuth}  style="width:auto;margin:0;"><span>Tilt azimuth</span></label></div>
+      <div class="control-group"><label style="display:flex;align-items:center;gap:8px;"><input type="checkbox" bind:checked={showTiltX}    onchange={onShowTiltX}    style="width:auto;margin:0;"><span>Tilt X</span></label></div>
+      <div class="control-group"><label style="display:flex;align-items:center;gap:8px;"><input type="checkbox" bind:checked={showTiltY}    onchange={onShowTiltY}    style="width:auto;margin:0;"><span>Tilt Y</span></label></div>
+      <div class="control-group"><label style="display:flex;align-items:center;gap:8px;"><input type="checkbox" bind:checked={showBarrel}   onchange={onShowBarrel}   style="width:auto;margin:0;"><span>Barrel rotation</span></label></div>
+    </div>
+    <!-- Right column: line annotations -->
+    <div style="flex:1;">
+      <div class="control-group"><label style="display:flex;align-items:center;gap:8px;"><input type="checkbox" bind:checked={showPenTopLine} onchange={onShowPenTopLine} style="width:auto;margin:0;"><span>Pen top line</span></label></div>
+      <div class="control-group"><label style="display:flex;align-items:center;gap:8px;"><input type="checkbox" bind:checked={showPenAxisLine} onchange={onShowPenAxisLine} style="width:auto;margin:0;"><span>Pen axis line</span></label></div>
+      <div class="control-group"><label style="display:flex;align-items:center;gap:8px;"><input type="checkbox" bind:checked={showPenTipLine} onchange={onShowPenTipLine} style="width:auto;margin:0;"><span>Pen tip line</span></label></div>
+    </div>
+  </div>
 {/snippet}
 
 
