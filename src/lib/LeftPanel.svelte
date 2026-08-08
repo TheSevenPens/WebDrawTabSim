@@ -57,12 +57,25 @@
   } = $props();
 
   let activeCamTab = $state('dir'); // 'dir' | 'targ'
+
+  // Per-section collapse state (all expanded by default).
+  let collapsed = $state({
+    pen: false, mapping: false, pointer: false, camera: false, tablet: false, other: false,
+  });
 </script>
+
+{#snippet sectionHeader(key, label)}
+  <button type="button" class="section-header" onclick={() => (collapsed[key] = !collapsed[key])} aria-expanded={!collapsed[key]}>
+    <span>{label}</span>
+    <span class="collapse-chevron">{collapsed[key] ? '▸' : '▾'}</span>
+  </button>
+{/snippet}
 
 <div id="control-panel">
   <h1>SevenPens DrawTabSim</h1>
 
-  <div class="section-header">Pen</div>
+  {@render sectionHeader('pen', 'Pen')}
+  {#if !collapsed.pen}
   <PenOrientationPanel
     bind:distance
     bind:tabletX
@@ -85,11 +98,15 @@
     {onShowPenShadow}
     {penAnnTab}
   />
+  {/if}
 
-  <div class="section-header">Mapping</div>
+  {@render sectionHeader('mapping', 'Mapping')}
+  {#if !collapsed.mapping}
   <button class="action-btn" id="pointer-tracking-flyout-btn" onclick={() => onToggleFlyout('pointer-tracking')}>Pointer tracking</button>
+  {/if}
 
-  <div class="section-header">Pointer</div>
+  {@render sectionHeader('pointer', 'Pointer')}
+  {#if !collapsed.pointer}
   {@render sceneAnnTab()}
 
   {#if showCameraInfo}
@@ -100,7 +117,10 @@
   {/if}
 
   <button class="action-btn" onclick={onResetPen}>Reset pen</button>
-  <div class="section-header">Camera</div>
+  {/if}
+
+  {@render sectionHeader('camera', 'Camera')}
+  {#if !collapsed.camera}
   <div class="tabs">
     <button type="button" class="tab" class:active={activeCamTab === 'dir'} onclick={() => (activeCamTab = 'dir')}>Cam Dir</button>
     <button type="button" class="tab" class:active={activeCamTab === 'targ'} onclick={() => (activeCamTab = 'targ')}>Cam Targ</button>
@@ -139,8 +159,10 @@
       <option value="edge-right">Edge midpoint: right</option>
     </select>
   {/if}
+  {/if}
 
-  <div class="section-header">Tablet</div>
+  {@render sectionHeader('tablet', 'Tablet')}
+  {#if !collapsed.tablet}
   <div class="control-group">
     <label style="display:flex;align-items:center;gap:8px;">
       <input type="checkbox" bind:checked={showCheckerboard} onchange={onShowCheckerboard} style="width:auto;margin:0;">
@@ -166,8 +188,10 @@
       <span>Dark tablet</span>
     </label>
   </div>
+  {/if}
 
-  <div class="section-header">Other</div>
+  {@render sectionHeader('other', 'Other')}
+  {#if !collapsed.other}
   <div class="control-group">
     <label style="display:flex;align-items:center;gap:8px;">
       <input type="checkbox" bind:checked={showAxis} onchange={onShowAxis} style="width:auto;margin:0;">
@@ -208,16 +232,36 @@
       <option value="2 / 3">2:3</option>
     </select>
   </div>
+  {/if}
 </div>
 
 <style>
   .section-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    width: 100%;
     font-size: 14px;
     font-weight: 600;
     color: #ddd;
     margin: 12px 0 6px;
-    padding-bottom: 3px;
+    padding: 0 0 3px;
+    border: none;
     border-bottom: 1px solid #444;
+    background: none;
+    font-family: inherit;
+    text-align: left;
+    cursor: pointer;
+  }
+
+  .section-header:hover {
+    color: #fff;
+  }
+
+  .collapse-chevron {
+    font-size: 10px;
+    color: #999;
+    margin-left: 8px;
   }
 
   .tabs {
