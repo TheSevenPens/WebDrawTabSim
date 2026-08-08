@@ -17,15 +17,19 @@
     onAzimuth,
     onBarrel,
     onSharpNib,
+    showPenShadow  = $bindable(),
+    onShowPenShadow,
+    penAnnTab,
   } = $props();
 
-  let activeTab = $state('pos'); // 'pos' | 'or' | 'fmt'
+  let activeTab = $state('pos'); // 'pos' | 'or' | 'fmt' | 'ann'
 </script>
 
 <div class="tabs">
   <button type="button" class="tab" class:active={activeTab === 'pos'} onclick={() => (activeTab = 'pos')}>pen pos</button>
   <button type="button" class="tab" class:active={activeTab === 'or'} onclick={() => (activeTab = 'or')}>Pen Or</button>
   <button type="button" class="tab" class:active={activeTab === 'fmt'} onclick={() => (activeTab = 'fmt')}>pen fmt</button>
+  <button type="button" class="tab" class:active={activeTab === 'ann'} onclick={() => (activeTab = 'ann')}>pen ann</button>
 </div>
 
 {#if activeTab === 'pos'}
@@ -36,13 +40,21 @@
   <SliderControl inline label="Al" title="Tilt altitude" bind:value={tiltAltitude} min={0} max={60} step={1} decimals={0} unit="°" oninput={onAltitude} />
   <SliderControl inline label="Az" title="Tilt azimuth" bind:value={tiltAzimuth} min={0} max={359} step={1} decimals={0} unit="°" disabled={azimuthDisabled} oninput={onAzimuth} />
   <SliderControl inline label="Br" title="Barrel rotation" bind:value={barrelRotation} min={0} max={359} step={1} decimals={0} unit="°" oninput={onBarrel} />
-{:else}
+{:else if activeTab === 'fmt'}
   <div class="control-group">
     <label style="display:flex;align-items:center;gap:8px;">
       <input type="checkbox" bind:checked={sharpNib} onchange={onSharpNib} style="width:auto;margin:0;">
       <span>Sharp nib tip</span>
     </label>
   </div>
+  <div class="control-group">
+    <label style="display:flex;align-items:center;gap:8px;">
+      <input type="checkbox" bind:checked={showPenShadow} onchange={onShowPenShadow} style="width:auto;margin:0;">
+      <span>Pen shadow</span>
+    </label>
+  </div>
+{:else}
+  {@render penAnnTab()}
 {/if}
 
 <style>

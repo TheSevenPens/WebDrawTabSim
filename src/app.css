@@ -71,25 +71,25 @@ input[type="range"] {
 }
 
 .action-btn {
-    padding: 6px 6px;
-    background: #4CAF50;
-    color: white;
-    border: none;
-    border-radius: 8px;
+    padding: 6px 8px;
+    background: #3a3f47;
+    color: #ddd;
+    border: 1px solid #555;
+    border-radius: 4px;
     cursor: pointer;
     font-size: 12px;
-    font-weight: bold;
-    transition: background 0.3s;
+    transition: background 0.2s, border-color 0.2s;
     margin-top: 4px;
     width: 100%;
 }
 
 .action-btn:hover {
-    background: #45a049;
+    background: #4a5059;
+    border-color: #777;
 }
 
 .action-btn:active {
-    background: #3d8b40;
+    background: #2f333a;
 }
 
 #viewer {
@@ -116,7 +116,7 @@ input[type="checkbox"] {
     width: 18px;
     height: 18px;
     cursor: pointer;
-    accent-color: #4CAF50;
+    accent-color: #4a90d9;
 }
 
 .checkbox-grid {

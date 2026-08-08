@@ -448,6 +448,23 @@
 
 <svelte:window onkeydown={handleKeyDown} onresize={() => sim?.onResize()} />
 
+<!-- Scene tab contents, passed to LeftPanel as snippets (state stays here). -->
+{#snippet sceneAnnTab()}
+  <AnnotationSettings
+    bind:showCursor
+    {onShowCursor}
+  />
+{/snippet}
+
+{#snippet penAnnTab()}
+  <div class="control-group"><label style="display:flex;align-items:center;gap:8px;"><input type="checkbox" bind:checked={showAltitude} onchange={onShowAltitude} style="width:auto;margin:0;"><span>Tilt altitude</span></label></div>
+  <div class="control-group"><label style="display:flex;align-items:center;gap:8px;"><input type="checkbox" bind:checked={showAzimuth}  onchange={onShowAzimuth}  style="width:auto;margin:0;"><span>Tilt azimuth</span></label></div>
+  <div class="control-group"><label style="display:flex;align-items:center;gap:8px;"><input type="checkbox" bind:checked={showTiltX}    onchange={onShowTiltX}    style="width:auto;margin:0;"><span>Tilt X</span></label></div>
+  <div class="control-group"><label style="display:flex;align-items:center;gap:8px;"><input type="checkbox" bind:checked={showTiltY}    onchange={onShowTiltY}    style="width:auto;margin:0;"><span>Tilt Y</span></label></div>
+  <div class="control-group"><label style="display:flex;align-items:center;gap:8px;"><input type="checkbox" bind:checked={showBarrel}   onchange={onShowBarrel}   style="width:auto;margin:0;"><span>Barrel rotation</span></label></div>
+{/snippet}
+
+
 <!-- ═══════════════════════════════════════════════════════════════════════════
      Control panel
      ═══════════════════════════════════════════════════════════════════════════ -->
@@ -458,23 +475,29 @@
   bind:tiltAltitude
   bind:tiltAzimuth
   bind:barrelRotation
-  bind:axonometric
   bind:penDisplayMode
   bind:darkTablet
   bind:sharpNib
   {onSharpNib}
+  bind:showPenShadow
+  {onShowPenShadow}
   {azimuthDisabled}
-  {tiltXDisplay}
-  {tiltYDisplay}
   {onDistance}
   {onTabletX}
   {onTabletY}
   {onAltitude}
   {onAzimuth}
   {onBarrel}
-  {onAxonometric}
   {onPenDisplayMode}
+  {penAnnTab}
+  {sceneAnnTab}
+  bind:axonometric
+  {onAxonometric}
   {onDarkTablet}
+  bind:showCheckerboard
+  {onShowCheckerboard}
+  bind:showAxis
+  {onShowAxis}
   bind:showCameraInfo
   {cameraPos}
   {cameraTarget}
@@ -525,40 +548,6 @@
   </div>
 </div>
 {/if}
-
-<!-- ═══════════════════════════════════════════════════════════════════════════
-     Annotations flyout
-     ═══════════════════════════════════════════════════════════════════════════ -->
-<div id="annotations-flyout" class="flyout-panel" class:open={openFlyout === 'annotations'}>
-  <div class="flyout-header">
-    <h3>Annotations</h3>
-    <button class="flyout-close-btn" onclick={() => openFlyout = null}>×</button>
-  </div>
-  <div class="flyout-content">
-    <AnnotationSettings
-      bind:showAltitude
-      bind:showAzimuth
-      bind:showTiltX
-      bind:showTiltY
-      bind:showBarrel
-      bind:showAxis
-      bind:showCursor
-      bind:showPenShadow
-      bind:showCheckerboard
-      {onShowAltitude}
-      {onShowAzimuth}
-      {onShowTiltX}
-      {onShowTiltY}
-      {onShowBarrel}
-      {onShowAxis}
-      {onShowCursor}
-      {onShowPenShadow}
-      {onShowCheckerboard}
-      onAllOn={allAnnotationsOn}
-      onAllOff={allAnnotationsOff}
-    />
-  </div>
-</div>
 
 <!-- ═══════════════════════════════════════════════════════════════════════════
      Pointer tracking flyout
