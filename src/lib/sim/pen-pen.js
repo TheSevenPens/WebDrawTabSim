@@ -174,6 +174,7 @@ Object.assign(Pen3DSim.prototype, {
     // wrap and a solid graphite color. Mutates the existing materials so
     // shadows/refs stay intact.
     setPenBodyFormat(format) {
+        this.requestRender();
         this.penBodyFormat = format;
         const solid = format === 'solid';
         for (const [mat, checkerTexture, solidColor] of [

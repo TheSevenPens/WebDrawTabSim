@@ -168,6 +168,85 @@ class HeadlessSim extends Pen3DSim {
     initMouseControl() {} // Real input teardown is covered in editing-playback.test.js.
 }
 
+function scheduledSim(t) {
+    documentStub(t);
+    const frames = new Map(); let id = 0;
+    t.mock.method(globalThis, 'requestAnimationFrame', fn => { frames.set(++id, fn); return id; });
+    t.mock.method(globalThis, 'cancelAnimationFrame', id => frames.delete(id));
+    const sim = new HeadlessSim({ clientWidth: 800, clientHeight: 450 });
+    t.after(() => sim.dispose());
+    const step = () => {
+        const pending = [...frames.values()]; frames.clear();
+        pending.forEach(fn => fn(0));
+    };
+    return { sim, frames, step };
+}
+
+test('render requests coalesce, continue camera damping and stop at idle/disposal', t => {
+    const { sim, frames, step } = scheduledSim(t);
+    for (let i = 0; i < 20; i++) sim.setDistance(i);
+    assert.equal(frames.size, 1);
+    step();
+    assert.equal(sim.renderer.renders, 1);
+    assert.equal(frames.size, 0);
+    let remaining = 3;
+    sim.controls.update = () => remaining-- > 0;
+    sim.requestRender();
+    for (let i = 0; i < 4; i++) step();
+    assert.equal(frames.size, 0);
+    assert.equal(sim.renderer.renders, 5);
+    sim.setGridVisible(false);
+    const stale = [...frames.values()];
+    sim.dispose();
+    stale.forEach(fn => fn(0));
+    sim.requestRender();
+    assert.equal(frames.size, 0);
+    assert.equal(sim.renderer.renders, 5);
+});
+
+test('mapping edits reuse pen and annotations, preserve shadows, and coalesce mixed batches', t => {
+    const { sim, step } = scheduledSim(t);
+    step();
+    sim.renderer.shadowMap.needsUpdate = false;
+    const pose = t.mock.method(sim, 'updatePenPose');
+    const annotations = t.mock.method(sim, 'updateAnnotations');
+    const cursor = t.mock.method(sim, 'updateCursorFromPen');
+    const oldCursor = sim.cursorArrow.position.clone();
+    sim.batchSceneUpdate(() => {
+        sim.setCursorOffsetX(10);
+        sim.setCursorOffsetY(5);
+        sim.setScalingFactor(0.5);
+    });
+    assert.equal(pose.mock.callCount(), 0);
+    assert.equal(annotations.mock.callCount(), 0);
+    assert.equal(cursor.mock.callCount(), 1);
+    assert.equal(sim.renderer.shadowMap.needsUpdate, false);
+    assert.notDeepEqual(sim.cursorArrow.position, oldCursor);
+    sim.batchSceneUpdate(() => {
+        sim.setCursorOffsetX(20);
+        sim.batchSceneUpdate(() => sim.setTiltAltitude(45));
+    });
+    assert.equal(pose.mock.callCount(), 1);
+    assert.equal(annotations.mock.callCount(), 1);
+    assert.equal(cursor.mock.callCount(), 2);
+    assert.equal(sim.renderer.shadowMap.needsUpdate, true);
+});
+
+test('export success and failure request restoration of the live pixels', t => {
+    const { sim, frames, step } = scheduledSim(t);
+    step();
+    sim.renderToCanvas(480, 270);
+    assert.equal(frames.size, 1);
+    step();
+    const original = sim.renderer.render;
+    sim.renderer.render = () => { throw new Error('render failed'); };
+    assert.throws(() => sim.renderToCanvas(480, 270), /render failed/);
+    assert.equal(frames.size, 1);
+    sim.renderer.render = original;
+    step();
+    assert.equal(frames.size, 0);
+});
+
 test('saved documents restore real scene geometry and preferences with one pen refresh', t => {
     documentStub(t);
     const sim = new HeadlessSim({ clientWidth: 800, clientHeight: 450 });

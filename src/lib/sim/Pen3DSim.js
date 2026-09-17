@@ -141,6 +141,7 @@ export class Pen3DSim {
         for (const cancel of this.animations ?? []) clean(cancel);
         this.animations?.clear();
         clean(() => this.disposeMouseControl?.());
+        clean(() => this.controls?.removeEventListener?.('change', this.handleControlsChange));
         clean(() => this.controls?.dispose());
         clean(() => this.resources?.dispose());
         clean(() => this.scene?.clear());
@@ -151,14 +152,20 @@ export class Pen3DSim {
     }
 
     animate() {
-        if (this.disposed || this.renderFrame != null) return;
-        const loop = () => {
+        this.renderReady = true;
+        this.requestRender();
+    }
+
+    // Coalesce writes into one frame, continuing only while controls change.
+    requestRender() {
+        if (this.disposed || !this.renderReady || this.renderFrame != null) return;
+        this.renderFrame = requestAnimationFrame(() => {
+            this.renderFrame = null;
             if (this.disposed) return;
-            this.renderFrame = requestAnimationFrame(loop);
             // Keep the orbit target on/above the tablet surface so that, with
             // maxPolarAngle = 90°, the camera can never drop below the surface.
             if (this.controls.target.y < this.yOffset) this.controls.target.y = this.yOffset;
-            this.controls.update();
+            if (this.controls.update()) this.requestRender();
             this.renderer.render(this.scene, this.camera);
             if (this.onCameraUpdate) {
                 const pos = this.camera.position;
@@ -172,13 +179,18 @@ export class Pen3DSim {
                     azimuth, elevation, distance,
                 });
             }
-        };
-        loop();
+        });
     }
 
     _refreshPen() {
         if (this.sceneUpdateDepth) { this.penRefreshPending = true; return; }
         this.updatePenTransform(this.distance, this.tiltAltitude, this.tiltAzimuth, this.barrelRotation);
+    }
+
+    _refreshCursor() {
+        if (this.sceneUpdateDepth) { this.cursorRefreshPending = true; return; }
+        this.updateCursorFromPen(this.tiltAltitude, this.tiltAzimuth);
+        this.requestRender();
     }
 
     batchSceneUpdate(update) {
@@ -188,7 +200,11 @@ export class Pen3DSim {
             this.sceneUpdateDepth--;
             if (!this.sceneUpdateDepth && this.penRefreshPending) {
                 this.penRefreshPending = false;
+                this.cursorRefreshPending = false;
                 this._refreshPen();
+            } else if (!this.sceneUpdateDepth && this.cursorRefreshPending) {
+                this.cursorRefreshPending = false;
+                this._refreshCursor();
             }
         }
     }
@@ -263,51 +279,51 @@ export class Pen3DSim {
 
     setCursorOffsetX(value) {
         this.cursorOffsetX = clampValue(value, PEN_RANGES.cursorOffsetX.min, PEN_RANGES.cursorOffsetX.max, this.cursorOffsetX);
-        this._refreshPen();
+        this._refreshCursor();
     }
 
     setCursorOffsetY(value) {
         this.cursorOffsetY = clampValue(value, PEN_RANGES.cursorOffsetY.min, PEN_RANGES.cursorOffsetY.max, this.cursorOffsetY);
-        this._refreshPen();
+        this._refreshCursor();
     }
 
     // ── Tilt compensation ─────────────────────────────────────────────────────
 
     setTiltCompensationPosTiltXValue(value) {
         this.tiltCompensationPosTiltXValue = clampValue(value, PEN_RANGES.tiltCompensation.min, PEN_RANGES.tiltCompensation.max, this.tiltCompensationPosTiltXValue);
-        this._refreshPen();
+        this._refreshCursor();
     }
 
     setTiltCompensationNegTiltXValue(value) {
         this.tiltCompensationNegTiltXValue = clampValue(value, PEN_RANGES.tiltCompensation.min, PEN_RANGES.tiltCompensation.max, this.tiltCompensationNegTiltXValue);
-        this._refreshPen();
+        this._refreshCursor();
     }
 
     setTiltCompensationPosTiltYValue(value) {
         this.tiltCompensationPosTiltYValue = clampValue(value, PEN_RANGES.tiltCompensation.min, PEN_RANGES.tiltCompensation.max, this.tiltCompensationPosTiltYValue);
-        this._refreshPen();
+        this._refreshCursor();
     }
 
     setTiltCompensationNegTiltYValue(value) {
         this.tiltCompensationNegTiltYValue = clampValue(value, PEN_RANGES.tiltCompensation.min, PEN_RANGES.tiltCompensation.max, this.tiltCompensationNegTiltYValue);
-        this._refreshPen();
+        this._refreshCursor();
     }
 
     // ── Cursor scaling / edge attraction ──────────────────────────────────────
 
     setScalingFactor(value) {
         this.scalingFactor = clampValue(value, PEN_RANGES.scalingFactor.min, PEN_RANGES.scalingFactor.max, this.scalingFactor);
-        this._refreshPen();
+        this._refreshCursor();
     }
 
     setEdgeAttraction(value) {
         this.edgeAttraction = clampValue(value, PEN_RANGES.edgeAttraction.min, PEN_RANGES.edgeAttraction.max, this.edgeAttraction);
-        this._refreshPen();
+        this._refreshCursor();
     }
 
     setEdgeAttractionRange(value) {
         this.edgeAttractionRange = clampValue(value, PEN_RANGES.edgeAttractionRange.min, PEN_RANGES.edgeAttractionRange.max, this.edgeAttractionRange);
-        this._refreshPen();
+        this._refreshCursor();
     }
 
     setMouseSensitivity(value) {
@@ -322,6 +338,7 @@ export class Pen3DSim {
     // ── Visibility toggles ────────────────────────────────────────────────────
 
     setAzimuthAnnotationsVisible(visible) {
+        this.requestRender();
         this.arcAnnotationGroup.visible = visible;
         this.surfaceLine.visible = visible;
     }
@@ -348,6 +365,7 @@ export class Pen3DSim {
 
     // Select the pointer cursor: 'mouse' (arrow), 'crosshairs', or 'none'.
     setCursorMode(mode) {
+        this.requestRender();
         this.cursorMode = mode;
         this._applyCursorMode();
     }
@@ -375,29 +393,34 @@ export class Pen3DSim {
 
     // The yellow dashed line dropping from the pen top down to the surface.
     setPenTopLineVisible(visible) {
+        this.requestRender();
         this.showPenTopLine = !!visible;
         if (this.penLine) this.penLine.visible = this.showPenTopLine && this.tiltAltitude !== 0;
     }
 
     // The white dashed line from the pen tip along the pen axis to the surface.
     setPenAxisLineVisible(visible) {
+        this.requestRender();
         if (this.penAxisLine) this.penAxisLine.visible = visible;
     }
 
     // The yellow dotted line dropping vertically from the pen tip to the surface
     // point directly below it.
     setPenTipLineVisible(visible) {
+        this.requestRender();
         if (this.penTipLine) this.penTipLine.visible = visible;
     }
 
     // The thin line grid over the digitizer active area.
     setGridVisible(visible) {
+        this.requestRender();
         if (this.digitizerGrid) this.digitizerGrid.visible = visible;
     }
 
     // Re-render the shadow map on the next frame. Call whenever shadow-casting
     // geometry moves or its visibility changes (the map is not auto-updated).
     markShadowsDirty() {
+        this.requestRender();
         if (this.renderer) this.renderer.shadowMap.needsUpdate = true;
     }
 
@@ -410,6 +433,7 @@ export class Pen3DSim {
     }
 
     setTabletCheckerboardVisible(visible) {
+        this.requestRender();
         if (!this.tabletMaterial) return;
         this.tabletCheckerboardVisible = visible;
         if (visible) {
@@ -442,6 +466,7 @@ export class Pen3DSim {
      * @param {boolean} dark
      */
     setDarkTablet(dark) {
+        this.requestRender();
         this.darkTablet = !!dark;
         this.tabletBaseColor = dark ? SCENE.tabletDark : SCENE.tablet;
         if (this.gridMaterial) {
@@ -466,6 +491,7 @@ export class Pen3DSim {
     }
 
     setAxisMarkersVisible(visible) {
+        this.requestRender();
         this.xArrow.visible = visible;
         this.yArrow.visible = visible;
         this.zArrow.visible = visible;
@@ -489,6 +515,7 @@ export class Pen3DSim {
     }
 
     restoreCameraState(state) {
+        this.requestRender();
         // Drain residual OrbitControls motion before applying saved framing.
         const damping = this.controls.enableDamping;
         this.controls.enableDamping = false;
@@ -528,6 +555,7 @@ export class Pen3DSim {
     // min/max distance. In axonometric mode the orthographic zoom is scaled
     // inversely, since ortho scale is independent of distance.
     changeCameraDistance(delta) {
+        this.requestRender();
         const offset = this.camera.position.clone().sub(this.controls.target);
         const oldDist = offset.length();
         const minD = this.controls.minDistance ?? 0.01;
@@ -568,6 +596,7 @@ export class Pen3DSim {
     }
 
     setAxonometricView(enabled) {
+        this.requestRender();
         if (enabled) {
             this.orthographicCamera.position.copy(this.perspectiveCamera.position);
             this.orthographicCamera.rotation.copy(this.perspectiveCamera.rotation);
@@ -584,11 +613,13 @@ export class Pen3DSim {
     // ── Cursor orientation ────────────────────────────────────────────────────
 
     setCursorRotation(angle) {
+        this.requestRender();
         this.cursorRotation = angle;
         this.updateCursorRotation();
     }
 
     setCursorTipRotationY(angle) {
+        this.requestRender();
         this.cursorTipRotationY = angle;
         this.updateCursorRotation();
     }
@@ -643,6 +674,7 @@ export class Pen3DSim {
     }
 
     onResize() {
+        this.requestRender();
         if (this.disposed) return;
         const cw = this.viewer.clientWidth;
         const ch = this.viewer.clientHeight;

@@ -37,6 +37,7 @@ Object.assign(Pen3DSim.prototype, {
             if (e.pointerId === this.penPointerId) this.resetPenInteraction();
         });
         listen(canvas, 'wheel', e => this.handleWheel(e), { passive: false });
+        listen(canvas, 'webglcontextrestored', () => this.markShadowsDirty());
     },
 
     disposeMouseControl() {

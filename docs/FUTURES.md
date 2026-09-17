@@ -8,7 +8,8 @@
 ## Code Quality
 
 - **Large annotation update path**: `updateAnnotations()` in `pen-annotations.js` is still sizable after the pose/cursor/annotation split; further extraction of per-annotation updaters would help.
-- **Broader test coverage**: Node regression tests and strict type checking cover the portable math and input-adapter APIs, alongside editing/playback/export/lifecycle tests. Image baselines, full recorded-stroke fixtures, and cross-browser automation remain useful additions (#77).
+- **Broader test coverage**: Numeric fixtures and Windows Chromium image baselines now cover representative scenes, editing, playback, exports, and lifecycle. Recorded-stroke fixtures and cross-browser automation remain useful additions. See [reference scenes](REFERENCE_SCENES.md).
+- **Performance evidence**: Rendering now settles at idle, and cursor-only edits skip annotation/shadow work. Hardware-GPU and peak-memory measurements remain before choosing a desktop renderer. See [measurements](PERFORMANCE.md).
 
 ## Suggested Features
 
@@ -25,7 +26,7 @@
 - **Mobile / touch support**: `pen-mouse.js` only handles keyboard + mouse events. Touch devices can view but not interact with pen positioning.
 - **Responsive layout**: The control panel is fixed at 400px and doesn't adapt to small screens.
 - **Light mode**: Currently dark-only. A theme toggle would help with accessibility and embedding in light-themed docs.
-- **Undo/redo**: All state changes are immediate with no way to step back.
+- **Undo/redo**: Implemented for complete scene edits with grouped gestures; see [history behavior](HISTORY.md).
 
 ## Accessibility
 

@@ -59,6 +59,7 @@ export function renderExport(sim, width, height) {
         renderer.setPixelRatio(pixelRatio);
         renderer.setSize(size.x, size.y, false);
         renderer.setViewport(viewport);
+        sim.requestRender?.(); // Resizing clears the live canvas, even after failure.
     }
 }
 

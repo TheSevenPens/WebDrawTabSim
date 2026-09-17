@@ -30,6 +30,7 @@ npm audit --audit-level=moderate # include development/build dependencies
 ## What it does
 
 For renderer refactors and desktop ports, see the [reference scenes and visual checks](docs/REFERENCE_SCENES.md).
+The viewport [renders on changes and settles at idle](docs/PERFORMANCE.md); the performance notes include a repeatable workload and measured before/after work counts.
 
 - Visualise **tilt altitude**, **tilt azimuth**, and **barrel rotation** in 3D
 - Map **tablet coordinates** to a screen cursor (external monitor or pen-display mode)

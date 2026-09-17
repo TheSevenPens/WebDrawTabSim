@@ -61,7 +61,7 @@ Object.assign(Pen3DSim.prototype, {
         // Shadows are static except when the pen (or monitor visibility) changes,
         // so don't re-render the shadow map every frame. Callers flip
         // shadowMap.needsUpdate via markShadowsDirty() when geometry moves; the
-        // continuous render loop otherwise just re-composites the cached map.
+        // requested frames otherwise just re-composite the cached map.
         this.renderer.shadowMap.autoUpdate = false;
         this.renderer.shadowMap.needsUpdate = true;   // render once at startup
         this.renderer.outputColorSpace = THREE.SRGBColorSpace;
@@ -84,6 +84,8 @@ Object.assign(Pen3DSim.prototype, {
         this.controls.maxPolarAngle = Math.PI / 2;
         this.controls.target.set(0, this.yOffset, 0);
         this.controls.update();
+        this.handleControlsChange = () => this.requestRender();
+        this.controls.addEventListener('change', this.handleControlsChange);
     },
 
     initLighting() {
