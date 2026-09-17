@@ -60,7 +60,9 @@ Object.assign(Pen3DSim.prototype, {
     handleWheel(e) {
         if (!this.controls.enabled) return;
         e.preventDefault();
-        this.changeCameraDistance(e.deltaY > 0 ? 20 : -20);
+        const delta = e.deltaY > 0 ? 20 : -20;
+        if (this.onCameraInput) this.onCameraInput(delta);
+        else this.changeCameraDistance(delta);
     },
 
     handleKeyDown(e) {

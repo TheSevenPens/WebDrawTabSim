@@ -68,6 +68,7 @@ export class Pen3DSim {
         this.onCameraUpdate = null;
         this.onPenInteraction = null;
         this.onPoseInput = null;
+        this.onCameraInput = null;
         this.viewportAspect = 16 / 9;   // target render aspect (width / height)
 
         // Constants (tablet coordinate dimensions)
@@ -134,6 +135,7 @@ export class Pen3DSim {
         this.onCameraUpdate = null;
         this.onPenInteraction = null;
         this.onPoseInput = null;
+        this.onCameraInput = null;
         const errors = [];
         const clean = fn => { try { fn(); } catch (error) { errors.push(error); } };
         for (const cancel of this.animations ?? []) clean(cancel);

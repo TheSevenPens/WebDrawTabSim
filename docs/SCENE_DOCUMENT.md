@@ -58,5 +58,8 @@ pose transitions, camera damping/zoom, drag commands, and restoration of real
 Three.js scene geometry/preferences. The saved fixture is a numeric regression
 reference, not a cross-GPU pixel-equality promise.
 
-Named scene libraries, undo/redo, recording references, automatic image sidecars,
+Scene editing now supports [undo/redo](./HISTORY.md), including valid file loads.
+History is transient and is not serialized in a scene document.
+
+Named scene libraries, recording references, automatic image sidecars,
 and cross-version migrations are follow-up work.

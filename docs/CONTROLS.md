@@ -17,6 +17,10 @@ Space+drag maps screen pixels to tablet millimetres using **Mouse drag sensitivi
 
 The left panel is grouped into collapsible headers: **Pen**, **Mapping**, **Pointer**, **Camera**, **Tablet**, **Animations**, **Other**.
 
+**Undo / Redo** at the top restores full scene edits. Slider and pen drags count
+as one edit; playback frames do not enter history. Use Ctrl/Cmd+Z and
+Ctrl/Cmd+Shift+Z outside editable fields. See [HISTORY.md](./HISTORY.md).
+
 ## Pen
 
 Tabbed controls (`pen pos`, `Pen Or`, `pen fmt`, `pen ann`). Slider numeric values are click-to-edit; typed values clamp to the slider min/max. All distances are in millimetres.

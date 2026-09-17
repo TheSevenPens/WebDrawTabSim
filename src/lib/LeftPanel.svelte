@@ -48,6 +48,7 @@
     onSceneEdit,
     onExportAction,
     sceneControls,
+    historyControls,
     aspectRatio,
     onAspectRatio,
   } = $props();
@@ -69,6 +70,7 @@
 
 <div id="control-panel">
   <h1>SevenPens DrawTabSim</h1>
+  {@render historyControls()}
 
   {@render sectionHeader('pen', 'Pen')}
   {#if !collapsed.pen}

@@ -12,18 +12,43 @@
   import { DEFAULT_PEN, DEMO_POSE, ANIMATION, EXPORT, SCALE } from './lib/sim/config.js';
 
   import SceneControls from './lib/SceneControls.svelte';
+  import HistoryControls from './lib/HistoryControls.svelte';
+  import { attachEditGestures, historyShortcut } from './lib/edit-gestures.js';
   import { createSceneDocument, createSceneController, parseSceneDocument, serializeSceneDocument } from './lib/sim/scene-document.js';
   import { applySceneDocument } from './lib/sim/scene-renderer.js';
 
   let scene = $state(createSceneDocument());
+  let historyStatus = $state({ canUndo: false, canRedo: false, undoLabel: '', redoLabel: '' });
+  let editGestures;
   const scenes = createSceneController({
     apply: (next, previous) => applySceneDocument(sim, next, previous),
     onChange: next => { scene = next; },
+    onHistoryChange: status => { historyStatus = status; },
   });
-  function commitScene(candidate = scene) { return scenes.replace(candidate); }
+  function commitScene(candidate = scene, options = {}) { return scenes.replace(candidate, options); }
   const onSceneEdit = () => commitScene();
-  function commitPose(pose) { return commitScene({ ...scene, pose: { ...scene.pose, ...pose } }); }
+  function commitPose(pose, options = {}) { return commitScene({ ...scene, pose: { ...scene.pose, ...pose } }, options); }
+  function finishEdit() { editGestures?.finish(); scenes.endEdit(); }
+  function syncCamera(record = false, settle = false) {
+    if (settle) {
+      sim.controls.target.y = Math.max(sim.yOffset, sim.controls.target.y);
+      sim.controls.update();
+      sim.restoreCameraState(sim.getCameraState());
+    }
+    const camera = sim.getCameraState();
+    if (JSON.stringify(camera) !== JSON.stringify(scene.camera))
+      scenes.replace({ ...scene, camera }, { render: false, record, label: 'Camera' });
+  }
+  function cameraCommand(action) {
+    finishEdit();
+    action(); syncCamera(true, true);
+  }
+  function restoreHistory(direction) {
+    finishEdit(); playback.cancel(); sim.resetPenInteraction();
+    scenes[direction]();
+  }
   function saveScene() {
+    finishEdit();
     if (playbackStatus.loaded) transport.pause();
     else playback.cancel();
     sim.restoreCameraState(sim.getCameraState());
@@ -31,9 +56,10 @@
   }
   function loadScene(text) {
     const next = parseSceneDocument(text);
+    finishEdit();
     playback.cancel();
     sim.resetPenInteraction();
-    scenes.replace(next, { force: true });
+    scenes.replace(next, { force: true, label: 'Load scene' });
     openFlyout = null;
   }
 
@@ -79,7 +105,7 @@
     const name = e.target.value;
     if (!name) return;
     const view = cameraViews.find(v => v.name === name);
-    if (view) sim.setCameraView(view.pos, view.target);
+    if (view) cameraCommand(() => sim.setCameraView(view.pos, view.target));
     e.target.value = ''; // reset dropdown
   }
 
@@ -95,15 +121,15 @@
   }
 
   function onRotateCamera(deltaAzimuth, deltaElevation) {
-    sim?.rotateCamera(deltaAzimuth, deltaElevation);
+    cameraCommand(() => sim.rotateCamera(deltaAzimuth, deltaElevation));
   }
 
   function onChangeDistance(delta) {
-    sim?.changeCameraDistance(delta);
+    cameraCommand(() => sim.changeCameraDistance(delta));
   }
 
   function onPointCameraAt(name) {
-    sim?.pointCameraAt(name);
+    cameraCommand(() => sim.pointCameraAt(name));
   }
 
   // Export dimensions follow the selected viewport aspect: the vertical
@@ -131,11 +157,12 @@
   let playbackStatus = $state({ loaded: false, playing: false, time: 0, duration: 0,
     inPoint: 0, outPoint: 0, speed: 1, loop: false, index: null });
   const transport = createTransport({
-    onFrame: ({ values }) => commitPose(values),
+    onFrame: ({ values }) => commitPose(values, { record: false }),
     onChange: status => { playbackStatus = status; },
   });
   const currentPose = () => ({ ...scene.pose });
   function startClip(start, end, showAnnotations = false) {
+    finishEdit();
     openFlyout = null;
     playback.start(() => {
       if (!sim || sim.disposed) return () => {};
@@ -173,13 +200,12 @@
       if (az !== cameraAzimuth)     cameraAzimuth = az;
       if (el !== cameraElevation)   cameraElevation = el;
       if (dist !== cameraDistance)  cameraDistance = dist;
-      const camera = sim.getCameraState();
-      if (JSON.stringify(camera) !== JSON.stringify(scene.camera))
-        scenes.replace({ ...scene, camera }, { render: false });
+      syncCamera(editGestures?.viewportActive() ?? false);
     };
 
     applySceneDocument(sim, scene);
     sim.onPoseInput = pose => commitPose(pose);
+    sim.onCameraInput = delta => onChangeDistance(delta);
 
     sim.onPenInteraction = playback.cancel;
     // Capture user edits before bindings/setters; animation writes emit no DOM events.
@@ -187,6 +213,16 @@
       if (!event.target.closest?.('[data-playback-controls], [data-scene-controls]')) playback.cancel();
     };
     const appElement = viewer.parentElement;
+    editGestures = attachEditGestures({ root: appElement, windowTarget: window,
+      onBegin: (label, kind) => {
+        if (kind !== 'viewport') playback.cancel();
+        scenes.beginEdit(label);
+      },
+      onEnd: kind => {
+        if (kind === 'viewport') syncCamera(true, true);
+        scenes.endEdit();
+      },
+    });
     appElement.addEventListener('input', cancelOnEdit, true);
     appElement.addEventListener('change', cancelOnEdit, true);
 
@@ -202,11 +238,13 @@
     document.addEventListener('click', onDocClick);
 
     return () => {
+      editGestures.dispose();
       playback.dispose();
       transport.dispose();
       clearTimeout(exportStatusTimer);
       sim.onPenInteraction = null;
       sim.onPoseInput = null;
+      sim.onCameraInput = null;
       appElement.removeEventListener('input', cancelOnEdit, true);
       appElement.removeEventListener('change', cancelOnEdit, true);
       document.removeEventListener('click', onDocClick);
@@ -222,18 +260,20 @@
   // ── Reset ──────────────────────────────────────────────────────────────────
 
   function resetPen() {
+    finishEdit();
     playback.cancel();
-    commitPose({ ...DEFAULT_PEN });
+    commitPose({ ...DEFAULT_PEN }, { label: 'Reset pen' });
   }
 
   // ── Demo ───────────────────────────────────────────────────────────────────
 
   function runDemo() {
+    finishEdit();
     playback.cancel();
     openFlyout = null;
     scene.annotations.showAltitude = scene.annotations.showAzimuth = true;
     scene.annotations.showTiltX = scene.annotations.showTiltY = scene.annotations.showBarrel = true;
-    commitPose({ ...DEMO_POSE });
+    commitPose({ ...DEMO_POSE }, { label: 'Demo' });
   }
 
   // Authored clips retain the existing endpoints and cubic easing.
@@ -253,6 +293,11 @@
 
   function handleKeyDown(e) {
     if (e.key === 'Escape') openFlyout = null;
+    const direction = historyShortcut(e);
+    if (direction) {
+      e.preventDefault();
+      if (!e.repeat) restoreHistory(direction);
+    }
   }
 </script>
 
@@ -268,6 +313,10 @@
 
 {#snippet sceneControls()}
   <SceneControls onSave={saveScene} onLoad={loadScene} />
+{/snippet}
+
+{#snippet historyControls()}
+  <HistoryControls status={historyStatus} onUndo={() => restoreHistory('undo')} onRedo={() => restoreHistory('redo')} />
 {/snippet}
 
 {#snippet animationsTab()}
@@ -335,6 +384,7 @@
   onResetPen={resetPen}
   {onExportAction}
   {sceneControls}
+  {historyControls}
   aspectRatio={scene.presentation.aspectRatio}
   {onAspectRatio}
 />

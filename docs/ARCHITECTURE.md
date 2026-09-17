@@ -48,6 +48,11 @@ into the document without being reapplied to the renderer on each frame.
 schema/controller have no DOM, Svelte, or Three.js dependencies. See
 [SCENE_DOCUMENT.md](./SCENE_DOCUMENT.md) for persistence and validation rules.
 
+The scene controller also owns bounded before/after history. App marks playback
+as unrecorded, while `edit-gestures.js` groups pointer and keyboard editing.
+`HistoryControls.svelte` exposes Undo/Redo. Restore stops competing interaction
+and reuses the scene application path; see [HISTORY.md](./HISTORY.md).
+
 ---
 
 ## Simulation layer — `src/lib/sim/`

@@ -114,19 +114,83 @@ export function serializeSceneDocument(scene) {
 /** @template T @param {T} value @returns {T} */
 const clone = value => JSON.parse(JSON.stringify(value));
 
+/** @typedef {{before: SceneDocument, after: SceneDocument, label: string}} HistoryEntry */
+/** @typedef {{canUndo: boolean, canRedo: boolean, undoLabel: string, redoLabel: string}} HistoryStatus */
+
 /** @param {{ apply: (next: SceneDocument, previous: SceneDocument | null) => void,
- * onChange?: (next: SceneDocument) => void }} callbacks */
-export function createSceneController({ apply, onChange = () => {} }) {
+ * onChange?: (next: SceneDocument) => void,
+ * onHistoryChange?: (status: HistoryStatus) => void, historyLimit?: number }} callbacks */
+export function createSceneController({ apply, onChange = () => {}, onHistoryChange = () => {}, historyLimit = 100 }) {
+    if (!Number.isInteger(historyLimit) || historyLimit < 1) throw new RangeError('History limit must be a positive integer');
     let state = validateSceneDocument(createSceneDocument());
-    return {
+    /** @type {HistoryEntry[]} */
+    const past = [];
+    /** @type {HistoryEntry[]} */
+    const future = [];
+    /** @type {{label: string, entry: HistoryEntry | null} | null} */
+    let group = null;
+    /** @param {SceneDocument} a @param {SceneDocument} b */
+    const same = (a, b) => JSON.stringify(a) === JSON.stringify(b);
+    const groupChanged = () => !!group?.entry && !same(group.entry.before, group.entry.after);
+    const historyStatus = () => ({
+        canUndo: groupChanged() || past.length > 0,
+        canRedo: !groupChanged() && future.length > 0,
+        undoLabel: groupChanged() ? group?.label ?? '' : past.at(-1)?.label ?? '',
+        redoLabel: !groupChanged() ? future.at(-1)?.label ?? '' : '',
+    });
+    const notifyHistory = () => onHistoryChange(historyStatus());
+    /** @param {HistoryEntry} entry */
+    function push(entry) {
+        if (same(entry.before, entry.after)) return;
+        past.push(entry);
+        if (past.length > historyLimit) past.shift();
+        future.length = 0;
+    }
+    const api = {
         snapshot: () => clone(state),
-        /** @param {unknown} candidate @param {{render?: boolean, force?: boolean}} options */
-        replace(candidate, { render = true, force = false } = {}) {
+        historyStatus,
+        /** @param {unknown} candidate @param {{render?: boolean, force?: boolean, record?: boolean, label?: string}} options */
+        replace(candidate, { render = true, force = false, record = render, label = 'Edit scene' } = {}) {
             const next = validateSceneDocument(candidate);
             if (render) apply(clone(next), force ? null : clone(state));
+            if (record && !same(state, next)) {
+                const entry = { before: clone(state), after: clone(next), label };
+                if (group) {
+                    if (group.entry) group.entry.after = entry.after;
+                    else group.entry = { ...entry, label: group.label };
+                } else push(entry);
+            }
             state = next;
             onChange(clone(state));
+            if (record) notifyHistory();
             return clone(state);
         },
+        /** @param {string} label */
+        beginEdit(label = 'Edit scene') {
+            api.endEdit();
+            group = { label, entry: null };
+        },
+        endEdit() {
+            if (group?.entry) push(group.entry);
+            group = null;
+            notifyHistory();
+        },
+        undo() {
+            api.endEdit();
+            const entry = past.at(-1);
+            if (!entry) return false;
+            api.replace(entry.before, { record: false, force: true });
+            past.pop(); future.push(entry); notifyHistory();
+            return true;
+        },
+        redo() {
+            api.endEdit();
+            const entry = future.at(-1);
+            if (!entry) return false;
+            api.replace(entry.after, { record: false, force: true });
+            future.pop(); past.push(entry); notifyHistory();
+            return true;
+        },
     };
+    return api;
 }
