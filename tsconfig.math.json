@@ -10,5 +10,5 @@
     "lib": ["ES2022"],
     "types": []
   },
-  "files": ["src/lib/sim/math.js", "src/lib/sim/input-coordinates.js"]
+  "files": ["src/lib/sim/math.js", "src/lib/sim/input-coordinates.js", "src/lib/sim/scene-document.js"]
 }

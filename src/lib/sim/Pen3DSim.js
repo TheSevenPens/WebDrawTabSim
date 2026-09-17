@@ -67,6 +67,7 @@ export class Pen3DSim {
         this.cursorMode = 'mouse';   // 'mouse' | 'crosshairs' | 'none'
         this.onCameraUpdate = null;
         this.onPenInteraction = null;
+        this.onPoseInput = null;
         this.viewportAspect = 16 / 9;   // target render aspect (width / height)
 
         // Constants (tablet coordinate dimensions)
@@ -132,6 +133,7 @@ export class Pen3DSim {
         this.renderFrame = null;
         this.onCameraUpdate = null;
         this.onPenInteraction = null;
+        this.onPoseInput = null;
         const errors = [];
         const clean = fn => { try { fn(); } catch (error) { errors.push(error); } };
         for (const cancel of this.animations ?? []) clean(cancel);
@@ -173,7 +175,20 @@ export class Pen3DSim {
     }
 
     _refreshPen() {
+        if (this.sceneUpdateDepth) { this.penRefreshPending = true; return; }
         this.updatePenTransform(this.distance, this.tiltAltitude, this.tiltAzimuth, this.barrelRotation);
+    }
+
+    batchSceneUpdate(update) {
+        if (this.disposed) return;
+        this.sceneUpdateDepth = (this.sceneUpdateDepth ?? 0) + 1;
+        try { update(); } finally {
+            this.sceneUpdateDepth--;
+            if (!this.sceneUpdateDepth && this.penRefreshPending) {
+                this.penRefreshPending = false;
+                this._refreshPen();
+            }
+        }
     }
 
     // Commit a complete teaching pose before refreshing any scene nodes.
@@ -465,6 +480,28 @@ export class Pen3DSim {
         this.controls.update();
     }
 
+    getCameraState() {
+        const vector = v => ({ x: v.x, y: v.y, z: v.z });
+        return { position: vector(this.camera.position), target: vector(this.controls.target),
+            perspectiveZoom: this.perspectiveCamera.zoom, orthographicZoom: this.orthographicCamera.zoom };
+    }
+
+    restoreCameraState(state) {
+        // Drain residual OrbitControls motion before applying saved framing.
+        const damping = this.controls.enableDamping;
+        this.controls.enableDamping = false;
+        try {
+            this.controls.update();
+            this.camera.position.set(state.position.x, state.position.y, state.position.z);
+            this.controls.target.set(state.target.x, state.target.y, state.target.z);
+            this.perspectiveCamera.zoom = state.perspectiveZoom;
+            this.orthographicCamera.zoom = state.orthographicZoom;
+            this.perspectiveCamera.updateProjectionMatrix();
+            this.orthographicCamera.updateProjectionMatrix();
+            this.controls.update();
+        } finally { this.controls.enableDamping = damping; }
+    }
+
     // Orbit the camera around its target by the given deltas (degrees).
     // +azimuth rotates right (around world Y); +elevation raises the camera.
     rotateCamera(deltaAzimuthDeg = 0, deltaElevationDeg = 0) {
@@ -556,8 +593,12 @@ export class Pen3DSim {
 
     // ── Utility ───────────────────────────────────────────────────────────────
 
-    reset() {
+    getDefaultPose() {
         return { ...DEFAULT_PEN };
+    }
+
+    reset() {
+        return this.setPose(this.getDefaultPose());
     }
 
     // Render the scene at the requested resolution (supersampled) and return a

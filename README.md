@@ -20,7 +20,7 @@ Open the local URL Vite prints (base path is `/WebDrawTabSim/`), e.g. `http://lo
 npm run build    # production build → dist/
 npm run preview  # preview the production build
 npm test         # portable math, editing, playback, input, export, and lifecycle regressions
-npm run check:math # strict JSDoc checks for portable math and input adapters
+npm run check:math # strict JSDoc checks for math, input adapters, and scene documents
 npm audit --audit-level=moderate # include development/build dependencies
 ```
 
@@ -33,6 +33,7 @@ npm audit --audit-level=moderate # include development/build dependencies
 - Explore **pointer-tracking** behaviours: offset, tilt compensation, scaling, edge attraction
 - Export crisp **1080p / 4K** PNGs for docs and teaching
 - Pause, seek, step, and loop demonstrations with [deterministic playback](docs/PLAYBACK.md)
+- Save and restore [complete scenes as JSON](docs/SCENE_DOCUMENT.md), including camera framing
 
 ## Documentation
 

@@ -24,30 +24,14 @@
     penDisplayMode = $bindable(),
     darkTablet     = $bindable(),
     showCheckerboard = $bindable(),
-    onShowCheckerboard,
     showGrid       = $bindable(),
-    onShowGrid,
     showAxis       = $bindable(),
-    onShowAxis,
     showMonitor    = $bindable(),
-    onShowMonitor,
     sharpNib       = $bindable(),
-    onSharpNib,
     penBodyFormat  = $bindable(),
-    onPenBodyFormat,
     showPenShadow  = $bindable(),
-    onShowPenShadow,
     azimuthDisabled,
-    onDistance,
-    onTabletX,
-    onTabletY,
-    onAltitude,
-    onAzimuth,
-    onBarrel,
-    onPenDisplayMode,
-    onDarkTablet,
     axonometric    = $bindable(),
-    onAxonometric,
     penAnnTab,
     sceneAnnTab,
     animationsTab,
@@ -61,7 +45,9 @@
     onViewChange,
     onToggleFlyout,
     onResetPen,
+    onSceneEdit,
     onExportAction,
+    sceneControls,
     aspectRatio,
     onAspectRatio,
   } = $props();
@@ -96,16 +82,16 @@
     bind:sharpNib
     bind:penBodyFormat
     {azimuthDisabled}
-    {onDistance}
-    {onTabletX}
-    {onTabletY}
-    {onAltitude}
-    {onAzimuth}
-    {onBarrel}
-    {onSharpNib}
-    {onPenBodyFormat}
+    onDistance={onSceneEdit}
+    onTabletX={onSceneEdit}
+    onTabletY={onSceneEdit}
+    onAltitude={onSceneEdit}
+    onAzimuth={onSceneEdit}
+    onBarrel={onSceneEdit}
+    onSharpNib={onSceneEdit}
+    onPenBodyFormat={onSceneEdit}
     bind:showPenShadow
-    {onShowPenShadow}
+    onShowPenShadow={onSceneEdit}
     {penAnnTab}
   />
   {/if}
@@ -166,15 +152,15 @@
 
   {@render sectionHeader('tablet', 'Tablet')}
   {#if !collapsed.tablet}
-  <CheckboxControl label="Tablet checkerboard" bind:checked={showCheckerboard} onchange={onShowCheckerboard} />
-  <CheckboxControl label="Active area grid" bind:checked={showGrid} onchange={onShowGrid} />
+  <CheckboxControl label="Tablet checkerboard" bind:checked={showCheckerboard} onchange={onSceneEdit} />
+  <CheckboxControl label="Active area grid" bind:checked={showGrid} onchange={onSceneEdit} />
   <SelectControl
     label="Device type:"
     value={penDisplayMode ? 'display' : 'tablet'}
-    onchange={(e) => { penDisplayMode = e.target.value === 'display'; onPenDisplayMode(); }}
+    onchange={(e) => { penDisplayMode = e.target.value === 'display'; onSceneEdit(); }}
     options={deviceTypeOptions}
   />
-  <CheckboxControl label="Dark tablet" bind:checked={darkTablet} onchange={onDarkTablet} />
+  <CheckboxControl label="Dark tablet" bind:checked={darkTablet} onchange={onSceneEdit} />
   {/if}
 
   {@render sectionHeader('animations', 'Animations')}
@@ -184,9 +170,10 @@
 
   {@render sectionHeader('other', 'Other')}
   {#if !collapsed.other}
-  <CheckboxControl label="Axis" bind:checked={showAxis} onchange={onShowAxis} />
-  <CheckboxControl label="Monitor" bind:checked={showMonitor} onchange={onShowMonitor} />
-  <CheckboxControl label="Axonometric" bind:checked={axonometric} onchange={onAxonometric} />
+  {@render sceneControls()}
+  <CheckboxControl label="Axis" bind:checked={showAxis} onchange={onSceneEdit} />
+  <CheckboxControl label="Monitor" bind:checked={showMonitor} onchange={onSceneEdit} />
+  <CheckboxControl label="Axonometric" bind:checked={axonometric} onchange={onSceneEdit} />
   <select class="action-btn" onchange={(e) => { const v = e.target.value; e.target.value = ''; onExportAction(v); }} style="text-align:left;">
     <option value="">Export / Copy...</option>
     <option value="png-hd">Export 1080p PNG</option>

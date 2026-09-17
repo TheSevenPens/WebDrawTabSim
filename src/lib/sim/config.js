@@ -257,6 +257,7 @@ export const CAMERA_INITIAL = {
 /**
  * Clamp to [min, max]. Non-finite values fall back to `fallback` (default: min).
  */
+/** @param {number} value @param {number} min @param {number} max @param {number} fallback */
 export function clampValue(value, min, max, fallback = min) {
     const n = Number(value);
     if (!Number.isFinite(n)) return fallback;

@@ -5,3 +5,10 @@
 The eight cases cover upright, two corners, mixed orientation and compensation, zero scaling, positive/negative edge strength, and out-of-bounds mapping. Each fixture supplies all inputs and expected values; numbers are model millimetres and degrees. Quaternion components use x, y, z, w order. Tests compare within 1e-10 to allow equivalent floating-point operation ordering.
 
 Do not regenerate this baseline merely to make a failing refactor pass. Intentional numerical behavior changes need reviewed expected results and an explanation. Separate hand-derived tests cover cardinal axes, edge boundaries, monitor corners, and animation wrapping. These are numeric regression fixtures, not image baselines or hardware measurements.
+# Saved scene fixture
+
+`scenes/demo-orthographic.json` was saved through the browser UI after choosing
+Demo, dark tablet, axonometric projection, and one 20 mm zoom-in step. Load it
+using Other → Load scene. `test/scene-document.test.js` checks its pose, zoom,
+and serialization round trip. It is a numeric fixture; no pixel baseline is
+claimed. See `docs/SCENE_DOCUMENT.md` for the version 1 contract.

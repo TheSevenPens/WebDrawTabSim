@@ -107,8 +107,13 @@ Object.assign(Pen3DSim.prototype, {
         const mmPerPixel = this.mouseSensitivity;
         const x = this.tabletOffsetX + (e.clientX - this.lastMouseX) * mmPerPixel;
         const y = this.tabletOffsetY + (e.clientY - this.lastMouseY) * mmPerPixel;
-        this.setTabletPositionX(THREE.MathUtils.clamp(x, 0, this.tabletWidth));
-        this.setTabletPositionY(THREE.MathUtils.clamp(y, 0, this.tabletDepth));
+        const tabletX = THREE.MathUtils.clamp(x, 0, this.tabletWidth);
+        const tabletY = THREE.MathUtils.clamp(y, 0, this.tabletDepth);
+        if (this.onPoseInput) this.onPoseInput({ tabletX, tabletY });
+        else {
+            this.setTabletPositionX(tabletX);
+            this.setTabletPositionY(tabletY);
+        }
         this.lastMouseX = e.clientX;
         this.lastMouseY = e.clientY;
     },

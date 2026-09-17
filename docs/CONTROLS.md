@@ -84,6 +84,11 @@ Demo and Anim Rot all share `DEMO_POSE` in `src/lib/sim/config.js`; the individu
 
 ## Other
 
+**Save scene** downloads a versioned JSON scene; **Load scene…** restores pose,
+mapping, appearance, annotations, aspect, and camera framing. Saving pauses
+playback; a valid load stops it. Invalid files display an error without changing
+the current scene. See [SCENE_DOCUMENT.md](./SCENE_DOCUMENT.md).
+
 | Control | Effect |
 |---|---|
 | **Axis** | Show the X/Y/Z axis markers |

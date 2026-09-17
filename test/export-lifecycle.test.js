@@ -1,4 +1,6 @@
 import test from 'node:test';
+import { createSceneDocument, parseSceneDocument, serializeSceneDocument } from '../src/lib/sim/scene-document.js';
+import { applySceneDocument } from '../src/lib/sim/scene-renderer.js';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import * as THREE from 'three';
@@ -165,6 +167,46 @@ class HeadlessSim extends Pen3DSim {
     }
     initMouseControl() {} // Real input teardown is covered in editing-playback.test.js.
 }
+
+test('saved documents restore real scene geometry and preferences with one pen refresh', t => {
+    documentStub(t);
+    const sim = new HeadlessSim({ clientWidth: 800, clientHeight: 450 });
+    t.after(() => sim.dispose());
+    const scene = createSceneDocument();
+    Object.assign(scene.pose, { distance: 10, tiltAltitude: 45, tiltAzimuth: 242, barrelRotation: 318, tabletX: 20 });
+    Object.assign(scene.mapping, { cursorOffsetX: 20, compPosTiltY: 0.7, scalingFactor: 0.5 });
+    Object.assign(scene.annotations, { showAltitude: true, showBarrel: true, showPenTopLine: false });
+    Object.assign(scene.presentation, { penDisplayMode: true, axonometric: true, darkTablet: true,
+        sharpNib: true, showCheckerboard: true, showGrid: false, showMonitor: false,
+        showPenShadow: false, cursorMode: 'crosshairs', penBodyFormat: 'solid', aspectRatio: '2 / 3' });
+    scene.camera.orthographicZoom = 2;
+    const original = sim.updatePenTransform.bind(sim);
+    let refreshes = 0;
+    sim.updatePenTransform = (...args) => { refreshes++; original(...args); };
+    applySceneDocument(sim, scene);
+    assert.equal(refreshes, 1);
+    const tip = sim.penTipWorld.toArray(), quaternion = sim.penGroup.quaternion.toArray();
+    const serialized = serializeSceneDocument(scene);
+    applySceneDocument(sim, createSceneDocument());
+    refreshes = 0;
+    applySceneDocument(sim, parseSceneDocument(serialized));
+    assert.equal(refreshes, 1);
+    assert.deepEqual(sim.penTipWorld.toArray(), tip);
+    assert.deepEqual(sim.penGroup.quaternion.toArray(), quaternion);
+    assert.deepEqual(sim.getCameraState(), scene.camera);
+    assert.equal(sim.camera, sim.orthographicCamera);
+    assert.equal(sim.viewportAspect, 2 / 3);
+    assert.equal(sim.penLine.visible, false);
+    assert.equal(sim.monitorVisible, false);
+    assert.equal(sim.digitizerGrid.visible, false);
+    assert.equal(sim.tabletScreen.visible, true);
+    assert.equal(sim.cursorMode, 'crosshairs');
+    assert.equal(sim.nibShape, 'sharp');
+    assert.equal(sim.penBodyFormat, 'solid');
+    const texture = sim.tabletCheckerboardTexture;
+    applySceneDocument(sim, { ...scene, pose: { ...scene.pose, tabletX: 21 } }, scene);
+    assert.equal(sim.tabletCheckerboardTexture, texture, 'pose frames must not rebuild materials');
+});
 
 test('scene adapters preserve the numeric reference in both device modes', t => {
     documentStub(t);

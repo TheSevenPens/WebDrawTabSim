@@ -9,54 +9,40 @@
   import PlaybackControls from './lib/PlaybackControls.svelte';
   import { createClip } from './lib/sim/timeline.js';
   import { createTransport } from './lib/sim/transport.js';
-  import { DEFAULT_PEN, DEMO_POSE, POINTER_DEFAULTS, ANIMATION, EXPORT, SCALE } from './lib/sim/config.js';
+  import { DEFAULT_PEN, DEMO_POSE, ANIMATION, EXPORT, SCALE } from './lib/sim/config.js';
+
+  import SceneControls from './lib/SceneControls.svelte';
+  import { createSceneDocument, createSceneController, parseSceneDocument, serializeSceneDocument } from './lib/sim/scene-document.js';
+  import { applySceneDocument } from './lib/sim/scene-renderer.js';
+
+  let scene = $state(createSceneDocument());
+  const scenes = createSceneController({
+    apply: (next, previous) => applySceneDocument(sim, next, previous),
+    onChange: next => { scene = next; },
+  });
+  function commitScene(candidate = scene) { return scenes.replace(candidate); }
+  const onSceneEdit = () => commitScene();
+  function commitPose(pose) { return commitScene({ ...scene, pose: { ...scene.pose, ...pose } }); }
+  function saveScene() {
+    if (playbackStatus.loaded) transport.pause();
+    else playback.cancel();
+    sim.restoreCameraState(sim.getCameraState());
+    return serializeSceneDocument({ ...scene, camera: sim.getCameraState() });
+  }
+  function loadScene(text) {
+    const next = parseSceneDocument(text);
+    playback.cancel();
+    sim.resetPenInteraction();
+    scenes.replace(next, { force: true });
+    openFlyout = null;
+  }
 
   // ── DOM reference ──────────────────────────────────────────────────────────
   let viewer = $state();
   let sim;
 
   // ── Pen state (tablet coordinates) ────────────────────────────────────────
-  let distance       = $state(DEFAULT_PEN.distance);
-  let tabletX        = $state(DEFAULT_PEN.tabletX);
-  let tabletY        = $state(DEFAULT_PEN.tabletY);
-  let tiltAltitude   = $state(0);
-  let tiltAzimuth    = $state(0);
-  let barrelRotation = $state(0);
-  let azimuthDisabled = $derived(tiltAltitude === 0);
-
-  // ── Annotation / display state ─────────────────────────────────────────────
-  let showAltitude     = $state(false);
-  let showAzimuth      = $state(false);
-  let showTiltX        = $state(false);
-  let showTiltY        = $state(false);
-  let showBarrel       = $state(false);
-  let showPenTopLine   = $state(true);   // yellow drop line from the pen top
-  let showPenAxisLine  = $state(true);   // white tip → surface axis line
-  let showPenTipLine   = $state(true);   // yellow vertical tip → surface-below line
-  let showAxis         = $state(false);
-  let cursorMode       = $state('mouse'); // 'mouse' | 'crosshairs' | 'none'
-  let showPenShadow    = $state(true);
-  let showCheckerboard = $state(false);
-  let showGrid         = $state(true);   // active-area line grid
-  let showMonitor      = $state(true);   // external monitor visibility
-  let axonometric      = $state(false);
-  let penDisplayMode   = $state(false);
-  let darkTablet       = $state(false);
-  let sharpNib         = $state(false);
-  let penBodyFormat    = $state('checkerboard'); // 'checkerboard' | 'solid'
-  let aspectRatio      = $state('16 / 9'); // CSS aspect-ratio for #viewer
-
-  // ── Pointer-tracking state ─────────────────────────────────────────────────
-  let cursorOffsetX       = $state(0);
-  let cursorOffsetY       = $state(0);
-  let compPosTiltX        = $state(0);
-  let compNegTiltX        = $state(0);
-  let compPosTiltY        = $state(0);
-  let compNegTiltY        = $state(0);
-  let scalingFactor       = $state(1);
-  let edgeAttraction      = $state(0);
-  let edgeAttractionRange = $state(POINTER_DEFAULTS.edgeAttractionRange);
-  let mouseSensitivity    = $state(POINTER_DEFAULTS.mouseSensitivity);
+  let azimuthDisabled = $derived(scene.pose.tiltAltitude === 0);
 
   // ── Flyout / modal state ───────────────────────────────────────────────────
   let openFlyout      = $state(null); // 'pointer-tracking' | null
@@ -123,7 +109,7 @@
   // Export dimensions follow the selected viewport aspect: the vertical
   // resolution stays 1080 ("1080p") / 2160 ("4K"), width is derived from it.
   function exportDims(height) {
-    const [aw, ah] = aspectRatio.split('/').map(Number);
+    const [aw, ah] = scene.presentation.aspectRatio.split('/').map(Number);
     return [Math.round(height * (aw / ah)), height];
   }
 
@@ -145,21 +131,16 @@
   let playbackStatus = $state({ loaded: false, playing: false, time: 0, duration: 0,
     inPoint: 0, outPoint: 0, speed: 1, loop: false, index: null });
   const transport = createTransport({
-    onFrame: ({ values }) => {
-      const pose = sim.setPose(values);
-      distance = pose.distance; tiltAltitude = pose.tiltAltitude; tiltAzimuth = pose.tiltAzimuth;
-      barrelRotation = pose.barrelRotation; tabletX = pose.tabletX; tabletY = pose.tabletY;
-    },
+    onFrame: ({ values }) => commitPose(values),
     onChange: status => { playbackStatus = status; },
   });
-  const currentPose = () => ({ distance, tiltAltitude, tiltAzimuth, barrelRotation, tabletX, tabletY });
+  const currentPose = () => ({ ...scene.pose });
   function startClip(start, end, showAnnotations = false) {
     openFlyout = null;
     playback.start(() => {
       if (!sim || sim.disposed) return () => {};
       if (showAnnotations) {
-        showAltitude = showAzimuth = showBarrel = true;
-        sim.setAltitudeAnnotationsVisible(true); sim.setAzimuthAnnotationsVisible(true); sim.setBarrelAnnotationsVisible(true);
+        scene.annotations.showAltitude = scene.annotations.showAzimuth = scene.annotations.showBarrel = true;
       }
       const cancel = () => { transport.clear(); sim.animations?.delete(cancel); };
       sim.trackAnimation(cancel);
@@ -171,7 +152,6 @@
       return cancel;
     }, ANIMATION.startDelayMs);
   }
-
 
   // ── Helpers ────────────────────────────────────────────────────────────────
 
@@ -193,35 +173,22 @@
       if (az !== cameraAzimuth)     cameraAzimuth = az;
       if (el !== cameraElevation)   cameraElevation = el;
       if (dist !== cameraDistance)  cameraDistance = dist;
+      const camera = sim.getCameraState();
+      if (JSON.stringify(camera) !== JSON.stringify(scene.camera))
+        scenes.replace({ ...scene, camera }, { render: false });
     };
 
-    // Apply initial checkbox state
-    sim.setAzimuthAnnotationsVisible(showAzimuth);
-    sim.setCursorMode(cursorMode);
-    sim.setPenTopLineVisible(showPenTopLine);
-    sim.setPenAxisLineVisible(showPenAxisLine);
-    sim.setPenTipLineVisible(showPenTipLine);
-    sim.setPenBodyFormat(penBodyFormat);
-    sim.setGridVisible(showGrid);
-    sim.setPenShadowVisible(showPenShadow);
-    sim.setAxisMarkersVisible(showAxis);
-    sim.setMonitorVisible(showMonitor);
+    applySceneDocument(sim, scene);
+    sim.onPoseInput = pose => commitPose(pose);
 
     sim.onPenInteraction = playback.cancel;
     // Capture user edits before bindings/setters; animation writes emit no DOM events.
     const cancelOnEdit = event => {
-      if (!event.target.closest?.('[data-playback-controls]')) playback.cancel();
+      if (!event.target.closest?.('[data-playback-controls], [data-scene-controls]')) playback.cancel();
     };
     const appElement = viewer.parentElement;
     appElement.addEventListener('input', cancelOnEdit, true);
     appElement.addEventListener('change', cancelOnEdit, true);
-
-    // Sync slider values when mouse-drag moves the pen
-    const onTabletPosition = (e) => {
-      tabletX = e.detail.x;
-      tabletY = e.detail.y;
-    };
-    viewer.addEventListener('tabletPositionChanged', onTabletPosition);
 
     // Click-outside closes flyout
     const onDocClick = (e) => {
@@ -239,7 +206,7 @@
       transport.dispose();
       clearTimeout(exportStatusTimer);
       sim.onPenInteraction = null;
-      viewer.removeEventListener('tabletPositionChanged', onTabletPosition);
+      sim.onPoseInput = null;
       appElement.removeEventListener('input', cancelOnEdit, true);
       appElement.removeEventListener('change', cancelOnEdit, true);
       document.removeEventListener('click', onDocClick);
@@ -247,77 +214,16 @@
     };
   });
 
-  // ── Slider handlers ────────────────────────────────────────────────────────
-
-  function onDistance()       { sim.setDistance(distance); }
-  function onTabletX()        { sim.setTabletPositionX(tabletX); }
-  function onTabletY()        { sim.setTabletPositionY(tabletY); }
-
-  function onAltitude() {
-    sim.setTiltAltitude(tiltAltitude);
-  }
-
-  function onAzimuth() {
-    sim.setTiltAzimuth(tiltAzimuth);
-  }
-
-  function onBarrel()            { sim.setBarrelRotation(barrelRotation); }
-  function onCursorOffsetX()     { sim.setCursorOffsetX(cursorOffsetX); }
-  function onCursorOffsetY()     { sim.setCursorOffsetY(cursorOffsetY); }
-  function onCompPosTiltX()      { sim.setTiltCompensationPosTiltXValue(compPosTiltX); }
-  function onCompNegTiltX()      { sim.setTiltCompensationNegTiltXValue(compNegTiltX); }
-  function onCompPosTiltY()      { sim.setTiltCompensationPosTiltYValue(compPosTiltY); }
-  function onCompNegTiltY()      { sim.setTiltCompensationNegTiltYValue(compNegTiltY); }
-  function onScalingFactor()     { sim.setScalingFactor(scalingFactor); }
-  function onEdgeAttraction()    { sim.setEdgeAttraction(edgeAttraction); }
-  function onEdgeAttractionRange() { sim.setEdgeAttractionRange(edgeAttractionRange); }
-  function onMouseSensitivity()  { sim.setMouseSensitivity(mouseSensitivity); }
-
-  // ── Annotation checkbox handlers ───────────────────────────────────────────
-
-  function onShowAltitude()     { sim.setAltitudeAnnotationsVisible(showAltitude); }
-  function onShowAzimuth()      { sim.setAzimuthAnnotationsVisible(showAzimuth); }
-  function onShowTiltX()        { sim.setTiltXAnnotationsVisible(showTiltX); }
-  function onShowTiltY()        { sim.setTiltYAnnotationsVisible(showTiltY); }
-  function onShowBarrel()       { sim.setBarrelAnnotationsVisible(showBarrel); }
-  function onShowPenTopLine()   { sim.setPenTopLineVisible(showPenTopLine); }
-  function onShowPenAxisLine()  { sim.setPenAxisLineVisible(showPenAxisLine); }
-  function onShowPenTipLine()   { sim.setPenTipLineVisible(showPenTipLine); }
-  function onShowAxis()         { sim.setAxisMarkersVisible(showAxis); }
-  function onShowMonitor()      { sim.setMonitorVisible(showMonitor); }
-  function onCursorMode()       { sim.setCursorMode(cursorMode); }
-  function onShowPenShadow()    { sim.setPenShadowVisible(showPenShadow); }
-  function onShowCheckerboard() { sim.setTabletCheckerboardVisible(showCheckerboard); }
-  function onShowGrid()         { sim.setGridVisible(showGrid); }
-  function onAxonometric()      { sim.setAxonometricView(axonometric); }
-  function onPenDisplayMode()   { sim.setPenDisplayMode(penDisplayMode); }
-  function onDarkTablet()       { sim.setDarkTablet(darkTablet); }
-  function onSharpNib()         { sim.setNibShape(sharpNib ? 'sharp' : 'rounded'); }
-  function onPenBodyFormat()    { sim.setPenBodyFormat(penBodyFormat); }
-
   function onAspectRatio(value) {
-    aspectRatio = value;
-    const [aw, ah] = value.split('/').map(Number);
-    sim?.setViewportAspect(aw, ah);   // re-fit the canvas to the new aspect
+    scene.presentation.aspectRatio = value;
+    commitScene();
   }
 
   // ── Reset ──────────────────────────────────────────────────────────────────
 
   function resetPen() {
     playback.cancel();
-    const d = sim.reset();
-    distance = d.distance;
-    tiltAltitude = d.tiltAltitude;
-    tiltAzimuth = d.tiltAzimuth;
-    barrelRotation = d.barrelRotation;
-    tabletX = d.tabletX;
-    tabletY = d.tabletY;
-    sim.setDistance(d.distance);
-    sim.setTiltAltitude(d.tiltAltitude);
-    sim.setTiltAzimuth(d.tiltAzimuth);
-    sim.setBarrelRotation(d.barrelRotation);
-    sim.setTabletPositionX(d.tabletX);
-    sim.setTabletPositionY(d.tabletY);
+    commitPose({ ...DEFAULT_PEN });
   }
 
   // ── Demo ───────────────────────────────────────────────────────────────────
@@ -325,25 +231,9 @@
   function runDemo() {
     playback.cancel();
     openFlyout = null;
-    const demo = { ...DEMO_POSE };
-    distance = demo.distance;
-    tiltAltitude = demo.tiltAltitude;
-    tiltAzimuth = demo.tiltAzimuth;
-    barrelRotation = demo.barrelRotation;
-    tabletX = demo.tabletX;
-    tabletY = demo.tabletY;
-    showAltitude = showAzimuth = showTiltX = showTiltY = showBarrel = true;
-    sim.setDistance(demo.distance);
-    sim.setTiltAltitude(demo.tiltAltitude);
-    sim.setBarrelRotation(demo.barrelRotation);
-    sim.setTabletPositionX(demo.tabletX);
-    sim.setTabletPositionY(demo.tabletY);
-    sim.setAltitudeAnnotationsVisible(true);
-    sim.setAzimuthAnnotationsVisible(true);
-    sim.setTiltXAnnotationsVisible(true);
-    sim.setTiltYAnnotationsVisible(true);
-    sim.setBarrelAnnotationsVisible(true);
-    sim.setTiltAzimuth(demo.tiltAzimuth);
+    scene.annotations.showAltitude = scene.annotations.showAzimuth = true;
+    scene.annotations.showTiltX = scene.annotations.showTiltY = scene.annotations.showBarrel = true;
+    commitPose({ ...DEMO_POSE });
   }
 
   // Authored clips retain the existing endpoints and cubic easing.
@@ -371,9 +261,13 @@
 <!-- Scene tab contents, passed to LeftPanel as snippets (state stays here). -->
 {#snippet sceneAnnTab()}
   <CursorModeControl
-    bind:cursorMode
-    {onCursorMode}
+    bind:cursorMode={scene.presentation.cursorMode}
+    onCursorMode={onSceneEdit}
   />
+{/snippet}
+
+{#snippet sceneControls()}
+  <SceneControls onSave={saveScene} onLoad={loadScene} />
 {/snippet}
 
 {#snippet animationsTab()}
@@ -389,62 +283,46 @@
   <div style="display:flex;gap:16px;">
     <!-- Left column: rotation annotations -->
     <div style="flex:1;">
-      <CheckboxControl label="Tilt altitude"   bind:checked={showAltitude}   onchange={onShowAltitude} />
-      <CheckboxControl label="Tilt azimuth"    bind:checked={showAzimuth}    onchange={onShowAzimuth} />
-      <CheckboxControl label="Tilt X"          bind:checked={showTiltX}      onchange={onShowTiltX} />
-      <CheckboxControl label="Tilt Y"          bind:checked={showTiltY}      onchange={onShowTiltY} />
-      <CheckboxControl label="Barrel rotation" bind:checked={showBarrel}     onchange={onShowBarrel} />
+      <CheckboxControl label="Tilt altitude"   bind:checked={scene.annotations.showAltitude}   onchange={onSceneEdit} />
+      <CheckboxControl label="Tilt azimuth"    bind:checked={scene.annotations.showAzimuth}    onchange={onSceneEdit} />
+      <CheckboxControl label="Tilt X"          bind:checked={scene.annotations.showTiltX}      onchange={onSceneEdit} />
+      <CheckboxControl label="Tilt Y"          bind:checked={scene.annotations.showTiltY}      onchange={onSceneEdit} />
+      <CheckboxControl label="Barrel rotation" bind:checked={scene.annotations.showBarrel}     onchange={onSceneEdit} />
     </div>
     <!-- Right column: line annotations -->
     <div style="flex:1;">
-      <CheckboxControl label="Pen top line"  bind:checked={showPenTopLine}  onchange={onShowPenTopLine} />
-      <CheckboxControl label="Pen axis line" bind:checked={showPenAxisLine} onchange={onShowPenAxisLine} />
-      <CheckboxControl label="Pen tip line"  bind:checked={showPenTipLine}  onchange={onShowPenTipLine} />
+      <CheckboxControl label="Pen top line"  bind:checked={scene.annotations.showPenTopLine}  onchange={onSceneEdit} />
+      <CheckboxControl label="Pen axis line" bind:checked={scene.annotations.showPenAxisLine} onchange={onSceneEdit} />
+      <CheckboxControl label="Pen tip line"  bind:checked={scene.annotations.showPenTipLine}  onchange={onSceneEdit} />
     </div>
   </div>
 {/snippet}
-
 
 <!-- ═══════════════════════════════════════════════════════════════════════════
      Control panel
      ═══════════════════════════════════════════════════════════════════════════ -->
 <LeftPanel
-  bind:distance
-  bind:tabletX
-  bind:tabletY
-  bind:tiltAltitude
-  bind:tiltAzimuth
-  bind:barrelRotation
-  bind:penDisplayMode
-  bind:darkTablet
-  bind:sharpNib
-  {onSharpNib}
-  bind:penBodyFormat
-  {onPenBodyFormat}
-  bind:showPenShadow
-  {onShowPenShadow}
+  {onSceneEdit}
+  bind:distance={scene.pose.distance}
+  bind:tabletX={scene.pose.tabletX}
+  bind:tabletY={scene.pose.tabletY}
+  bind:tiltAltitude={scene.pose.tiltAltitude}
+  bind:tiltAzimuth={scene.pose.tiltAzimuth}
+  bind:barrelRotation={scene.pose.barrelRotation}
+  bind:penDisplayMode={scene.presentation.penDisplayMode}
+  bind:darkTablet={scene.presentation.darkTablet}
+  bind:sharpNib={scene.presentation.sharpNib}
+  bind:penBodyFormat={scene.presentation.penBodyFormat}
+  bind:showPenShadow={scene.presentation.showPenShadow}
   {azimuthDisabled}
-  {onDistance}
-  {onTabletX}
-  {onTabletY}
-  {onAltitude}
-  {onAzimuth}
-  {onBarrel}
-  {onPenDisplayMode}
   {penAnnTab}
   {sceneAnnTab}
   {animationsTab}
-  bind:axonometric
-  {onAxonometric}
-  {onDarkTablet}
-  bind:showCheckerboard
-  {onShowCheckerboard}
-  bind:showGrid
-  {onShowGrid}
-  bind:showAxis
-  {onShowAxis}
-  bind:showMonitor
-  {onShowMonitor}
+  bind:axonometric={scene.presentation.axonometric}
+  bind:showCheckerboard={scene.presentation.showCheckerboard}
+  bind:showGrid={scene.presentation.showGrid}
+  bind:showAxis={scene.presentation.showAxis}
+  bind:showMonitor={scene.presentation.showMonitor}
   {cameraAzimuth}
   {cameraElevation}
   {cameraDistance}
@@ -456,7 +334,8 @@
   onToggleFlyout={toggleFlyout}
   onResetPen={resetPen}
   {onExportAction}
-  {aspectRatio}
+  {sceneControls}
+  aspectRatio={scene.presentation.aspectRatio}
   {onAspectRatio}
 />
 
@@ -479,26 +358,26 @@
   </div>
   <div class="flyout-content">
     <PointerTrackingSettings
-      bind:cursorOffsetX
-      bind:cursorOffsetY
-      bind:compPosTiltX
-      bind:compNegTiltX
-      bind:compPosTiltY
-      bind:compNegTiltY
-      bind:scalingFactor
-      bind:edgeAttraction
-      bind:edgeAttractionRange
-      bind:mouseSensitivity
-      {onCursorOffsetX}
-      {onCursorOffsetY}
-      {onCompPosTiltX}
-      {onCompNegTiltX}
-      {onCompPosTiltY}
-      {onCompNegTiltY}
-      {onScalingFactor}
-      {onEdgeAttraction}
-      {onEdgeAttractionRange}
-      {onMouseSensitivity}
+      bind:cursorOffsetX={scene.mapping.cursorOffsetX}
+      bind:cursorOffsetY={scene.mapping.cursorOffsetY}
+      bind:compPosTiltX={scene.mapping.compPosTiltX}
+      bind:compNegTiltX={scene.mapping.compNegTiltX}
+      bind:compPosTiltY={scene.mapping.compPosTiltY}
+      bind:compNegTiltY={scene.mapping.compNegTiltY}
+      bind:scalingFactor={scene.mapping.scalingFactor}
+      bind:edgeAttraction={scene.mapping.edgeAttraction}
+      bind:edgeAttractionRange={scene.mapping.edgeAttractionRange}
+      bind:mouseSensitivity={scene.mapping.mouseSensitivity}
+      onCursorOffsetX={onSceneEdit}
+      onCursorOffsetY={onSceneEdit}
+      onCompPosTiltX={onSceneEdit}
+      onCompNegTiltX={onSceneEdit}
+      onCompPosTiltY={onSceneEdit}
+      onCompNegTiltY={onSceneEdit}
+      onScalingFactor={onSceneEdit}
+      onEdgeAttraction={onSceneEdit}
+      onEdgeAttractionRange={onSceneEdit}
+      onMouseSensitivity={onSceneEdit}
     />
   </div>
 </div>

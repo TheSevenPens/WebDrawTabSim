@@ -33,9 +33,20 @@ src/main.js
 
 ### State flow
 
-Mutable UI state lives in `App.svelte` as Svelte 5 `$state`. Children use `$bindable()` props and callback props (`onDistance`, etc.) that call sim setters.
+`App.svelte` binds controls into a versioned scene document. `scene-document.js`
+validates a complete candidate before publishing a detached accepted snapshot.
+Manual edits, Demo, Reset, playback, and Space+drag use that same commit path.
+Transient flyouts, panel selection, file status, and playback transport state stay
+outside the document. LeftPanel forwards one `onSceneEdit` callback for bound settings.
 
-When Space+drag moves the pen, the sim dispatches `tabletPositionChanged` on the viewer; `App.svelte` updates `tabletX` / `tabletY` so sliders stay in sync.
+`scene-renderer.js` projects changed fields into `Pen3DSim` and batches pen refreshes.
+Space+drag sends one XY patch through `onPoseInput`; standalone simulator consumers
+retain the legacy setter/event fallback. OrbitControls camera motion is observed
+into the document without being reapplied to the renderer on each frame.
+
+`SceneControls.svelte` owns browser file selection and downloads. The portable
+schema/controller have no DOM, Svelte, or Three.js dependencies. See
+[SCENE_DOCUMENT.md](./SCENE_DOCUMENT.md) for persistence and validation rules.
 
 ---
 
@@ -91,7 +102,9 @@ Pie meshes are persistent; geometry is replaced via `updatePieMesh` / `hidePieMe
 Pen: `setDistance`, `setTiltAltitude`, `setTiltAzimuth`, `setBarrelRotation`, `setTabletPositionX/Y`  
 Pointer: cursor offset, tilt-compensation, scaling, edge attraction, `setMouseSensitivity`  
 Display: annotation/axis/cursor/shadow/checkerboard/pen-display toggles, axonometric, camera view/JSON  
-Utility: `reset()`, `exportAsPNG()`, `animateToDemo()`, `onResize()`
+Utility: `getDefaultPose()` (detached defaults), `reset()` (applies defaults),
+`setPose()`, `batchSceneUpdate()`, `getCameraState()`, `restoreCameraState()`,
+`exportAsPNG()`, `animateToDemo()`, `onResize()`
 
 Setters clamp through `PEN_RANGES` / `clampValue` in `config.js`.
 

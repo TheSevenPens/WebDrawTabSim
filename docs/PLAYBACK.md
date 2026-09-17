@@ -52,8 +52,9 @@ The evaluator supports numeric camera channels and discrete annotation channels,
 tested at the same explicit timestamp as pose channels. The current app only
 applies pose clips; camera/annotation track authoring and rendering are not yet
 wired to the transport. Recorded-file import, live capture, arbitrary keyframe
-editing, scene persistence, and timestamped publication export remain separate
-work. This is not yet a complete recorded-stroke player or scene state model.
+editing and timestamped publication export remain separate
+work. [Saved scenes](./SCENE_DOCUMENT.md) persist the current pose and view, not
+the transport or recording. This is not yet a complete recorded-stroke player.
 
 `test/timeline.test.js` covers cadence independence, duplicate identities,
 interpolation and gap policies, stale callbacks, ranges, looping, speed, and
