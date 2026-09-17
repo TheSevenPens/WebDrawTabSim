@@ -2,9 +2,9 @@
  * Central defaults and shared constants for Pen3DSim.
  * All lengths are in millimetres (1 world unit = 1 mm).
  *
- * SCALE converts the original inch-based design values to the mm world so the
- * scene keeps its proportions. The tablet active area (16×9 → 384×216) and every
- * other distance are scaled by it; a few values (e.g. the bezel) are absolute mm.
+ * SCALE is an artistic multiplier for legacy design dimensions, not an
+ * inches-to-mm conversion (physical inches use 25.4). It preserves the model's
+ * proportions, including its 384×216 mm active area; the bezel uses absolute mm.
  */
 export const SCALE = 24;
 

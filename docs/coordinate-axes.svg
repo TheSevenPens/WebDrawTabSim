@@ -1,0 +1,35 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="800" height="500" viewBox="0 0 800 500" role="img" aria-labelledby="title desc">
+  <title id="title">Tablet and source coordinate directions</title>
+  <desc id="desc">Top view. Tablet X increases right and tablet Y increases down in this diagram, mapping to world X and Z. The front edge has tablet Y zero. The monitor is on negative world Z. Model azimuth zero points down, 90 right, 180 up, and 270 left. World Y points out of the page.</desc>
+  <defs>
+    <marker id="arrow" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto-start-reverse"><path d="M0 0L8 4L0 8Z" fill="#205b92"/></marker>
+  </defs>
+  <rect width="800" height="500" fill="#fff"/>
+  <g font-family="system-ui, sans-serif" fill="#172b40">
+    <text x="30" y="35" font-size="22" font-weight="bold">Coordinate contract · top view</text>
+    <text x="30" y="61" font-size="14">Axis-aligned source surface; camera viewpoint does not change these directions.</text>
+    <rect x="290" y="82" width="220" height="28" rx="4" fill="#e5eaf0" stroke="#64748b"/>
+    <text x="400" y="102" text-anchor="middle" font-size="14">Monitor side: world −Z</text>
+    <rect x="165" y="153" width="470" height="255" rx="8" fill="#f2ecfa" stroke="#83639e" stroke-width="2"/>
+    <text x="165" y="140" font-size="14">(0, 0) · world X/Z (−192, −108)</text>
+    <text x="400" y="177" text-anchor="middle" font-size="14">Front · tablet Y = 0</text>
+    <text x="400" y="395" text-anchor="middle" font-size="14">Back · tablet Y = 216</text>
+    <text x="635" y="431" text-anchor="end" font-size="14">(384, 216) · world X/Z (+192, +108)</text>
+    <g stroke="#205b92" stroke-width="2.5" marker-end="url(#arrow)">
+      <path d="M400 278H547"/><path d="M400 278H253"/>
+      <path d="M400 278V201"/><path d="M400 278V355"/>
+    </g>
+    <g font-size="15" fill="#205b92">
+      <text x="462" y="259">Az 90°</text><text x="281" y="259">Az 270°</text>
+      <text x="414" y="216">Az 180°</text><text x="414" y="351">Az 0°</text>
+    </g>
+    <circle cx="400" cy="278" r="7" fill="#fff" stroke="#172b40" stroke-width="2"/>
+    <circle cx="400" cy="278" r="2" fill="#172b40"/>
+    <text x="650" y="271" font-size="14">+tablet X</text><text x="650" y="291" font-size="14">+world X</text>
+    <text x="650" y="311" font-size="14">source right</text>
+    <text x="30" y="319" font-size="14">Down in diagram:</text>
+    <text x="30" y="341" font-size="14">+tablet Y / +world Z</text>
+    <text x="30" y="363" font-size="14">source down</text>
+    <text x="30" y="465" font-size="14">⊙ World +Y is up from the surface (out of page). Model azimuth labels describe the pen cap.</text>
+  </g>
+</svg>

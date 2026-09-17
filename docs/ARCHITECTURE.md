@@ -50,6 +50,7 @@ index.js
 ├── Pen3DSim.js         ← class skeleton, public API, clamped setters
 ├── config.js           ← TABLET, DESK, ROOM, LIGHTING, MONITOR, DEFAULT_PEN, DEMO_POSE, ranges, colors, timings
 ├── math.js             ← pure pose, coordinate, cursor, monitor, and interpolation functions
+├── input-coordinates.js ← validated Pointer Events/source-coordinate adapters for future importers
 ├── cursor-geometry.js  ← shared arrow silhouette for tablet + monitor cursors
 ├── pen-scene.js        ← scene, cameras, renderer, lights, OrbitControls, camera JSON
 ├── pen-room.js         ← desk (slab + legs), floor, walls, baseboards
@@ -98,7 +99,8 @@ Setters clamp through `PEN_RANGES` / `clampValue` in `config.js`.
 
 ## Tablet body vs digitizer
 
-**Tablet body** — visual plastic slab with bezel (`digitizer + bodyMargin` → 19×12×0.35 in).  
+**Tablet body** — visual plastic slab with a 25 mm bezel on each side (434×266×5.28 model mm).
+
 **Digitizer** — 384×216 mm sensing area as a line grid at `yOffset`. All coordinate math uses digitizer space.
 
 ```
@@ -110,7 +112,8 @@ yOffset = thickness / 2           → digitizer plane world Y
 
 ## Coordinate systems
 
-**Tablet (API):** X 0–384, Y 0–216, Z ≥ 0 (millimetres; `SCALE = 24` maps the original 16×9 inch design).  
+**Tablet (API):** X 0–384, Y 0–216, Z ≥ 0 in model millimetres. `SCALE = 24` preserves legacy proportions; physical inches convert with 25.4.
+
 **World (Three.js Y-up, 1 unit = 1 mm):**
 
 ```
@@ -119,7 +122,7 @@ worldY = yOffset + tabletZ
 worldZ = tabletY − depth/2
 ```
 
-Details and axis-label remapping: [CONCEPTS.md](./CONCEPTS.md).
+Canonical input contract and direction diagram: [COORDINATES.md](./COORDINATES.md). Teaching glossary and axis-label remapping: [CONCEPTS.md](./CONCEPTS.md).
 
 ---
 

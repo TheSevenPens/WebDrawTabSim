@@ -15,7 +15,7 @@ npm run build
 
 Install Node from `.nvmrc` before these commands. `npm ci` verifies manifest/lockfile agreement and replaces the installed dependency tree without rewriting the lockfile. Lifecycle scripts are disabled; the current dependencies build successfully with their packaged platform binaries. Future packages requiring install scripts need an explicit review of this policy.
 
-The type check deliberately covers `src/lib/sim/math.js`, with strict JSDoc checking and no DOM or ambient package types. It enforces the renderer-independent API. It is not a full Svelte/application type check. Node tests cover math, editing, playback, input, image export, and resource lifetime. The production build compiles the Svelte application.
+The type check deliberately covers `src/lib/sim/math.js` and `input-coordinates.js`, with strict JSDoc checking and no DOM or ambient package types. It enforces the renderer-independent numerical and input-adapter APIs. It is not a full Svelte/application type check. Node tests cover math, editing, playback, input, image export, and resource lifetime. The production build compiles the Svelte application.
 
 ## GitHub Actions
 

@@ -8,7 +8,7 @@
 ## Code Quality
 
 - **Large annotation update path**: `updateAnnotations()` in `pen-annotations.js` is still sizable after the pose/cursor/annotation split; further extraction of per-annotation updaters would help.
-- **Broader test coverage**: There are 49 Node regression tests plus strict type checking of the portable math core. Image baselines, recorded-input fixtures, and cross-browser automation remain useful additions (#77).
+- **Broader test coverage**: Node regression tests and strict type checking cover the portable math and input-adapter APIs, alongside editing/playback/export/lifecycle tests. Image baselines, full recorded-stroke fixtures, and cross-browser automation remain useful additions (#77).
 
 ## Suggested Features
 

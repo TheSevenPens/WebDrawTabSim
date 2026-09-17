@@ -20,7 +20,7 @@ Open the local URL Vite prints (base path is `/WebDrawTabSim/`), e.g. `http://lo
 npm run build    # production build → dist/
 npm run preview  # preview the production build
 npm test         # portable math, editing, playback, input, export, and lifecycle regressions
-npm run check:math # strict JSDoc type checking for the portable numerical core
+npm run check:math # strict JSDoc checks for portable math and input adapters
 npm audit --audit-level=moderate # include development/build dependencies
 ```
 
@@ -43,6 +43,7 @@ npm audit --audit-level=moderate # include development/build dependencies
 | [docs/CURSOR_PIPELINE.md](./docs/CURSOR_PIPELINE.md) | How cursor position is computed |
 | [docs/ARCHITECTURE.md](./docs/ARCHITECTURE.md) | Svelte + Three.js code structure |
 | [docs/SIMULATION_MATH.md](./docs/SIMULATION_MATH.md) | Portable numerical API, units, reference fixtures |
+| [docs/COORDINATES.md](./docs/COORDINATES.md) | Canonical coordinate contract and Pointer Events adapters |
 | [docs/FUTURES.md](./docs/FUTURES.md) | Known gaps and ideas |
 
 ## Stack

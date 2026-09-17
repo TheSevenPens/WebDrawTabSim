@@ -4,7 +4,7 @@ Teaching glossary for the simulator. For how the code is structured, see [ARCHIT
 
 ## Pen orientation
 
-Drawing tablets report pen orientation as angles relative to the digitizer surface. This sim uses the same three primary angles plus hover distance.
+Drawing tablets report pen orientation in several conventions. This simulator uses the following teaching convention plus hover distance. It differs from browser Pointer Events; see the canonical [coordinate contract and source adapters](COORDINATES.md).
 
 | Term | Meaning | UI range |
 |---|---|---|
@@ -30,15 +30,15 @@ When altitude is `0`, azimuth is disabled in the UI — there is no lean directi
 
 ### Tablet coordinates (API / teaching space)
 
-Millimetres on the digitizer active area (`SCALE = 24` maps the original 16×9 inch design):
+Model millimetres on the digitizer active area. `SCALE = 24` preserves legacy design proportions; it is not a physical inches-to-millimetres conversion (which uses 25.4):
 
 ```
 tabletX   0 – 384   left → right
-tabletY   0 – 216   front → back (toward the monitor)
+tabletY   0 – 216   front → back (world −Z → +Z)
 tabletZ   ≥ 0       tip height above the surface (hover distance)
 ```
 
-All sliders, mouse-drag, and the public `Pen3DSim` setters use tablet coordinates.
+Position sliders, mouse-drag, and the position setters use tablet coordinates. The external monitor is placed on the negative-world-Z side (`MONITOR.z = -288`), so increasing tablet Y moves away from its placement. “Front/back” are the model's coordinate labels, not a promise about the current camera viewpoint.
 
 ### World coordinates (Three.js)
 
@@ -68,8 +68,8 @@ That remapping is intentional for teaching tablet space, not a bug.
 
 Two different things are drawn on top of each other:
 
-- **Tablet body** — physical plastic slab with bezel. Visual only. Size = digitizer + `bodyMargin` (1.5") on each side → **19 × 12 × 0.35 in**.
-- **Digitizer** — active sensing area. A line grid (**16 × 9 in**) on the body top surface. All pen math uses this area only.
+- **Tablet body** — visual plastic slab with a 25 mm bezel on each side: **434 × 266 × 5.28 model mm**.
+- **Digitizer** — active sensing area: **384 × 216 model mm** on the body top surface. All pen math uses this area only.
 
 Defaults live in `src/lib/sim/config.js` (`TABLET`).
 
@@ -80,7 +80,7 @@ Defaults live in `src/lib/sim/config.js` (`TABLET`).
 | **Pen tablet** (default) | Opaque tablet + external desk monitor. Digitizer cursor is mirrored onto the monitor screen. |
 | **Pen display** | Embedded screen on the tablet surface; external monitor hidden. The digitizer cursor sits slightly above the embedded screen. |
 
-Toggle with the **Pen display** checkbox.
+Choose **pen tablet** or **pen display** in the **Device type** dropdown.
 
 ## Pose vs cursor
 
