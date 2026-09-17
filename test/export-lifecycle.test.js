@@ -1,5 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import { readFileSync } from 'node:fs';
 import * as THREE from 'three';
 import { Pen3DSim } from '../src/lib/sim/index.js';
 import { ResourceScope } from '../src/lib/sim/resources.js';
@@ -164,6 +165,33 @@ class HeadlessSim extends Pen3DSim {
     }
     initMouseControl() {} // Real input teardown is covered in editing-playback.test.js.
 }
+
+test('scene adapters preserve the numeric reference in both device modes', t => {
+    documentStub(t);
+    const reference = JSON.parse(readFileSync(new URL('./fixtures/math-reference.json', import.meta.url)));
+    const sim = new HeadlessSim({ clientWidth: 800, clientHeight: 450 });
+    t.after(() => sim.dispose());
+    const near = (actual, expected) => actual.forEach((n, i) => assert.ok(Math.abs(n - expected[i]) < 1e-10));
+    Object.assign(sim, { tabletWidth: reference.tablet.width, tabletDepth: reference.tablet.depth,
+        yOffset: reference.tablet.surfaceY });
+    for (const penDisplayMode of [false, true]) {
+        sim.penDisplayMode = penDisplayMode;
+        for (const { pose, mapping, expected } of reference.fixtures) {
+            Object.assign(sim, mapping, { tabletOffsetX: pose.tabletX, tabletOffsetY: pose.tabletY });
+            sim.updatePenTransform(pose.distance, pose.altitude, pose.azimuth, pose.barrel);
+            near(sim.penTipWorld.toArray(), expected.tip);
+            near(sim.penGroup.position.toArray(), expected.origin);
+            near(sim.penGroup.quaternion.toArray(), expected.quaternion);
+            near([sim.cursorArrow.position.x, sim.cursorArrow.position.z], expected.cursor);
+            near(sim.cursorCrosshair.position.toArray(), sim.cursorArrow.position.toArray());
+            const screen = reference.screen;
+            // Compare monitor position in its normalized screen space; actual mesh sizes differ.
+            near([sim.monitorCursor.position.x / sim.monitorScreenWidth,
+                (sim.monitorCursor.position.y - sim.monitorBodyCenterY) / sim.monitorScreenHeight],
+            [expected.monitor[0] / screen.width, (expected.monitor[1] - screen.centerY) / screen.height]);
+        }
+    }
+});
 
 test('repeated full scene creation/disposal owns detached and shared resources without affecting another instance', t => {
     documentStub(t);

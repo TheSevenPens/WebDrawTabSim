@@ -1,3 +1,4 @@
+import { penTransform, planarTilt, mapCursor } from './math.js';
 import * as THREE from 'three';
 import { MaterialsFactory } from './materials.js';
 import { TexturesFactory } from './textures.js';
@@ -153,9 +154,6 @@ Object.assign(Pen3DSim.prototype, {
         this.penAxisIntersection = new THREE.Vector3();
         this._penQuaternion      = new THREE.Quaternion();
         this._penAxisDir         = new THREE.Vector3();
-        this._altitudeQuat       = new THREE.Quaternion();
-        this._azimuthQuat        = new THREE.Quaternion();
-        this._barrelQuat         = new THREE.Quaternion();
     },
 
     nibProfileFor(shape) {
@@ -270,36 +268,15 @@ Object.assign(Pen3DSim.prototype, {
         const worldSurfaceY = this.yOffset;
         const tipLength     = PEN_MESH.tipHeight;
 
-        const altitudeRad = (altitude * Math.PI) / 180;
-        const azimuthRad  = (azimuth  * Math.PI) / 180;
-        const barrelRad   = (barrel   * Math.PI) / 180;
-
-        const worldTipX = THREE.MathUtils.clamp(
-            this.tabletOffsetX - this.tabletWidth  / 2,
-            -this.tabletWidth  / 2, this.tabletWidth  / 2
-        );
-        const worldTipY = worldSurfaceY + distance;
-        const worldTipZ = THREE.MathUtils.clamp(
-            this.tabletOffsetY - this.tabletDepth / 2,
-            -this.tabletDepth / 2, this.tabletDepth / 2
-        );
-
-        this._azimuthQuat.setFromAxisAngle(new THREE.Vector3(0, 1, 0), azimuthRad);
-        this._altitudeQuat.setFromAxisAngle(new THREE.Vector3(1, 0, 0), altitudeRad);
-        this._barrelQuat.setFromAxisAngle(new THREE.Vector3(0, 1, 0), barrelRad);
-
+        const transform = penTransform({
+            tabletX: this.tabletOffsetX, tabletY: this.tabletOffsetY,
+            distance, altitude, azimuth, barrel,
+        }, { width: this.tabletWidth, depth: this.tabletDepth, surfaceY: worldSurfaceY }, tipLength);
         const quaternion = this._penQuaternion;
-        quaternion.multiplyQuaternions(this._altitudeQuat, this._barrelQuat);
-        quaternion.premultiply(this._azimuthQuat);
-
+        const q = transform.quaternion;
+        quaternion.set(q.x, q.y, q.z, q.w);
         this.penGroup.setRotationFromQuaternion(quaternion);
-
-        const tipOffsetWorld = new THREE.Vector3(0, -tipLength, 0).applyQuaternion(quaternion);
-        this.penGroup.position.set(
-            worldTipX - tipOffsetWorld.x,
-            worldTipY - tipOffsetWorld.y,
-            worldTipZ - tipOffsetWorld.z
-        );
+        this.penGroup.position.set(transform.origin.x, transform.origin.y, transform.origin.z);
         this.penGroup.updateMatrixWorld(true);
 
         this.penTopWorld.copy(this.penTopLocal).applyMatrix4(this.penGroup.matrixWorld);
@@ -349,57 +326,18 @@ Object.assign(Pen3DSim.prototype, {
     // -------------------------------------------------------------------------
 
     updateCursorFromPen(altitude, azimuth) {
-        const scale = POINTER_DEFAULTS.tiltCompensationScale;
-        let worldCompOffsetX = 0;
-        let worldCompOffsetZ = 0;
-        const tiltXDeg = this.calculateTiltX(altitude, azimuth);
-        const tiltYDeg = this.calculateTiltY(altitude, azimuth);
-        if (tiltXDeg > 0 && this.tiltCompensationPosTiltXValue > 0) {
-            worldCompOffsetX = tiltXDeg * this.tiltCompensationPosTiltXValue * scale;
-        } else if (tiltXDeg < 0 && this.tiltCompensationNegTiltXValue > 0) {
-            worldCompOffsetX = tiltXDeg * this.tiltCompensationNegTiltXValue * scale;
-        }
-        if (tiltYDeg > 0 && this.tiltCompensationPosTiltYValue > 0) {
-            worldCompOffsetZ = tiltYDeg * this.tiltCompensationPosTiltYValue * scale;
-        } else if (tiltYDeg < 0 && this.tiltCompensationNegTiltYValue > 0) {
-            worldCompOffsetZ = tiltYDeg * this.tiltCompensationNegTiltYValue * scale;
-        }
-
-        let worldCursorX, worldCursorZ;
-        if (this.scalingFactor > 0) {
-            worldCursorX = this.penTipSurfaceBelow.x * this.scalingFactor + this.cursorOffsetX + worldCompOffsetX;
-            worldCursorZ = this.penTipSurfaceBelow.z * this.scalingFactor + this.cursorOffsetY + worldCompOffsetZ;
-        } else {
-            worldCursorX = this.cursorOffsetX + worldCompOffsetX;
-            worldCursorZ = this.cursorOffsetY + worldCompOffsetZ;
-        }
-
-        if (this.edgeAttraction !== 0 && this.edgeAttractionRange > 0) {
-            const leftEdge   = -this.tabletWidth  / 2;
-            const rightEdge  =  this.tabletWidth  / 2;
-            const frontEdge  = -this.tabletDepth  / 2;
-            const backEdge   =  this.tabletDepth  / 2;
-
-            const distFromLeft  = worldCursorX - leftEdge;
-            const distFromRight = rightEdge    - worldCursorX;
-            const distFromFront = worldCursorZ - frontEdge;
-            const distFromBack  = backEdge     - worldCursorZ;
-
-            let attractX = 0;
-            let attractZ = 0;
-
-            if (distFromLeft  <= this.edgeAttractionRange && distFromLeft  >= 0)
-                attractX += this.edgeAttraction * (1 - distFromLeft  / this.edgeAttractionRange);
-            if (distFromRight <= this.edgeAttractionRange && distFromRight >= 0)
-                attractX -= this.edgeAttraction * (1 - distFromRight / this.edgeAttractionRange);
-            if (distFromFront <= this.edgeAttractionRange && distFromFront >= 0)
-                attractZ += this.edgeAttraction * (1 - distFromFront / this.edgeAttractionRange);
-            if (distFromBack  <= this.edgeAttractionRange && distFromBack  >= 0)
-                attractZ -= this.edgeAttraction * (1 - distFromBack  / this.edgeAttractionRange);
-
-            worldCursorX += attractX;
-            worldCursorZ += attractZ;
-        }
+        const { x: worldCursorX, z: worldCursorZ } = mapCursor(
+            this.penTipSurfaceBelow, planarTilt(altitude, azimuth), {
+                scalingFactor: this.scalingFactor,
+                cursorOffsetX: this.cursorOffsetX, cursorOffsetY: this.cursorOffsetY,
+                tiltCompensationPosTiltXValue: this.tiltCompensationPosTiltXValue,
+                tiltCompensationNegTiltXValue: this.tiltCompensationNegTiltXValue,
+                tiltCompensationPosTiltYValue: this.tiltCompensationPosTiltYValue,
+                tiltCompensationNegTiltYValue: this.tiltCompensationNegTiltYValue,
+                tiltCompensationScale: POINTER_DEFAULTS.tiltCompensationScale,
+                edgeAttraction: this.edgeAttraction, edgeAttractionRange: this.edgeAttractionRange,
+            }, { width: this.tabletWidth, depth: this.tabletDepth },
+        );
 
         const cursorY = this.yOffset + (this.penDisplayMode ? 0.01 : 0.002) * SCALE;
         this.cursorArrow.position.set(worldCursorX, cursorY, worldCursorZ);

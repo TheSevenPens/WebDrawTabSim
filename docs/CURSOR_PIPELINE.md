@@ -2,7 +2,7 @@
 
 How the digitizer (and monitor) cursor position is computed from pen pose and pointer-tracking settings.
 
-Implemented in `updateCursorFromPen()` in `src/lib/sim/pen-pen.js`. Defaults and scales live in `src/lib/sim/config.js` (`POINTER_DEFAULTS`).
+Computed by `planarTilt`, `mapCursor`, and `mapMonitor` in the renderer-independent `src/lib/sim/math.js`. The methods in `pen-pen.js` and `pen-monitor.js` supply state and apply results to scene nodes. Defaults and scales live in `config.js` (`POINTER_DEFAULTS`). See [SIMULATION_MATH.md](./SIMULATION_MATH.md) for the numerical API and reference tests.
 
 ## Pipeline
 
@@ -47,14 +47,14 @@ Add constant `cursorOffsetX` / `cursorOffsetY` (millimetres).
 Uses derived **Tilt X** / **Tilt Y** (degrees). Separate gains for positive and negative lean on each axis:
 
 ```
-scale = tiltCompensationScale   # default 0.01 in per degree at gain 1.0
+scale = tiltCompensationScale   # default 0.24 model mm per degree at gain 1.0
 
 if tiltX > 0:  worldCompX = tiltX × posTiltXGain × scale
 if tiltX < 0:  worldCompX = tiltX × negTiltXGain × scale
 # same pattern for tiltY → worldCompZ
 ```
 
-This models drivers that shift the reported cursor when the pen is tilted (parallax / contact-point heuristics).
+This illustrates cursor shifts when the pen is tilted (parallax / contact-point heuristics); it is not a measured hardware-driver model.
 
 ### 5. Edge attraction
 

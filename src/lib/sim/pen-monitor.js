@@ -1,3 +1,4 @@
+import { mapMonitor } from './math.js';
 import * as THREE from 'three';
 import { MaterialsFactory } from './materials.js';
 import { Pen3DSim } from './Pen3DSim.js';
@@ -107,12 +108,13 @@ Object.assign(Pen3DSim.prototype, {
     updateMonitorCursor(worldCursorX, worldCursorZ) {
         if (!this.monitorCursor) return;
 
-        const normalizedX =  worldCursorX / (this.tabletWidth  / 2);
-        const normalizedZ =  worldCursorZ / (this.tabletDepth  / 2);
-
-        const screenCursorX = normalizedX * (this.monitorScreenWidth  / 2);
-        const screenCursorY = this.monitorBodyCenterY - normalizedZ * (this.monitorScreenHeight / 2);
-        const screenCursorZ = this.monitorZ + this.monitorBodyDepth / 2 + MONITOR.cursorOffset;
+        const { x: screenCursorX, y: screenCursorY, z: screenCursorZ } = mapMonitor(
+            { x: worldCursorX, z: worldCursorZ },
+            { width: this.tabletWidth, depth: this.tabletDepth },
+            { width: this.monitorScreenWidth, height: this.monitorScreenHeight,
+                centerY: this.monitorBodyCenterY,
+                frontZ: this.monitorZ + this.monitorBodyDepth / 2 + MONITOR.cursorOffset },
+        );
 
         this.monitorCursor.position.set(screenCursorX, screenCursorY, screenCursorZ);
         this.monitorCrosshair.position.set(screenCursorX, screenCursorY, screenCursorZ);

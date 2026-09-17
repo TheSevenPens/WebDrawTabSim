@@ -1,3 +1,4 @@
+import { planarTilt, penOrientation } from './math.js';
 import * as THREE from 'three';
 import { MaterialsFactory } from './materials.js';
 import { TexturesFactory } from './textures.js';
@@ -255,15 +256,11 @@ Object.assign(Pen3DSim.prototype, {
     },
 
     calculateTiltX(altitude, azimuth) {
-        const altRad = (altitude * Math.PI) / 180;
-        const azRad  = (azimuth  * Math.PI) / 180;
-        return (Math.atan(Math.tan(altRad) * Math.sin(azRad)) * 180) / Math.PI;
+        return planarTilt(altitude, azimuth).tiltX;
     },
 
     calculateTiltY(altitude, azimuth) {
-        const altRad = (altitude * Math.PI) / 180;
-        const azRad  = (azimuth  * Math.PI) / 180;
-        return (Math.atan(Math.tan(altRad) * Math.cos(azRad)) * 180) / Math.PI;
+        return planarTilt(altitude, azimuth).tiltY;
     },
 
     calculatePieRotationQuaternion(u, v) {
@@ -476,9 +473,8 @@ Object.assign(Pen3DSim.prototype, {
         const barrelCenter = this.penTopWorld.clone();
         const penAxis = new THREE.Vector3(0, 1, 0).applyQuaternion(quaternion).normalize();
 
-        const orientationQuat = new THREE.Quaternion();
-        orientationQuat.multiplyQuaternions(this._altitudeQuat, new THREE.Quaternion());
-        orientationQuat.premultiply(this._azimuthQuat);
+        const orientation = penOrientation(altitude, azimuth, 0);
+        const orientationQuat = new THREE.Quaternion(orientation.x, orientation.y, orientation.z, orientation.w);
 
         const u = new THREE.Vector3(1, 0, 0).applyQuaternion(orientationQuat).normalize();
         const v = new THREE.Vector3(0, 0, 1).applyQuaternion(orientationQuat).normalize();

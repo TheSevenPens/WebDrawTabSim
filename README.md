@@ -16,7 +16,7 @@ Open the local URL Vite prints (base path is `/WebDrawTabSim/`), e.g. `http://lo
 ```bash
 npm run build    # production build → dist/
 npm run preview  # preview the production build
-npm test         # editing, playback, input, export, and lifecycle regressions (Node 20+)
+npm test         # portable math, editing, playback, input, export, and lifecycle regressions (Node 20+)
 ```
 
 ## What it does
@@ -35,6 +35,7 @@ npm test         # editing, playback, input, export, and lifecycle regressions (
 | [docs/CONTROLS.md](./docs/CONTROLS.md) | UI panel, Space+drag, camera, animations, export |
 | [docs/CURSOR_PIPELINE.md](./docs/CURSOR_PIPELINE.md) | How cursor position is computed |
 | [docs/ARCHITECTURE.md](./docs/ARCHITECTURE.md) | Svelte + Three.js code structure |
+| [docs/SIMULATION_MATH.md](./docs/SIMULATION_MATH.md) | Portable numerical API, units, reference fixtures |
 | [docs/FUTURES.md](./docs/FUTURES.md) | Known gaps and ideas |
 
 ## Stack

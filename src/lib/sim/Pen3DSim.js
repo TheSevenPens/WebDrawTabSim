@@ -1,3 +1,4 @@
+import { easeInOutCubic, interpolateAngle } from './math.js';
 import * as THREE from 'three';
 import { TexturesFactory } from './textures.js';
 import { ResourceScope } from './resources.js';
@@ -607,16 +608,11 @@ export class Pen3DSim {
     // ── Animation helpers ─────────────────────────────────────────────────────
 
     easeInOutCubic(t) {
-        return t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
+        return easeInOutCubic(t);
     }
 
     interpolateAngle(start, end, t) {
-        start = ((start % 360) + 360) % 360;
-        end   = ((end   % 360) + 360) % 360;
-        let diff = end - start;
-        if (diff < 0)    diff += 360;
-        if (diff >= 360) diff %= 360;
-        return ((( start + diff * t) % 360) + 360) % 360;
+        return interpolateAngle(start, end, t);
     }
 
     // Animates from default position to the shared demo pose.

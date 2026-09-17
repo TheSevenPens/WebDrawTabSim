@@ -49,6 +49,7 @@ When Space+drag moves the pen, the sim dispatches `tabletPositionChanged` on the
 index.js
 ├── Pen3DSim.js         ← class skeleton, public API, clamped setters
 ├── config.js           ← TABLET, DESK, ROOM, LIGHTING, MONITOR, DEFAULT_PEN, DEMO_POSE, ranges, colors, timings
+├── math.js             ← pure pose, coordinate, cursor, monitor, and interpolation functions
 ├── cursor-geometry.js  ← shared arrow silhouette for tablet + monitor cursors
 ├── pen-scene.js        ← scene, cameras, renderer, lights, OrbitControls, camera JSON
 ├── pen-room.js         ← desk (slab + legs), floor, walls, baseboards
@@ -64,12 +65,14 @@ index.js
 
 Companions call `Object.assign(Pen3DSim.prototype, { … })`. **Import order is load-order critical** — `Pen3DSim.js` must evaluate first.
 
+The numerical core is independent of this initialization: import `math.js` directly for pose/orientation, tilt, cursor/monitor mapping, and interpolation. It accepts plain objects with explicit dimensions, units, and mapping settings. The companions adapt its results to scene nodes. See [SIMULATION_MATH.md](./SIMULATION_MATH.md) for the API contract and reference fixtures.
+
 ### Init chain
 
 ```
 initScene → initCameras → initRenderer → initControls → initLighting
 → initDesk → initRoom → initTablet → initMonitor → initPen → initAnnotations → initAxisMarkers
-→ animate() → updatePenTransform() → initMouseControl()
+→ onResize() → updatePenTransform() → initMouseControl() → animate()
 ```
 
 ### Core update split

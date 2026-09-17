@@ -1,0 +1,489 @@
+{
+  "sourceCommit": "72b0e14",
+  "tablet": {
+    "width": 384,
+    "depth": 216,
+    "surfaceY": 2.64
+  },
+  "screen": {
+    "width": 480,
+    "height": 270,
+    "centerY": 220,
+    "frontZ": 30
+  },
+  "tipLength": 12.49992,
+  "fixtures": [
+    {
+      "name": "upright",
+      "pose": {
+        "tabletX": 192,
+        "tabletY": 108,
+        "distance": 0,
+        "altitude": 0,
+        "azimuth": 0,
+        "barrel": 0
+      },
+      "mapping": {
+        "scalingFactor": 1,
+        "cursorOffsetX": 0,
+        "cursorOffsetY": 0,
+        "tiltCompensationPosTiltXValue": 0,
+        "tiltCompensationNegTiltXValue": 0,
+        "tiltCompensationPosTiltYValue": 0,
+        "tiltCompensationNegTiltYValue": 0,
+        "tiltCompensationScale": 0.24,
+        "edgeAttraction": 0,
+        "edgeAttractionRange": 20
+      },
+      "expected": {
+        "tip": [
+          0,
+          2.6400000000000006,
+          0
+        ],
+        "origin": [
+          0,
+          15.13992,
+          0
+        ],
+        "axis": [
+          0,
+          1,
+          0
+        ],
+        "quaternion": [
+          0,
+          0,
+          0,
+          1
+        ],
+        "tilt": [
+          0,
+          0
+        ],
+        "cursor": [
+          0,
+          0
+        ],
+        "monitor": [
+          0,
+          220,
+          30
+        ]
+      }
+    },
+    {
+      "name": "front-left",
+      "pose": {
+        "tabletX": 0,
+        "tabletY": 0,
+        "distance": 5,
+        "altitude": 45,
+        "azimuth": 90,
+        "barrel": 180
+      },
+      "mapping": {
+        "scalingFactor": 1,
+        "cursorOffsetX": 0,
+        "cursorOffsetY": 0,
+        "tiltCompensationPosTiltXValue": 0,
+        "tiltCompensationNegTiltXValue": 0,
+        "tiltCompensationPosTiltYValue": 0,
+        "tiltCompensationNegTiltYValue": 0,
+        "tiltCompensationScale": 0.24,
+        "edgeAttraction": 0,
+        "edgeAttractionRange": 20
+      },
+      "expected": {
+        "tip": [
+          -192,
+          7.640000000000002,
+          -108
+        ],
+        "origin": [
+          -183.16122180371065,
+          16.47877819628935,
+          -108
+        ],
+        "axis": [
+          0.7071067811865475,
+          0.7071067811865476,
+          1.1102230246251565e-16
+        ],
+        "quaternion": [
+          0.27059805007309845,
+          0.6532814824381883,
+          0.2705980500730985,
+          -0.6532814824381882
+        ],
+        "tilt": [
+          45,
+          3.508354649267437e-15
+        ],
+        "cursor": [
+          -192,
+          -108
+        ],
+        "monitor": [
+          -240,
+          355,
+          30
+        ]
+      }
+    },
+    {
+      "name": "back-right",
+      "pose": {
+        "tabletX": 384,
+        "tabletY": 216,
+        "distance": 12,
+        "altitude": 60,
+        "azimuth": 270,
+        "barrel": 359
+      },
+      "mapping": {
+        "scalingFactor": 1,
+        "cursorOffsetX": 0,
+        "cursorOffsetY": 0,
+        "tiltCompensationPosTiltXValue": 0,
+        "tiltCompensationNegTiltXValue": 0,
+        "tiltCompensationPosTiltYValue": 0,
+        "tiltCompensationNegTiltYValue": 0,
+        "tiltCompensationScale": 0.24,
+        "edgeAttraction": 0,
+        "edgeAttractionRange": 20
+      },
+      "expected": {
+        "tip": [
+          192,
+          14.64,
+          108
+        ],
+        "origin": [
+          181.1747517347268,
+          20.889960000000002,
+          108
+        ],
+        "axis": [
+          -0.8660254037844388,
+          0.5000000000000001,
+          -5.551115123125784e-17
+        ],
+        "quaternion": [
+          0.3566252245770909,
+          -0.6176930082281826,
+          0.3504546321499253,
+          0.607005228631532
+        ],
+        "tilt": [
+          -59.99999999999999,
+          -1.8229945510505067e-14
+        ],
+        "cursor": [
+          192,
+          108
+        ],
+        "monitor": [
+          240,
+          85,
+          30
+        ]
+      }
+    },
+    {
+      "name": "mixed",
+      "pose": {
+        "tabletX": 91,
+        "tabletY": 160,
+        "distance": 24,
+        "altitude": 37,
+        "azimuth": 123,
+        "barrel": 247
+      },
+      "mapping": {
+        "scalingFactor": 1.4,
+        "cursorOffsetX": 7,
+        "cursorOffsetY": -13,
+        "tiltCompensationPosTiltXValue": 1.5,
+        "tiltCompensationNegTiltXValue": 0,
+        "tiltCompensationPosTiltYValue": 0,
+        "tiltCompensationNegTiltYValue": 2,
+        "tiltCompensationScale": 0.24,
+        "edgeAttraction": 0,
+        "edgeAttractionRange": 20
+      },
+      "expected": {
+        "tip": [
+          -101,
+          26.64,
+          52
+        ],
+        "origin": [
+          -94.69098353715107,
+          36.622879984750355,
+          47.902876803417804
+        ],
+        "axis": [
+          0.5047245472650169,
+          0.7986355100472928,
+          -0.32777195346707777
+        ],
+        "quaternion": [
+          0.14896551292173874,
+          -0.08265185253467039,
+          0.28016338257580503,
+          -0.9447149973914003
+        ],
+        "tilt": [
+          32.29221516841053,
+          -22.313979694253092
+        ],
+        "cursor": [
+          -122.77480253937219,
+          49.08928974675851
+        ],
+        "monitor": [
+          -153.46850317421524,
+          158.63838781655187,
+          30
+        ]
+      }
+    },
+    {
+      "name": "pinned",
+      "pose": {
+        "tabletX": 30,
+        "tabletY": 90,
+        "distance": 2,
+        "altitude": 60,
+        "azimuth": 225,
+        "barrel": 45
+      },
+      "mapping": {
+        "scalingFactor": 0,
+        "cursorOffsetX": 3,
+        "cursorOffsetY": 4,
+        "tiltCompensationPosTiltXValue": 0,
+        "tiltCompensationNegTiltXValue": 3,
+        "tiltCompensationPosTiltYValue": 0,
+        "tiltCompensationNegTiltYValue": 2,
+        "tiltCompensationScale": 0.24,
+        "edgeAttraction": 0,
+        "edgeAttractionRange": 20
+      },
+      "expected": {
+        "tip": [
+          -162,
+          4.6400000000000015,
+          -18
+        ],
+        "origin": [
+          -169.65460645640258,
+          10.889960000000004,
+          -25.654606456402576
+        ],
+        "axis": [
+          -0.6123724356957944,
+          0.5000000000000002,
+          -0.6123724356957945
+        ],
+        "quaternion": [
+          2.7755575615628914e-17,
+          0.6123724356957946,
+          -0.4999999999999999,
+          -0.6123724356957945
+        ],
+        "tilt": [
+          -50.76847951640773,
+          -50.768479516407744
+        ],
+        "cursor": [
+          -33.55330525181357,
+          -20.368870167875716
+        ],
+        "monitor": [
+          -41.941631564766965,
+          245.46108770984466,
+          30
+        ]
+      }
+    },
+    {
+      "name": "repulsion",
+      "pose": {
+        "tabletX": 0,
+        "tabletY": 216,
+        "distance": 0,
+        "altitude": 30,
+        "azimuth": 0,
+        "barrel": 0
+      },
+      "mapping": {
+        "scalingFactor": 1,
+        "cursorOffsetX": 0,
+        "cursorOffsetY": 0,
+        "tiltCompensationPosTiltXValue": 0,
+        "tiltCompensationNegTiltXValue": 0,
+        "tiltCompensationPosTiltYValue": 0,
+        "tiltCompensationNegTiltYValue": 0,
+        "tiltCompensationScale": 0.24,
+        "edgeAttraction": 12,
+        "edgeAttractionRange": 20
+      },
+      "expected": {
+        "tip": [
+          -192,
+          2.639999999999999,
+          108
+        ],
+        "origin": [
+          -192,
+          13.46524826527318,
+          114.24996
+        ],
+        "axis": [
+          0,
+          0.8660254037844387,
+          0.49999999999999994
+        ],
+        "quaternion": [
+          0.25881904510252074,
+          0,
+          0,
+          0.9659258262890683
+        ],
+        "tilt": [
+          0,
+          29.999999999999996
+        ],
+        "cursor": [
+          -180,
+          96
+        ],
+        "monitor": [
+          -225,
+          100,
+          30
+        ]
+      }
+    },
+    {
+      "name": "attraction",
+      "pose": {
+        "tabletX": 384,
+        "tabletY": 0,
+        "distance": 0,
+        "altitude": 10,
+        "azimuth": 90,
+        "barrel": 25
+      },
+      "mapping": {
+        "scalingFactor": 1,
+        "cursorOffsetX": 0,
+        "cursorOffsetY": 0,
+        "tiltCompensationPosTiltXValue": 0,
+        "tiltCompensationNegTiltXValue": 0,
+        "tiltCompensationPosTiltYValue": 0,
+        "tiltCompensationNegTiltYValue": 0,
+        "tiltCompensationScale": 0.24,
+        "edgeAttraction": -12,
+        "edgeAttractionRange": 20
+      },
+      "expected": {
+        "tip": [
+          192,
+          2.6400000000000006,
+          -108
+        ],
+        "origin": [
+          194.1705883289824,
+          14.95001812803236,
+          -108
+        ],
+        "axis": [
+          0.17364817766693036,
+          0.9848077530122082,
+          2.775557561562892e-17
+        ],
+        "quaternion": [
+          0.07350640788684334,
+          0.8401820867347284,
+          -0.04682874644349326,
+          0.5352550211218774
+        ],
+        "tilt": [
+          10,
+          6.18617582559833e-16
+        ],
+        "cursor": [
+          204,
+          -120
+        ],
+        "monitor": [
+          255,
+          370,
+          30
+        ]
+      }
+    },
+    {
+      "name": "outside",
+      "pose": {
+        "tabletX": 999,
+        "tabletY": -10,
+        "distance": 7,
+        "altitude": 55,
+        "azimuth": 315,
+        "barrel": 360
+      },
+      "mapping": {
+        "scalingFactor": 2,
+        "cursorOffsetX": 9,
+        "cursorOffsetY": -10,
+        "tiltCompensationPosTiltXValue": 0,
+        "tiltCompensationNegTiltXValue": 0,
+        "tiltCompensationPosTiltYValue": 0,
+        "tiltCompensationNegTiltYValue": 0,
+        "tiltCompensationScale": 0.24,
+        "edgeAttraction": 12,
+        "edgeAttractionRange": 20
+      },
+      "expected": {
+        "tip": [
+          192,
+          9.64,
+          -108
+        ],
+        "origin": [
+          184.7596967714926,
+          16.80965956827317,
+          -100.75969677149261
+        ],
+        "axis": [
+          -0.5792279653395694,
+          0.5735764363510462,
+          0.5792279653395691
+        ],
+        "quaternion": [
+          0.4266000929333181,
+          -0.33944435018566016,
+          0.1767035442026031,
+          0.8194911538891424
+        ],
+        "tilt": [
+          -45.280885607561046,
+          45.28088560756104
+        ],
+        "cursor": [
+          393,
+          -226
+        ],
+        "monitor": [
+          491.25,
+          502.5,
+          30
+        ]
+      }
+    }
+  ]
+}
