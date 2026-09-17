@@ -67,6 +67,11 @@ The initial view is azimuth 0°, elevation 30°, distance 720 mm.
 
 Collapsible left-panel section (not a flyout).
 
+After choosing an animation, use **Play/Pause**, **Stop**, the time slider,
+previous/next keyframe, speed, loop, and in/out points. Seeking and stepping
+pause; Stop returns to the in point. Range edits commit on leaving the field.
+See [PLAYBACK.md](./PLAYBACK.md) for timing rules and current scope.
+
 | Button | Effect |
 |---|---|
 | **Demo** | Jump to the shared demo pose and turn key annotations on |

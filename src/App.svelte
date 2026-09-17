@@ -6,7 +6,9 @@
   import PointerTrackingSettings from './lib/PointerTrackingSettings.svelte';
   import CheckboxControl from './lib/CheckboxControl.svelte';
   import { createPlaybackController } from './lib/sim/playback.js';
-  import { runParameterAnimation } from './lib/sim/animations.js';
+  import PlaybackControls from './lib/PlaybackControls.svelte';
+  import { createClip } from './lib/sim/timeline.js';
+  import { createTransport } from './lib/sim/transport.js';
   import { DEFAULT_PEN, DEMO_POSE, POINTER_DEFAULTS, ANIMATION, EXPORT, SCALE } from './lib/sim/config.js';
 
   // ── DOM reference ──────────────────────────────────────────────────────────
@@ -140,29 +142,41 @@
 
   // ── Playback ownership ───────────────────────────────────────────────
   const playback = createPlaybackController();
+  let playbackStatus = $state({ loaded: false, playing: false, time: 0, duration: 0,
+    inPoint: 0, outPoint: 0, speed: 1, loop: false, index: null });
+  const transport = createTransport({
+    onFrame: ({ values }) => {
+      const pose = sim.setPose(values);
+      distance = pose.distance; tiltAltitude = pose.tiltAltitude; tiltAzimuth = pose.tiltAzimuth;
+      barrelRotation = pose.barrelRotation; tabletX = pose.tabletX; tabletY = pose.tabletY;
+    },
+    onChange: status => { playbackStatus = status; },
+  });
+  const currentPose = () => ({ distance, tiltAltitude, tiltAzimuth, barrelRotation, tabletX, tabletY });
+  function startClip(start, end, showAnnotations = false) {
+    openFlyout = null;
+    playback.start(() => {
+      if (!sim || sim.disposed) return () => {};
+      if (showAnnotations) {
+        showAltitude = showAzimuth = showBarrel = true;
+        sim.setAltitudeAnnotationsVisible(true); sim.setAzimuthAnnotationsVisible(true); sim.setBarrelAnnotationsVisible(true);
+      }
+      const cancel = () => { transport.clear(); sim.animations?.delete(cancel); };
+      sim.trackAnimation(cancel);
+      transport.load(createClip([
+        { id: 'start', time: 0, values: start },
+        { id: 'end', time: ANIMATION.durationMs, values: end },
+      ], { easing: 'cubic', channels: { tiltAzimuth: 'angle', barrelRotation: 'angle' } }));
+      transport.play();
+      return cancel;
+    }, ANIMATION.startDelayMs);
+  }
+
 
   // ── Helpers ────────────────────────────────────────────────────────────────
 
   function toggleFlyout(name) {
     openFlyout = openFlyout === name ? null : name;
-  }
-
-  /**
-   * Generic single-parameter animation used by altitude / azimuth / barrel buttons.
-   * @param {{ start: number, end: number, angular?: boolean,
-   *           apply: (value: number) => void }} opts
-   */
-  function runParamAnim({ start, end, angular = false, apply }) {
-    openFlyout = null;
-    playback.start(() => {
-      apply(start);
-      return runParameterAnimation(sim, ANIMATION.durationMs, (eased) => {
-        const value = angular
-          ? sim.interpolateAngle(start, end, eased)
-          : start + (end - start) * eased;
-        apply(value);
-      });
-    }, ANIMATION.startDelayMs);
   }
 
   // ── Mount ──────────────────────────────────────────────────────────────────
@@ -195,7 +209,9 @@
 
     sim.onPenInteraction = playback.cancel;
     // Capture user edits before bindings/setters; animation writes emit no DOM events.
-    const cancelOnEdit = () => playback.cancel();
+    const cancelOnEdit = event => {
+      if (!event.target.closest?.('[data-playback-controls]')) playback.cancel();
+    };
     const appElement = viewer.parentElement;
     appElement.addEventListener('input', cancelOnEdit, true);
     appElement.addEventListener('change', cancelOnEdit, true);
@@ -220,6 +236,7 @@
 
     return () => {
       playback.dispose();
+      transport.dispose();
       clearTimeout(exportStatusTimer);
       sim.onPenInteraction = null;
       viewer.removeEventListener('tabletPositionChanged', onTabletPosition);
@@ -329,78 +346,20 @@
     sim.setTiltAzimuth(demo.tiltAzimuth);
   }
 
-  // ── Anim all ───────────────────────────────────────────────────────────────
-
-  function runAnimAll() {
-    openFlyout = null;
-    playback.start(() => {
-      showAltitude = showAzimuth = showBarrel = true;
-      sim.setAltitudeAnnotationsVisible(true);
-      sim.setAzimuthAnnotationsVisible(true);
-      sim.setBarrelAnnotationsVisible(true);
-
-      const d = sim.reset();
-      distance = d.distance; tiltAltitude = d.tiltAltitude; tiltAzimuth = d.tiltAzimuth;
-      barrelRotation = d.barrelRotation; tabletX = d.tabletX; tabletY = d.tabletY;
-      sim.setDistance(d.distance); sim.setTiltAltitude(d.tiltAltitude);
-      sim.setTiltAzimuth(d.tiltAzimuth); sim.setBarrelRotation(d.barrelRotation);
-      sim.setTabletPositionX(d.tabletX); sim.setTabletPositionY(d.tabletY);
-
-      return sim.animateToDemo((current) => {
-        distance = current.distance;
-        tiltAltitude = current.tiltAltitude;
-        tiltAzimuth = current.tiltAzimuth;
-        barrelRotation = current.barrelRotation;
-        tabletX = current.tabletX;
-        tabletY = current.tabletY;
-      });
-    }, ANIMATION.startDelayMs);
-  }
-
-  // ── Individual animations ──────────────────────────────────────────────────
-
+  // Authored clips retain the existing endpoints and cubic easing.
+  function runAnimAll() { startClip({ ...DEFAULT_PEN }, { ...DEMO_POSE }, true); }
   function runAnimAltitude() {
-    const curAzimuth = tiltAzimuth;
-    runParamAnim({
-      start: 0,
-      end: ANIMATION.altitudeEnd,
-      apply: (value) => {
-        tiltAltitude = value;
-        tiltAzimuth = curAzimuth;
-        sim.setTiltAltitude(tiltAltitude);
-        sim.setTiltAzimuth(curAzimuth);
-      },
-    });
+    const pose = currentPose();
+    startClip({ ...pose, tiltAltitude: 0 }, { ...pose, tiltAltitude: ANIMATION.altitudeEnd });
   }
-
   function runAnimAzimuth() {
-    const curAlt = tiltAltitude;
-    runParamAnim({
-      start: 0,
-      end: ANIMATION.azimuthEnd,
-      angular: true,
-      apply: (value) => {
-        tiltAltitude = curAlt;
-        tiltAzimuth = value;
-        sim.setTiltAltitude(curAlt);
-        sim.setTiltAzimuth(tiltAzimuth);
-      },
-    });
+    const pose = currentPose();
+    startClip({ ...pose, tiltAzimuth: 0 }, { ...pose, tiltAzimuth: ANIMATION.azimuthEnd });
   }
-
   function runAnimBarrel() {
-    runParamAnim({
-      start: 0,
-      end: ANIMATION.barrelEnd,
-      angular: true,
-      apply: (value) => {
-        barrelRotation = value;
-        sim.setBarrelRotation(barrelRotation);
-      },
-    });
+    const pose = currentPose();
+    startClip({ ...pose, barrelRotation: 0 }, { ...pose, barrelRotation: ANIMATION.barrelEnd });
   }
-
-  // ── Keyboard ───────────────────────────────────────────────────────────────
 
   function handleKeyDown(e) {
     if (e.key === 'Escape') openFlyout = null;
@@ -423,6 +382,7 @@
   <button class="action-btn" onclick={runAnimAltitude}>Anim Tilt Altitude</button>
   <button class="action-btn" onclick={runAnimAzimuth}>Anim Tilt Azimuth</button>
   <button class="action-btn" onclick={runAnimBarrel}>Anim Barrel</button>
+  <PlaybackControls {transport} status={playbackStatus} />
 {/snippet}
 
 {#snippet penAnnTab()}

@@ -176,6 +176,21 @@ export class Pen3DSim {
         this.updatePenTransform(this.distance, this.tiltAltitude, this.tiltAzimuth, this.barrelRotation);
     }
 
+    // Commit a complete teaching pose before refreshing any scene nodes.
+    setPose(pose) {
+        const keys = ['distance', 'tiltAltitude', 'tiltAzimuth', 'barrelRotation', 'tabletX', 'tabletY'];
+        const next = Object.fromEntries(keys.map(key => {
+            if (!Number.isFinite(pose[key])) throw new RangeError(`Invalid pose ${key}`);
+            return [key, clampValue(pose[key], PEN_RANGES[key].min, PEN_RANGES[key].max)];
+        }));
+        if (this.disposed) return next;
+        Object.assign(this, { distance: next.distance, tiltAltitude: next.tiltAltitude,
+            tiltAzimuth: next.tiltAzimuth, barrelRotation: next.barrelRotation,
+            tabletOffsetX: next.tabletX, tabletOffsetY: next.tabletY });
+        this._refreshPen();
+        return next;
+    }
+
     _tiltResult() {
         return {
             shouldEnableAzimuth: this.tiltAltitude !== 0,

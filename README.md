@@ -32,6 +32,7 @@ npm audit --audit-level=moderate # include development/build dependencies
 - Map **tablet coordinates** to a screen cursor (external monitor or pen-display mode)
 - Explore **pointer-tracking** behaviours: offset, tilt compensation, scaling, edge attraction
 - Export crisp **1080p / 4K** PNGs for docs and teaching
+- Pause, seek, step, and loop demonstrations with [deterministic playback](docs/PLAYBACK.md)
 
 ## Documentation
 
