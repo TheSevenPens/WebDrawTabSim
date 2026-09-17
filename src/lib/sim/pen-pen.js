@@ -308,7 +308,7 @@ Object.assign(Pen3DSim.prototype, {
         this.penLinePositions[3] = this.penTopSurfaceBelow.x;
         this.penLinePositions[4] = this.penTopSurfaceBelow.y;
         this.penLinePositions[5] = this.penTopSurfaceBelow.z;
-        this.penLine.visible = (altitude !== 0);
+        this.penLine.visible = this.showPenTopLine && altitude !== 0;
 
         this.penTipWorld.copy(this.penTipLocal).applyMatrix4(this.penGroup.matrixWorld);
         this.penTipSurfaceBelow.set(this.penTipWorld.x, worldSurfaceY, this.penTipWorld.z);

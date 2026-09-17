@@ -9,11 +9,11 @@ How to operate the simulator. For term definitions, see [CONCEPTS.md](./CONCEPTS
 | Orbit | Left-drag on the viewer |
 | Zoom | Scroll wheel — fixed **20 mm** steps (same as the Cam Dist buttons); closest distance is **20 mm** |
 | Pan | Restricted — orbit target stays on the ground plane (`screenSpacePanning` off; polar angle capped at horizon) |
-| Move the pen | Hold **Space** and drag on the viewer (OrbitControls disabled while Space is held) |
+| Move the pen | Focus the viewer (click or Tab), then hold **Space** and left-drag |
 
 The camera can never drop below the tablet surface: the polar angle is capped at the horizon and the orbit target is kept at/above the surface.
 
-Space+drag maps screen pixels to tablet millimetres using **Mouse drag sensitivity** (Pointer tracking flyout).
+Space+drag maps screen pixels to tablet millimetres using **Mouse drag sensitivity** (Pointer tracking flyout). It also works while hovering the viewer if no control has focus. Space on a focused button or input retains its normal behavior. Releasing the pointer or Space, cancelling capture, or leaving the window restores camera controls. Press Space again for a new drag.
 
 The left panel is grouped into collapsible headers: **Pen**, **Mapping**, **Pointer**, **Camera**, **Tablet**, **Animations**, **Other**.
 
@@ -75,7 +75,7 @@ Collapsible left-panel section (not a flyout).
 | **Anim Tilt Azimuth** | Sweep azimuth 0→242° |
 | **Anim Barrel** | Sweep barrel 0→318° |
 
-Demo and Anim Rot all share `DEMO_POSE` in `src/lib/sim/config.js`; the individual sweeps' end angles (`ANIMATION.azimuthEnd`/`barrelEnd`/`altitudeEnd`) are kept equal to it. Starting a new parameter animation cancels the previous one.
+Demo and Anim Rot all share `DEMO_POSE` in `src/lib/sim/config.js`; the individual sweeps' end angles (`ANIMATION.azimuthEnd`/`barrelEnd`/`altitudeEnd`) are kept equal to it. Starting any animation cancels the previous animation, including a pending delayed start. Reset, Demo, editing a field/select/checkbox, or beginning a pen drag cancels playback. Camera orbit and camera buttons can still be used while an animation runs.
 
 ## Other
 

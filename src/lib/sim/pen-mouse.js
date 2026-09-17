@@ -1,104 +1,122 @@
 import * as THREE from 'three';
 import { Pen3DSim } from './Pen3DSim.js';
 
-// pen-mouse.js — Spacebar + mouse drag control for pen position
-// Extends Pen3DSim.prototype (must be loaded after Pen3DSim.js)
-
+// Viewport-scoped Space + pointer drag; document listeners only release/recover
+// an interaction owned by this canvas and never consume Space on other controls.
 Object.assign(Pen3DSim.prototype, {
-
     initMouseControl() {
+        const canvas = this.renderer.domElement;
+        canvas.tabIndex = 0;
+        canvas.setAttribute('aria-label', '3D tablet viewer. Hold Space and drag to move the pen.');
         this.spaceBarPressed = false;
-        this.lastMouseX = 0;
-        this.lastMouseY = 0;
         this.isDraggingPen = false;
+        this.penPointerId = null;
+        this.pointerOverViewer = false;
+        this.inputEvents = new AbortController();
+        const signal = this.inputEvents.signal;
+        const listen = (target, name, callback, options = {}) =>
+            target.addEventListener(name, callback, { ...options, signal });
 
-        document.addEventListener('keydown', (e) => this.handleKeyDown(e));
-        document.addEventListener('keyup',   (e) => this.handleKeyUp(e));
-
-        // Use capture phase to intercept before OrbitControls
-        this.renderer.domElement.addEventListener('mousedown',  (e) => this.handleMouseDown(e), true);
-        this.renderer.domElement.addEventListener('mousemove',  (e) => this.handleMouseMove(e), true);
-        this.renderer.domElement.addEventListener('mouseup',    (e) => this.handleMouseUp(e),   true);
-        this.renderer.domElement.addEventListener('mouseleave', (e) => this.handleMouseUp(e));
-        this.renderer.domElement.addEventListener('wheel', (e) => this.handleWheel(e), { passive: false });
+        listen(document, 'keydown', e => this.handleKeyDown(e));
+        listen(document, 'keyup', e => this.handleKeyUp(e));
+        listen(window, 'blur', () => this.resetPenInteraction());
+        listen(document, 'visibilitychange', () => {
+            if (document.hidden) this.resetPenInteraction();
+        });
+        listen(canvas, 'blur', () => this.resetPenInteraction());
+        listen(canvas, 'pointerenter', () => { this.pointerOverViewer = true; });
+        listen(canvas, 'pointerleave', () => {
+            this.pointerOverViewer = false;
+            if (!this.isDraggingPen) this.resetPenInteraction();
+        });
+        listen(canvas, 'pointerdown', e => this.handleMouseDown(e), { capture: true });
+        listen(canvas, 'pointermove', e => this.handleMouseMove(e), { capture: true });
+        listen(canvas, 'pointerup', e => this.handleMouseUp(e), { capture: true });
+        listen(canvas, 'pointercancel', e => this.handleMouseUp(e), { capture: true });
+        listen(canvas, 'lostpointercapture', e => {
+            if (e.pointerId === this.penPointerId) this.resetPenInteraction();
+        });
+        listen(canvas, 'wheel', e => this.handleWheel(e), { passive: false });
     },
 
-    // Fixed-step wheel zoom: 20 mm per notch, same as the camera distance
-    // buttons. Scroll up = closer, scroll down = farther.
+    disposeMouseControl() {
+        this.resetPenInteraction();
+        this.inputEvents?.abort();
+    },
+
+    resetPenInteraction() {
+        const canvas = this.renderer.domElement;
+        const pointerId = this.penPointerId;
+        this.penPointerId = null;
+        this.spaceBarPressed = false;
+        this.isDraggingPen = false;
+        canvas.style.cursor = '';
+        this.controls.enabled = true;
+        if (pointerId != null && canvas.hasPointerCapture(pointerId)) {
+            canvas.releasePointerCapture(pointerId);
+        }
+    },
+
     handleWheel(e) {
-        if (!this.controls.enabled) return;   // e.g. while space-dragging the pen
+        if (!this.controls.enabled) return;
         e.preventDefault();
         this.changeCameraDistance(e.deltaY > 0 ? 20 : -20);
     },
 
     handleKeyDown(e) {
-        if (e.code === 'Space' && !e.repeat) {
-            e.preventDefault();
-            this.spaceBarPressed = true;
-            this.controls.enabled = false;
-            this.renderer.domElement.style.cursor = 'move';
-        }
+        const canvas = this.renderer.domElement;
+        const inViewer = e.target === canvas ||
+            (e.target === document.body && this.pointerOverViewer);
+        if (e.code !== 'Space' || e.repeat || e.defaultPrevented || e.isComposing ||
+            e.ctrlKey || e.metaKey || e.altKey || !inViewer) return;
+        e.preventDefault();
+        this.spaceBarPressed = true;
+        this.controls.enabled = false;
+        canvas.style.cursor = 'move';
     },
 
     handleKeyUp(e) {
-        if (e.code === 'Space') {
+        if (e.code === 'Space' && this.spaceBarPressed) {
             e.preventDefault();
-            this.spaceBarPressed = false;
-            this.isDraggingPen = false;
-            this.renderer.domElement.style.cursor = '';
-            this.controls.enabled = true;
+            this.resetPenInteraction();
         }
     },
 
     handleMouseDown(e) {
-        if (this.spaceBarPressed) {
-            e.preventDefault();
-            e.stopPropagation();
-            this.isDraggingPen = true;
-            const rect = this.renderer.domElement.getBoundingClientRect();
-            this.lastMouseX = e.clientX - rect.left;
-            this.lastMouseY = e.clientY - rect.top;
-            this.renderer.domElement.style.cursor = 'move';
-            this.controls.enabled = false;
+        const canvas = this.renderer.domElement;
+        if (!this.spaceBarPressed) {
+            canvas.focus({ preventScroll: true });
+            return;
         }
+        if (e.button !== 0 || this.penPointerId != null) return;
+        e.preventDefault();
+        e.stopImmediatePropagation();
+        canvas.focus({ preventScroll: true });
+        this.onPenInteraction?.(); // Cancel playback before changing the pose.
+        this.isDraggingPen = true;
+        this.penPointerId = e.pointerId;
+        this.lastMouseX = e.clientX;
+        this.lastMouseY = e.clientY;
+        canvas.setPointerCapture(e.pointerId);
     },
 
     handleMouseMove(e) {
-        if (this.isDraggingPen && this.spaceBarPressed) {
-            e.preventDefault();
-            e.stopPropagation();
-            const rect = this.renderer.domElement.getBoundingClientRect();
-            const currentMouseX = e.clientX - rect.left;
-            const currentMouseY = e.clientY - rect.top;
-
-            const deltaX = currentMouseX - this.lastMouseX;
-            const deltaY = currentMouseY - this.lastMouseY;
-
-            // Map screen pixels to tablet inches via configurable sensitivity
-            const pixelsPerInch = this.mouseSensitivity;
-            const newTabletX = this.tabletOffsetX + deltaX * pixelsPerInch;
-            const newTabletY = this.tabletOffsetY + deltaY * pixelsPerInch;
-
-            this.setTabletPositionX(THREE.MathUtils.clamp(newTabletX, 0, this.tabletWidth));
-            this.setTabletPositionY(THREE.MathUtils.clamp(newTabletY, 0, this.tabletDepth));
-
-            this.lastMouseX = currentMouseX;
-            this.lastMouseY = currentMouseY;
-        } else if (this.spaceBarPressed) {
-            this.renderer.domElement.style.cursor = 'move';
-        }
+        if (!this.isDraggingPen || e.pointerId !== this.penPointerId) return;
+        e.preventDefault();
+        e.stopImmediatePropagation();
+        const mmPerPixel = this.mouseSensitivity;
+        const x = this.tabletOffsetX + (e.clientX - this.lastMouseX) * mmPerPixel;
+        const y = this.tabletOffsetY + (e.clientY - this.lastMouseY) * mmPerPixel;
+        this.setTabletPositionX(THREE.MathUtils.clamp(x, 0, this.tabletWidth));
+        this.setTabletPositionY(THREE.MathUtils.clamp(y, 0, this.tabletDepth));
+        this.lastMouseX = e.clientX;
+        this.lastMouseY = e.clientY;
     },
 
     handleMouseUp(e) {
-        if (this.isDraggingPen && this.spaceBarPressed) {
-            e.preventDefault();
-            e.stopPropagation();
-        }
-        this.isDraggingPen = false;
-        if (!this.spaceBarPressed) {
-            this.renderer.domElement.style.cursor = '';
-            this.controls.enabled = true;
-        }
+        if (e.pointerId !== this.penPointerId) return;
+        e.preventDefault();
+        e.stopImmediatePropagation();
+        this.resetPenInteraction();
     },
-
 });

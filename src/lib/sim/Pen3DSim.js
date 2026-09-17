@@ -40,6 +40,7 @@ export class Pen3DSim {
         this.showBarrelAnnotations = false;
         this.showTiltXAnnotations = false;
         this.showTiltYAnnotations = false;
+        this.showPenTopLine = true;
         this.cursorRotation = CURSOR.rotation;
         this.cursorTipRotationY = CURSOR.tipRotationY;
         this.cursorOffsetX = POINTER_DEFAULTS.cursorOffsetX;
@@ -58,6 +59,7 @@ export class Pen3DSim {
         this.penBodyFormat = 'checkerboard';   // 'checkerboard' | 'solid'
         this.cursorMode = 'mouse';   // 'mouse' | 'crosshairs' | 'none'
         this.onCameraUpdate = null;
+        this.onPenInteraction = null;
         this.viewportAspect = 16 / 9;   // target render aspect (width / height)
 
         // Constants (tablet coordinate dimensions)
@@ -292,7 +294,8 @@ export class Pen3DSim {
 
     // The yellow dashed line dropping from the pen top down to the surface.
     setPenTopLineVisible(visible) {
-        if (this.penLine) this.penLine.visible = visible;
+        this.showPenTopLine = !!visible;
+        if (this.penLine) this.penLine.visible = this.showPenTopLine && this.tiltAltitude !== 0;
     }
 
     // The white dashed line from the pen tip along the pen axis to the surface.
@@ -588,8 +591,10 @@ export class Pen3DSim {
         const duration = ANIMATION.durationMs;
         const startTime = performance.now();
         let frameId = null;
+        let cancelled = false;
 
         const tick = (now) => {
+            if (cancelled) return;
             const progress = Math.min((now - startTime) / duration, 1);
             const eased    = this.easeInOutCubic(progress);
             const current = {
@@ -611,11 +616,11 @@ export class Pen3DSim {
             this.updatePenTransform(current.distance, current.tiltAltitude, current.tiltAzimuth, current.barrelRotation);
             if (onProgress) onProgress(current, progress);
 
-            if (progress < 1) frameId = requestAnimationFrame(tick);
+            if (!cancelled && progress < 1) frameId = requestAnimationFrame(tick);
             else frameId = null;
         };
 
         frameId = requestAnimationFrame(tick);
-        return () => { if (frameId !== null) { cancelAnimationFrame(frameId); frameId = null; } };
+        return () => { cancelled = true; if (frameId !== null) { cancelAnimationFrame(frameId); frameId = null; } };
     }
 }

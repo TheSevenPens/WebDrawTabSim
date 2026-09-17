@@ -8,11 +8,13 @@
 export function runParameterAnimation(sim, duration, onFrame) {
     const startTime = performance.now();
     let frameId = null;
+    let cancelled = false;
 
     const tick = (now) => {
+        if (cancelled) return;
         const progress = Math.min((now - startTime) / duration, 1);
         onFrame(sim.easeInOutCubic(progress), progress);
-        if (progress < 1) {
+        if (!cancelled && progress < 1) {
             frameId = requestAnimationFrame(tick);
         } else {
             frameId = null;
@@ -20,5 +22,5 @@ export function runParameterAnimation(sim, duration, onFrame) {
     };
 
     frameId = requestAnimationFrame(tick);
-    return () => { if (frameId !== null) { cancelAnimationFrame(frameId); frameId = null; } };
+    return () => { cancelled = true; if (frameId !== null) { cancelAnimationFrame(frameId); frameId = null; } };
 }

@@ -1,4 +1,5 @@
 <script>
+  import { normalizeNumber } from './number-input.js';
   let { label = '', title = '', value = $bindable(0), min = 0, max = 1, step = 1, unit = '', decimals = 2, disabled = false, inline = false, oninput } = $props();
 
   const id = `slider-${Math.random().toString(36).slice(2)}`;
@@ -18,7 +19,7 @@
   function onNumberInput(e) {
     text = e.target.value;
     const parsed = parseFloat(text);
-    if (!isNaN(parsed)) {
+    if (Number.isFinite(parsed)) {
       value = clamp(parsed);
       oninput?.();
     }
@@ -32,7 +33,7 @@
   function onNumberBlur() {
     focused = false;
     // Normalize to a clamped, rounded value and refresh the display.
-    const rounded = clamp(parseFloat(Number(value).toFixed(decimals)) || min);
+    const rounded = normalizeNumber(value, min, max, decimals);
     if (rounded !== value) { value = rounded; oninput?.(); }
     text = Number(value).toFixed(decimals);
   }
@@ -48,6 +49,7 @@
     <input
       class="slider-value-input"
       type="number"
+      aria-label={title || label}
       {min}
       {max}
       {step}

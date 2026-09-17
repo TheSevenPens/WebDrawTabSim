@@ -5,6 +5,7 @@
   import CursorModeControl from './lib/CursorModeControl.svelte';
   import PointerTrackingSettings from './lib/PointerTrackingSettings.svelte';
   import CheckboxControl from './lib/CheckboxControl.svelte';
+  import { createPlaybackController } from './lib/sim/playback.js';
   import { runParameterAnimation } from './lib/sim/animations.js';
   import { DEFAULT_PEN, DEMO_POSE, POINTER_DEFAULTS, ANIMATION, EXPORT, SCALE } from './lib/sim/config.js';
 
@@ -19,7 +20,7 @@
   let tiltAltitude   = $state(0);
   let tiltAzimuth    = $state(0);
   let barrelRotation = $state(0);
-  let azimuthDisabled = $state(true);
+  let azimuthDisabled = $derived(tiltAltitude === 0);
 
   // ── Annotation / display state ─────────────────────────────────────────────
   let showAltitude     = $state(false);
@@ -136,15 +137,10 @@
     }
   }
 
-  // ── Animation cancel handles ───────────────────────────────────────────────
-  let cancelMainAnimation = null;
-  let cancelParamAnimation = null;
+  // ── Playback ownership ───────────────────────────────────────────────
+  const playback = createPlaybackController();
 
   // ── Helpers ────────────────────────────────────────────────────────────────
-
-  function updateAzimuthState() {
-    azimuthDisabled = tiltAltitude === 0;
-  }
 
   function toggleFlyout(name) {
     openFlyout = openFlyout === name ? null : name;
@@ -157,15 +153,13 @@
    */
   function runParamAnim({ start, end, angular = false, apply }) {
     openFlyout = null;
-    if (cancelParamAnimation) cancelParamAnimation();
-    setTimeout(() => {
+    playback.start(() => {
       apply(start);
-      cancelParamAnimation = runParameterAnimation(sim, ANIMATION.durationMs, (eased, progress) => {
+      return runParameterAnimation(sim, ANIMATION.durationMs, (eased) => {
         const value = angular
           ? sim.interpolateAngle(start, end, eased)
           : start + (end - start) * eased;
         apply(value);
-        if (progress >= 1) cancelParamAnimation = null;
       });
     }, ANIMATION.startDelayMs);
   }
@@ -198,11 +192,19 @@
     sim.setAxisMarkersVisible(showAxis);
     sim.setMonitorVisible(showMonitor);
 
+    sim.onPenInteraction = playback.cancel;
+    // Capture user edits before bindings/setters; animation writes emit no DOM events.
+    const cancelOnEdit = () => playback.cancel();
+    const appElement = viewer.parentElement;
+    appElement.addEventListener('input', cancelOnEdit, true);
+    appElement.addEventListener('change', cancelOnEdit, true);
+
     // Sync slider values when mouse-drag moves the pen
-    viewer.addEventListener('tabletPositionChanged', (e) => {
+    const onTabletPosition = (e) => {
       tabletX = e.detail.x;
       tabletY = e.detail.y;
-    });
+    };
+    viewer.addEventListener('tabletPositionChanged', onTabletPosition);
 
     // Click-outside closes flyout
     const onDocClick = (e) => {
@@ -215,7 +217,16 @@
     };
     document.addEventListener('click', onDocClick);
 
-    return () => document.removeEventListener('click', onDocClick);
+    return () => {
+      playback.dispose();
+      clearTimeout(exportStatusTimer);
+      sim.onPenInteraction = null;
+      sim.disposeMouseControl();
+      viewer.removeEventListener('tabletPositionChanged', onTabletPosition);
+      appElement.removeEventListener('input', cancelOnEdit, true);
+      appElement.removeEventListener('change', cancelOnEdit, true);
+      document.removeEventListener('click', onDocClick);
+    };
   });
 
   // ── Slider handlers ────────────────────────────────────────────────────────
@@ -226,7 +237,6 @@
 
   function onAltitude() {
     sim.setTiltAltitude(tiltAltitude);
-    updateAzimuthState();
   }
 
   function onAzimuth() {
@@ -276,6 +286,7 @@
   // ── Reset ──────────────────────────────────────────────────────────────────
 
   function resetPen() {
+    playback.cancel();
     const d = sim.reset();
     distance = d.distance;
     tiltAltitude = d.tiltAltitude;
@@ -283,7 +294,6 @@
     barrelRotation = d.barrelRotation;
     tabletX = d.tabletX;
     tabletY = d.tabletY;
-    updateAzimuthState();
     sim.setDistance(d.distance);
     sim.setTiltAltitude(d.tiltAltitude);
     sim.setTiltAzimuth(d.tiltAzimuth);
@@ -295,6 +305,7 @@
   // ── Demo ───────────────────────────────────────────────────────────────────
 
   function runDemo() {
+    playback.cancel();
     openFlyout = null;
     const demo = { ...DEMO_POSE };
     distance = demo.distance;
@@ -304,7 +315,6 @@
     tabletX = demo.tabletX;
     tabletY = demo.tabletY;
     showAltitude = showAzimuth = showTiltX = showTiltY = showBarrel = true;
-    updateAzimuthState();
     sim.setDistance(demo.distance);
     sim.setTiltAltitude(demo.tiltAltitude);
     sim.setBarrelRotation(demo.barrelRotation);
@@ -322,8 +332,7 @@
 
   function runAnimAll() {
     openFlyout = null;
-    if (cancelMainAnimation) cancelMainAnimation();
-    setTimeout(() => {
+    playback.start(() => {
       showAltitude = showAzimuth = showBarrel = true;
       sim.setAltitudeAnnotationsVisible(true);
       sim.setAzimuthAnnotationsVisible(true);
@@ -332,20 +341,17 @@
       const d = sim.reset();
       distance = d.distance; tiltAltitude = d.tiltAltitude; tiltAzimuth = d.tiltAzimuth;
       barrelRotation = d.barrelRotation; tabletX = d.tabletX; tabletY = d.tabletY;
-      updateAzimuthState();
       sim.setDistance(d.distance); sim.setTiltAltitude(d.tiltAltitude);
       sim.setTiltAzimuth(d.tiltAzimuth); sim.setBarrelRotation(d.barrelRotation);
       sim.setTabletPositionX(d.tabletX); sim.setTabletPositionY(d.tabletY);
 
-      cancelMainAnimation = sim.animateToDemo((current, progress) => {
+      return sim.animateToDemo((current) => {
         distance = current.distance;
         tiltAltitude = current.tiltAltitude;
         tiltAzimuth = current.tiltAzimuth;
         barrelRotation = current.barrelRotation;
         tabletX = current.tabletX;
         tabletY = current.tabletY;
-        sim.setTiltAzimuth(current.tiltAzimuth);
-        if (progress >= 1) cancelMainAnimation = null;
       });
     }, ANIMATION.startDelayMs);
   }
@@ -362,7 +368,6 @@
         tiltAzimuth = curAzimuth;
         sim.setTiltAltitude(tiltAltitude);
         sim.setTiltAzimuth(curAzimuth);
-        updateAzimuthState();
       },
     });
   }
@@ -378,7 +383,6 @@
         tiltAzimuth = value;
         sim.setTiltAltitude(curAlt);
         sim.setTiltAzimuth(tiltAzimuth);
-        updateAzimuthState();
       },
     });
   }
