@@ -6,8 +6,11 @@ Live demo (GitHub Pages): **https://thesevenpens.github.io/WebDrawTabSim/**
 
 ## Quick start
 
+Use **Node 24.19.0** (`.nvmrc`) and **npm 11.6.2**. With nvm, run `nvm install` and `nvm use`; other Node version managers can use the version in `.nvmrc`. Then install the pinned npm version if necessary:
+
 ```bash
-npm install
+npm install --global npm@11.6.2
+npm ci --ignore-scripts --no-audit --no-fund
 npm run dev
 ```
 
@@ -16,8 +19,12 @@ Open the local URL Vite prints (base path is `/WebDrawTabSim/`), e.g. `http://lo
 ```bash
 npm run build    # production build → dist/
 npm run preview  # preview the production build
-npm test         # portable math, editing, playback, input, export, and lifecycle regressions (Node 20+)
+npm test         # portable math, editing, playback, input, export, and lifecycle regressions
+npm run check:math # strict JSDoc type checking for the portable numerical core
+npm audit --audit-level=moderate # include development/build dependencies
 ```
+
+`package-lock.json` is the sole dependency lockfile; Bun is no longer a supported install path. CI runs the same frozen install, math type check, tests, audit, and build on pull requests and `master`. Only a verified `master` build can deploy to Pages. See [build and verification](docs/BUILD.md) and the [dated dependency audit](docs/DEPENDENCIES-2026-09-17.md).
 
 ## What it does
 

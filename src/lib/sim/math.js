@@ -18,8 +18,15 @@
  * @property {number} edgeAttractionRange Millimetres inward from each edge.
  */
 
+/** @param {number} degrees */
 const radians = degrees => degrees * Math.PI / 180;
+/** @param {number} radians */
 const degrees = radians => radians * 180 / Math.PI;
+/**
+ * @param {number} value
+ * @param {number} min
+ * @param {number} max
+ */
 const clamp = (value, min, max) => Math.min(max, Math.max(min, value));
 
 /**
@@ -111,6 +118,10 @@ export function penOrientation(altitude, azimuth, barrel) {
  * @returns {{x: number, z: number}}
  */
 export function mapCursor(tip, tilt, mapping, tablet) {
+    /** @param {number} angle
+     * @param {number} positive
+     * @param {number} negative
+     */
     const compensation = (angle, positive, negative) => {
         const gain = angle > 0 ? positive : negative;
         return gain > 0 ? angle * gain * mapping.tiltCompensationScale : 0;
@@ -120,6 +131,9 @@ export function mapCursor(tip, tilt, mapping, tablet) {
         mapping.tiltCompensationPosTiltXValue, mapping.tiltCompensationNegTiltXValue);
     let z = tip.z * scale + mapping.cursorOffsetY + compensation(tilt.tiltY,
         mapping.tiltCompensationPosTiltYValue, mapping.tiltCompensationNegTiltYValue);
+    /** @param {number} position
+     * @param {number} dimension
+     */
     const edgeShift = (position, dimension) => {
         const range = mapping.edgeAttractionRange;
         if (mapping.edgeAttraction === 0 || range <= 0) return 0;

@@ -2,13 +2,13 @@
 
 ## Known Issues
 
-- **npm audit vulnerabilities**: 4 moderate-severity issues in the esbuild dependency chain (affects Vite dev server). Run `npm audit` for details.
+- **Dependency maintenance**: The 2026-09-17 toolchain update resolved the eight affected packages reported in the prior lockfile. The updated lockfile audited with zero reported vulnerabilities; this is a dated result, not a permanent guarantee. See [the dependency review](DEPENDENCIES-2026-09-17.md); CI audits all dependencies.
 - **No WebGL fallback**: If the browser lacks WebGL support, the constructor silently fails with no error message shown to the user.
 
 ## Code Quality
 
 - **Large annotation update path**: `updateAnnotations()` in `pen-annotations.js` is still sizable after the pose/cursor/annotation split; further extraction of per-annotation updaters would help.
-- **No tests**: No test files exist. Adding Vitest tests for the coordinate math and state logic would improve reliability.
+- **Broader test coverage**: There are 49 Node regression tests plus strict type checking of the portable math core. Image baselines, recorded-input fixtures, and cross-browser automation remain useful additions (#77).
 
 ## Suggested Features
 
