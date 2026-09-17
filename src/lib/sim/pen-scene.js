@@ -95,6 +95,7 @@ Object.assign(Pen3DSim.prototype, {
         // light outside the now-larger scene so the shadow frustum stays valid)
         const key = LIGHTING.key;
         const directionalLight = new THREE.DirectionalLight(key.color, key.intensity);
+        this.own(directionalLight.shadow);
         directionalLight.position.set(...key.position);
         directionalLight.castShadow = true;
         // Frustum wide enough to cover the whole desk (incl. its legs) so their

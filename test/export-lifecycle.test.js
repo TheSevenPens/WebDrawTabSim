@@ -1,0 +1,236 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import * as THREE from 'three';
+import { Pen3DSim } from '../src/lib/sim/index.js';
+import { ResourceScope } from '../src/lib/sim/resources.js';
+import { pngBlob } from '../src/lib/sim/export.js';
+import { runParameterAnimation } from '../src/lib/sim/animations.js';
+
+globalThis.requestAnimationFrame ??= () => 1;
+globalThis.cancelAnimationFrame ??= () => {};
+
+function replaceProperty(t, target, key, value) {
+    const old = Object.getOwnPropertyDescriptor(target, key);
+    Object.defineProperty(target, key, { value, configurable: true, writable: true });
+    t.after(() => old ? Object.defineProperty(target, key, old) : delete target[key]);
+}
+
+globalThis.navigator ??= {};
+
+function renderer() {
+    return {
+        size: new THREE.Vector2(800, 450), ratio: 1.5,
+        viewport: new THREE.Vector4(2, 3, 796, 444), ratios: [], renders: 0,
+        domElement: { style: { width: '800px', height: '450px' }, remove() { this.removed = true; } },
+        shadowMap: {},
+        getContext: () => ({ isContextLost: () => false, MAX_VIEWPORT_DIMS: 1,
+            getParameter: key => key === 1 ? [4096, 4096] : 4096 }),
+        getSize(out) { return out.copy(this.size); },
+        getPixelRatio() { return this.ratio; },
+        getViewport(out) { return out.copy(this.viewport); },
+        setPixelRatio(ratio) { this.ratio = ratio; this.ratios.push(ratio); },
+        setSize(w, h, style) { this.size.set(w, h); this.viewport.set(0, 0, w, h); assert.notEqual(style, true); },
+        setViewport(value) { this.viewport.copy(value); },
+        render() { this.renders++; },
+        dispose() { this.disposals = (this.disposals ?? 0) + 1; },
+        forceContextLoss() { this.lost = true; },
+    };
+}
+
+function documentStub(t, context = {}) {
+    const ctx = new Proxy(context, { get: (target, key) => key in target ? target[key] : () => {} });
+    replaceProperty(t, globalThis, 'document', { createElement: () => ({ getContext: () => ctx }) });
+}
+// Node does not have document; define it so MockTracker can replace it.
+globalThis.document ??= {};
+
+function exportSim(t, context) {
+    documentStub(t, context);
+    return Object.assign(Object.create(Pen3DSim.prototype), {
+        renderer: renderer(), scene: new THREE.Scene(),
+        perspectiveCamera: new THREE.PerspectiveCamera(30, 16 / 9, 1, 1000),
+        orthographicCamera: new THREE.OrthographicCamera(-12, 16, 8, -6, 1, 1000),
+    });
+}
+
+for (const mode of ['perspectiveCamera', 'orthographicCamera']) {
+    for (const failure of ['none', 'render', 'copy', 'resize']) {
+        test(`${mode} export restores exact state after ${failure}`, t => {
+            const sim = exportSim(t, { drawImage() { if (failure === 'copy') throw new Error('copy failure'); } });
+            sim.camera = sim[mode];
+            sim.camera.zoom = 1.75;
+            sim.camera.updateProjectionMatrix();
+            const matrices = [sim.perspectiveCamera, sim.orthographicCamera].map(c => c.projectionMatrix.clone());
+            if (failure === 'resize') {
+                const setSize = sim.renderer.setSize;
+                sim.renderer.setSize = function(w, h, style) {
+                    setSize.call(this, w, h, style);
+                    if (w === 1600) throw new Error('resize failure');
+                };
+            }
+            sim.renderer.render = () => {
+                assert.equal(sim.perspectiveCamera.aspect, 2);
+                assert.equal(sim.orthographicCamera.right - sim.orthographicCamera.left, 28);
+                if (failure === 'render') throw new Error('render failure');
+            };
+            if (failure === 'none') {
+                const canvas = sim.renderToCanvas(1600, 800);
+                assert.equal(canvas.width, 1600);
+                assert.equal(canvas.height, 800);
+            } else assert.throws(() => sim.renderToCanvas(1600, 800), new RegExp(`${failure} failure`));
+            assert.deepEqual(sim.renderer.size.toArray(), [800, 450]);
+            assert.equal(sim.renderer.ratio, 1.5);
+            assert.deepEqual(sim.renderer.viewport.toArray(), [2, 3, 796, 444]);
+            assert.deepEqual(sim.renderer.domElement.style, { width: '800px', height: '450px' });
+            assert.equal(sim.camera.zoom, 1.75);
+            [sim.perspectiveCamera, sim.orthographicCamera].forEach((c, i) => assert.deepEqual(c.projectionMatrix, matrices[i]));
+        });
+    }
+}
+
+test('export validates dimensions and reduces supersampling to hardware limits', t => {
+    const sim = exportSim(t);
+    for (const dims of [[0, 20], [-1, 1], [NaN, 2], [1.5, 2], [Infinity, 2], [10000, 10000], [4097, 1]]) {
+        assert.throws(() => sim.renderToCanvas(...dims));
+    }
+    assert.equal(sim.renderer.ratios.length, 0);
+    sim.renderToCanvas(3840, 2160);
+    assert.deepEqual(sim.renderer.ratios, [1, 1.5]);
+});
+
+test('missing 2D context and lost graphics context produce actionable errors', t => {
+    const sim = exportSim(t);
+    t.mock.method(document, 'createElement', () => ({ getContext: () => null }));
+    assert.throws(() => sim.renderToCanvas(800, 450), /smaller size/);
+    sim.renderer.getContext = () => ({ isContextLost: () => true });
+    assert.throws(() => sim.renderToCanvas(800, 450), /Reload/);
+    assert.equal(sim.renderer.ratios.length, 0);
+});
+
+test('a supersampled rendering failure retries at native resolution', t => {
+    const sim = exportSim(t);
+    const attempts = [];
+    sim.renderer.render = () => {
+        attempts.push(sim.renderer.ratio);
+        if (sim.renderer.ratio > 1) throw new Error('allocation failed');
+    };
+    assert.equal(sim.renderToCanvas(1920, 1080).width, 1920);
+    assert.deepEqual(attempts, [2, 1]);
+    assert.equal(sim.renderer.ratio, 1.5);
+});
+
+test('PNG download uses requested dimensions and rejects an empty data URL', t => {
+    const sim = exportSim(t);
+    let clicked = false;
+    const link = { click() { clicked = true; } };
+    t.mock.method(document, 'createElement', () => link);
+    sim.renderToCanvas = (w, h) => {
+        assert.deepEqual([w, h], [1920, 1080]);
+        return { toDataURL: () => 'data:image/png;base64,test' };
+    };
+    sim.exportAsPNG();
+    assert.equal(link.download, 'Pen3DSim-1920x1080.png');
+    assert.equal(clicked, true);
+    sim.renderToCanvas = () => ({ toDataURL: () => 'data:,' });
+    assert.throws(() => sim.exportAsPNG(), /encoding failed/);
+});
+
+test('clipboard keeps PNG encoding inside the write gesture and propagates rejection', async t => {
+    const sim = exportSim(t);
+    const blob = new Blob(['png'], { type: 'image/png' });
+    sim.renderToCanvas = () => ({ toBlob: cb => cb(blob) });
+    globalThis.ClipboardItem ??= class {};
+    replaceProperty(t, globalThis, 'ClipboardItem', class { constructor(data) { this.data = data; } });
+    replaceProperty(t, navigator, 'clipboard', { write: async ([item]) => {
+        assert.equal(await item.data['image/png'], blob);
+    } });
+    await sim.copyPNGToClipboard();
+    t.mock.method(navigator.clipboard, 'write', async () => { throw new Error('permission denied'); });
+    await assert.rejects(sim.copyPNGToClipboard(), /permission denied/);
+});
+
+test('PNG encoder rejects null results and synchronous errors', async () => {
+    await assert.rejects(pngBlob({ toBlob: cb => cb(null) }), /encoding failed/);
+    await assert.rejects(pngBlob({ toBlob() { throw new Error('encoder error'); } }), /encoder error/);
+    const blob = new Blob(['png']);
+    assert.equal(await pngBlob({ toBlob: cb => cb(blob) }), blob);
+});
+
+class HeadlessSim extends Pen3DSim {
+    initRenderer() { this.renderer = renderer(); }
+    initControls() {
+        this.controls = { target: new THREE.Vector3(), update() {}, dispose() { this.disposed = true; },
+            getAzimuthalAngle: () => 0, getPolarAngle: () => 0 };
+    }
+    initMouseControl() {} // Real input teardown is covered in editing-playback.test.js.
+}
+
+test('repeated full scene creation/disposal owns detached and shared resources without affecting another instance', t => {
+    documentStub(t);
+    const queued = new Map(); let id = 0;
+    t.mock.method(globalThis, 'requestAnimationFrame', fn => { queued.set(++id, fn); return id; });
+    t.mock.method(globalThis, 'cancelAnimationFrame', id => queued.delete(id));
+    const viewer = { clientWidth: 800, clientHeight: 450 };
+    const survivor = new HeadlessSim(viewer);
+    let survivorDisposals = 0;
+    survivor.desktopTexture.addEventListener('dispose', () => survivorDisposals++);
+    for (let i = 0; i < 3; i++) {
+        const sim = new HeadlessSim(viewer);
+        assert.notEqual(sim.desktopTexture, survivor.desktopTexture);
+        assert.notEqual(sim.xArrow.line.geometry, survivor.xArrow.line.geometry);
+        const baseline = sim.resources.resources.size;
+        for (let n = 0; n < 20; n++) sim.setTiltAltitude(n + 1);
+        assert.ok(sim.resources.resources.size <= baseline + 5, 'replaced geometries must not accumulate');
+        let disposed = 0;
+        const resources = [...sim.resources.resources];
+        for (const resource of resources) {
+            const original = resource.dispose.bind(resource);
+            resource.dispose = () => { disposed++; original(); };
+        }
+        sim.animateToDemo(() => assert.fail('disposed animation ran'));
+        runParameterAnimation(sim, 1000, () => assert.fail('disposed animation ran'));
+        const stale = [...queued.values()].slice(1);
+        sim.dispose(); sim.dispose();
+        stale.forEach(fn => fn(performance.now()));
+        assert.equal(disposed, resources.length);
+        assert.equal(sim.resources.resources.size, 0);
+        assert.equal(sim.animations.size, 0);
+        assert.equal(sim.renderer.disposals, 1);
+        assert.equal(sim.renderer.domElement.removed, true);
+        assert.equal(sim.renderer.lost, true);
+        assert.equal(sim.controls.disposed, true);
+        assert.equal(queued.size, 1);
+        assert.equal(survivorDisposals, 0);
+        assert.throws(() => sim.renderToCanvas(800, 450), /disposed/);
+    }
+    survivor.dispose();
+    assert.equal(queued.size, 0);
+    assert.equal(survivorDisposals, 1);
+});
+
+test('constructor failure cleans up resources allocated before scene attachment', t => {
+    documentStub(t);
+    let failed;
+    class BrokenSim extends HeadlessSim {
+        initTablet() {
+            failed = this;
+            this.own(new THREE.BoxGeometry());
+            throw new Error('initialization failed');
+        }
+    }
+    assert.throws(() => new BrokenSim({ clientWidth: 800, clientHeight: 450 }), /initialization failed/);
+    assert.equal(failed.resources.resources.size, 0);
+    assert.equal(failed.disposed, true);
+    assert.equal(failed.renderer.disposals, 1);
+    assert.equal(failed.renderer.domElement.removed, true);
+});
+
+test('resource cleanup continues after a failing disposer', () => {
+    const scope = new ResourceScope(); let cleaned = false;
+    scope.own({ dispose() { throw new Error('failure'); } });
+    scope.own({ dispose() { cleaned = true; } });
+    assert.throws(() => scope.dispose(), AggregateError);
+    assert.equal(cleaned, true);
+    assert.equal(scope.resources.size, 0);
+    scope.dispose();
+});

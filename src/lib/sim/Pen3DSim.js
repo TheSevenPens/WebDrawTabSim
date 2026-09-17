@@ -1,5 +1,7 @@
 import * as THREE from 'three';
 import { TexturesFactory } from './textures.js';
+import { ResourceScope } from './resources.js';
+import { renderExport, pngBlob } from './export.js';
 import {
     TABLET, DEFAULT_PEN, DEMO_POSE, PEN_RANGES, POINTER_DEFAULTS,
     ANNOTATION, CURSOR, EXPORT, ANIMATION, SCENE, SCALE, clampValue,
@@ -28,6 +30,10 @@ import {
 export class Pen3DSim {
     constructor(viewerElement) {
         this.viewer = viewerElement;
+        this.resources = new ResourceScope();
+        this.disposed = false;
+        this.renderFrame = null;
+        this.animations = new Set();
 
         // Pen state — all values in tablet coordinates
         this.tiltAltitude = DEFAULT_PEN.tiltAltitude;
@@ -73,35 +79,77 @@ export class Pen3DSim {
         this.tiltAltitudeColor = ANNOTATION.tiltAltitudeColor;
 
         // Build scene (methods from companion files via Object.assign)
-        this.initScene();
-        this.initCameras();
-        this.initRenderer();
-        this.initControls();
-        this.initLighting();
-        this.initDesk();
-        this.initRoom();
-        this.initTablet();
-        this.initMonitor();
-        this.initPen();
-        this.initAnnotations();
-        this.initAxisMarkers();
+        try {
+            this.initScene();
+            this.initCameras();
+            this.initRenderer();
+            this.initControls();
+            this.initLighting();
+            this.initDesk();
+            this.initRoom();
+            this.initTablet();
+            this.initMonitor();
+            this.initPen();
+            this.initAnnotations();
+            this.initAxisMarkers();
 
-        // Size the canvas to the target aspect within the viewer before drawing.
-        this.onResize();
+            // Size the canvas to the target aspect within the viewer before drawing.
+            this.onResize();
 
-        // Start render loop
-        this.animate();
+            // Initial pen position
+            this.updatePenTransform(this.distance, this.tiltAltitude, this.tiltAzimuth, this.barrelRotation);
 
-        // Initial pen position
-        this.updatePenTransform(this.distance, this.tiltAltitude, this.tiltAzimuth, this.barrelRotation);
+            // Spacebar + mouse drag
+            this.initMouseControl();
+            this.animate();
+        } catch (error) {
+            try { this.dispose(); } catch (cleanupError) { console.error(cleanupError); }
+            throw error;
+        }
+    }
 
-        // Spacebar + mouse drag
-        this.initMouseControl();
+    own(resource) {
+        // Lazily initialize for small standalone method consumers as well.
+        this.resources ??= new ResourceScope();
+        return this.resources.own(resource);
+    }
+
+    getDesktopTexture() {
+        return this.desktopTexture ??= this.own(TexturesFactory.createDesktopTexture());
+    }
+
+    trackAnimation(cancel) {
+        this.animations ??= new Set();
+        if (this.disposed) cancel();
+        else this.animations.add(cancel);
+    }
+
+    dispose() {
+        if (this.disposed) return;
+        this.disposed = true;
+        if (this.renderFrame != null) cancelAnimationFrame(this.renderFrame);
+        this.renderFrame = null;
+        this.onCameraUpdate = null;
+        this.onPenInteraction = null;
+        const errors = [];
+        const clean = fn => { try { fn(); } catch (error) { errors.push(error); } };
+        for (const cancel of this.animations ?? []) clean(cancel);
+        this.animations?.clear();
+        clean(() => this.disposeMouseControl?.());
+        clean(() => this.controls?.dispose());
+        clean(() => this.resources?.dispose());
+        clean(() => this.scene?.clear());
+        clean(() => this.renderer?.dispose());
+        clean(() => this.renderer?.forceContextLoss());
+        clean(() => this.renderer?.domElement.remove());
+        if (errors.length) throw new AggregateError(errors, 'Simulator cleanup failed');
     }
 
     animate() {
+        if (this.disposed || this.renderFrame != null) return;
         const loop = () => {
-            requestAnimationFrame(loop);
+            if (this.disposed) return;
+            this.renderFrame = requestAnimationFrame(loop);
             // Keep the orbit target on/above the tablet surface so that, with
             // maxPolarAngle = 90°, the camera can never drop below the surface.
             if (this.controls.target.y < this.yOffset) this.controls.target.y = this.yOffset;
@@ -340,9 +388,9 @@ export class Pen3DSim {
             if (this.tabletCheckerboardTexture) {
                 this.tabletCheckerboardTexture.dispose();
             }
-            this.tabletCheckerboardTexture = TexturesFactory.createTabletCheckerboardTexture(
+            this.tabletCheckerboardTexture = this.own(TexturesFactory.createTabletCheckerboardTexture(
                 this.tabletWidth, this.tabletDepth, c1, c2
-            );
+            ));
             this.tabletMaterial.map = this.tabletCheckerboardTexture;
             this.tabletMaterial.roughness = 0.92;
             this.tabletMaterial.metalness = 0.0;
@@ -499,25 +547,7 @@ export class Pen3DSim {
     // Render the scene at the requested resolution (supersampled) and return a
     // 2D canvas holding the downsampled image. Restores the live renderer size.
     renderToCanvas(width, height) {
-        const origPixelRatio = this.renderer.getPixelRatio();
-
-        this.renderer.setPixelRatio(EXPORT.supersample);
-        this.renderer.setSize(width, height);
-        this.perspectiveCamera.aspect = width / height;
-        this.perspectiveCamera.updateProjectionMatrix();
-        this.renderer.render(this.scene, this.camera);
-
-        const canvas = document.createElement('canvas');
-        canvas.width = width;
-        canvas.height = height;
-        const ctx = canvas.getContext('2d');
-        ctx.drawImage(this.renderer.domElement, 0, 0, width, height);
-
-        // Restore the live render size + aspect (canvas fitted to the viewer).
-        this.renderer.setPixelRatio(origPixelRatio);
-        this.onResize();
-
-        return canvas;
+        return renderExport(this, width, height);
     }
 
     exportAsPNG(width = EXPORT.hd.width, height = EXPORT.hd.height) {
@@ -525,6 +555,7 @@ export class Pen3DSim {
         const link = document.createElement('a');
         link.download = `Pen3DSim-${width}x${height}.png`;
         link.href = canvas.toDataURL('image/png');
+        if (link.href === 'data:,') throw new Error('PNG encoding failed. Choose a smaller export size');
         link.click();
     }
 
@@ -536,8 +567,12 @@ export class Pen3DSim {
             throw new Error('Clipboard image copy is not supported in this browser');
         }
         const canvas = this.renderToCanvas(width, height);
+        const blob = pngBlob(canvas);
+        // A permission rejection may arrive before the encoder settles.
+        // Observe that rejection even when the browser never consumes the item.
+        blob.catch(() => {});
         const item = new ClipboardItem({
-            'image/png': new Promise((resolve) => canvas.toBlob(resolve, 'image/png')),
+            'image/png': blob,
         });
         await navigator.clipboard.write([item]);
     }
@@ -549,6 +584,7 @@ export class Pen3DSim {
     }
 
     onResize() {
+        if (this.disposed) return;
         const cw = this.viewer.clientWidth;
         const ch = this.viewer.clientHeight;
         const aspect = this.viewportAspect || (cw / ch);
@@ -593,8 +629,15 @@ export class Pen3DSim {
         let frameId = null;
         let cancelled = false;
 
+        const cancel = () => {
+            cancelled = true;
+            if (frameId !== null) cancelAnimationFrame(frameId);
+            frameId = null;
+            this.animations?.delete(cancel);
+        };
+        this.trackAnimation(cancel);
         const tick = (now) => {
-            if (cancelled) return;
+            if (cancelled || this.disposed) return;
             const progress = Math.min((now - startTime) / duration, 1);
             const eased    = this.easeInOutCubic(progress);
             const current = {
@@ -617,10 +660,10 @@ export class Pen3DSim {
             if (onProgress) onProgress(current, progress);
 
             if (!cancelled && progress < 1) frameId = requestAnimationFrame(tick);
-            else frameId = null;
+            else cancel();
         };
 
-        frameId = requestAnimationFrame(tick);
-        return () => { cancelled = true; if (frameId !== null) { cancelAnimationFrame(frameId); frameId = null; } };
+        if (!cancelled) frameId = requestAnimationFrame(tick);
+        return cancel;
     }
 }

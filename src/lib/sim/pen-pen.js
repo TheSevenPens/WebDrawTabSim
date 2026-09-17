@@ -63,8 +63,8 @@ Object.assign(Pen3DSim.prototype, {
         // share the pen's local +Y axis (nib at the bottom), so the existing
         // pose/tilt/barrel math is unaffected.
         const nib = new THREE.Mesh(
-            latheFromProfile(this.nibProfileFor(this.nibShape), segments),
-            MaterialsFactory.createPenNibMaterial()
+            this.own(latheFromProfile(this.nibProfileFor(this.nibShape), segments)),
+            this.own(MaterialsFactory.createPenNibMaterial())
         );
 
         // Body and eraser both carry a checkerboard wrap so barrel rotation is
@@ -72,7 +72,7 @@ Object.assign(Pen3DSim.prototype, {
         // the eraser's is scaled by its arc length relative to the body so the
         // checks stay the same size across the seam.
         const makeChecker = (repeatLength) => {
-            const tex = TexturesFactory.createCheckerboardTexture();
+            const tex = this.own(TexturesFactory.createCheckerboardTexture());
             tex.wrapS = THREE.RepeatWrapping;
             tex.wrapT = THREE.RepeatWrapping;
             tex.repeat.set(PEN_CHECKER.repeatAround, repeatLength);
@@ -80,24 +80,24 @@ Object.assign(Pen3DSim.prototype, {
         };
         const bodyArc = profileArcLength(PEN_PROFILE.body);
 
-        const bodyGeometry = latheFromProfile(PEN_PROFILE.body, segments);
+        const bodyGeometry = this.own(latheFromProfile(PEN_PROFILE.body, segments));
         remapLatheVByArcLength(bodyGeometry, PEN_PROFILE.body);
         const bodyChecker = makeChecker(PEN_CHECKER.repeatLength);
         const body = new THREE.Mesh(
             bodyGeometry,
-            MaterialsFactory.createPenBodyMaterial(bodyChecker)
+            this.own(MaterialsFactory.createPenBodyMaterial(bodyChecker))
         );
         // Kept so the body can switch between checkerboard and solid color.
         this.penBodyMaterial = body.material;
         this.penBodyCheckerTexture = bodyChecker;
 
-        const eraserGeometry = latheFromProfile(PEN_PROFILE.eraser, segments);
+        const eraserGeometry = this.own(latheFromProfile(PEN_PROFILE.eraser, segments));
         remapLatheVByArcLength(eraserGeometry, PEN_PROFILE.eraser);
         const eraserRepeatLength = PEN_CHECKER.repeatLength * (profileArcLength(PEN_PROFILE.eraser) / bodyArc);
         const eraserChecker = makeChecker(eraserRepeatLength);
         const eraser = new THREE.Mesh(
             eraserGeometry,
-            MaterialsFactory.createPenEraserMaterial(eraserChecker)
+            this.own(MaterialsFactory.createPenEraserMaterial(eraserChecker))
         );
         // Kept so the eraser checkerboard follows the body format toggle (see setPenBodyFormat).
         this.penEraserMaterial = eraser.material;
@@ -118,23 +118,23 @@ Object.assign(Pen3DSim.prototype, {
 
         // Dashed line: top of pen → tablet surface (world coords)
         this.penLinePositions = new Float32Array(6);
-        this.penLineGeometry = new THREE.BufferGeometry();
+        this.penLineGeometry = this.own(new THREE.BufferGeometry());
         this.penLineGeometry.setAttribute('position', new THREE.BufferAttribute(this.penLinePositions, 3));
-        this.penLine = new THREE.Line(this.penLineGeometry, MaterialsFactory.createDashedLineMaterial(0xffff00));
+        this.penLine = new THREE.Line(this.penLineGeometry, this.own(MaterialsFactory.createDashedLineMaterial(0xffff00)));
         this.scene.add(this.penLine);
 
         // Dashed line: pen tip → tablet surface (world coords)
         this.penTipLinePositions = new Float32Array(6);
-        this.penTipLineGeometry = new THREE.BufferGeometry();
+        this.penTipLineGeometry = this.own(new THREE.BufferGeometry());
         this.penTipLineGeometry.setAttribute('position', new THREE.BufferAttribute(this.penTipLinePositions, 3));
-        this.penTipLine = new THREE.Line(this.penTipLineGeometry, MaterialsFactory.createDashedLineMaterial(0xffff00));
+        this.penTipLine = new THREE.Line(this.penTipLineGeometry, this.own(MaterialsFactory.createDashedLineMaterial(0xffff00)));
         this.scene.add(this.penTipLine);
 
         // Dashed white line: pen axis → tablet surface (world coords)
         this.penAxisLinePositions = new Float32Array(6);
-        this.penAxisLineGeometry = new THREE.BufferGeometry();
+        this.penAxisLineGeometry = this.own(new THREE.BufferGeometry());
         this.penAxisLineGeometry.setAttribute('position', new THREE.BufferAttribute(this.penAxisLinePositions, 3));
-        this.penAxisLine = new THREE.Line(this.penAxisLineGeometry, MaterialsFactory.createDashedLineMaterial(0xffffff));
+        this.penAxisLine = new THREE.Line(this.penAxisLineGeometry, this.own(MaterialsFactory.createDashedLineMaterial(0xffffff)));
         this.scene.add(this.penAxisLine);
 
         // Cursor arrow + crosshair (only one is visible at a time; see setCursorMode)
@@ -168,7 +168,7 @@ Object.assign(Pen3DSim.prototype, {
         this.nibShape = shape;
         if (!this.penTipMesh) return;
         if (this.penTipMesh.geometry) this.penTipMesh.geometry.dispose();
-        this.penTipMesh.geometry = latheFromProfile(this.nibProfileFor(shape), PEN_MESH.latheSegments);
+        this.penTipMesh.geometry = this.own(latheFromProfile(this.nibProfileFor(shape), PEN_MESH.latheSegments));
         this.markShadowsDirty();   // nib silhouette changed
     },
 
@@ -196,6 +196,7 @@ Object.assign(Pen3DSim.prototype, {
 
     createCursorArrow() {
         const { mesh } = createCursorArrowMesh(CURSOR.tabletSize);
+        this.own(mesh);
 
         const toXZPlaneQuat = new THREE.Quaternion();
         toXZPlaneQuat.setFromAxisAngle(new THREE.Vector3(1, 0, 0), -Math.PI / 2);
@@ -221,6 +222,7 @@ Object.assign(Pen3DSim.prototype, {
 
     createCursorCrosshair() {
         const { mesh } = createCrosshairCursorMesh(CURSOR.tabletSize);
+        this.own(mesh);
         // Lay the XY-plane crosshair flat on the digitizer surface (XZ plane).
         mesh.rotation.x = -Math.PI / 2;
         mesh.position.set(0, this.yOffset, 0);

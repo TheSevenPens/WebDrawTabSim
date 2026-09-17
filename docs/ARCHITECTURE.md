@@ -130,7 +130,15 @@ Shared arrow geometry: `cursor-geometry.js`.
 
 ## PNG export
 
-Temporarily resizes the renderer to 1920×1080 or 3840×2160 with pixel ratio `EXPORT.supersample` (2). Draws the 2× buffer into a canvas at the target size (supersampled downsample), then restores the original size.
+`export.js` renders at the requested aspect for both perspective and orthographic cameras. It validates integer dimensions, limits output to 16,777,216 pixels and the drawing buffer to twice that pixel count, and checks graphics-device dimension limits. It normally uses `EXPORT.supersample` (2), reducing to 1 when necessary or retrying at 1 after a supersampled rendering failure. A `finally` block restores the exact renderer size, pixel ratio, viewport, and camera projection. CSS dimensions and camera zoom stay unchanged. Clipboard PNG encoding rejects null blobs explicitly.
+
+## Simulator lifetime
+
+Call `Pen3DSim.dispose()` when removing a viewer; Svelte's unmount callback does this after cancelling pending playback and removing app listeners. Disposal is idempotent and stops the render and animation RAFs, aborts input listeners, releases pointer capture, disposes OrbitControls and GPU resources, releases the WebGL context, and removes the canvas. Construction failure invokes the same cleanup.
+
+Register newly allocated geometry, material, texture, and shadow resources with `this.own(resource)` immediately. `ResourceScope` deduplicates shared resources and forgets dynamically replaced resources when their `dispose` event fires. This also owns textures while detached from materials. Desktop textures are shared within one simulator, not globally; ArrowHelper's global geometries are cloned per simulator before being owned. Do not reuse a simulator after disposal.
+
+`test/export-lifecycle.test.js` exercises real Three.js scene construction with a fake renderer, repeated disposal, independent viewers, construction failure, export errors, projection restoration, and encoding. These tests check resource ownership and scheduling, not GPU memory consumption; actual GPU behavior still requires browser testing.
 
 ---
 

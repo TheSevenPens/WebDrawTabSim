@@ -16,7 +16,7 @@ Open the local URL Vite prints (base path is `/WebDrawTabSim/`), e.g. `http://lo
 ```bash
 npm run build    # production build → dist/
 npm run preview  # preview the production build
-npm test         # focused editing, playback, and input regressions (Node 20+)
+npm test         # editing, playback, input, export, and lifecycle regressions (Node 20+)
 ```
 
 ## What it does

@@ -115,7 +115,9 @@ The **Export / Copy…** dropdown (Other section):
 | **Copy 1080p to clipboard** | Copy a 1080-tall PNG |
 | **Copy 4K to clipboard** | Copy a 2160-tall PNG |
 
-The width follows the selected viewport **Aspect** (e.g. 1920×1080 at 16:9, 1080×1080 at 1:1). Exports render at 2× internally, then downsample for sharper edges. Download filename: `Pen3DSim-{width}x{height}.png`.
+The width follows the selected viewport **Aspect** (e.g. 1920×1080 at 16:9, 1080×1080 at 1:1). Exports normally render at 2× internally, then downsample for sharper edges. If the graphics device cannot support that buffer, export uses native resolution; a failed supersampled render also retries at native resolution. Download filename: `Pen3DSim-{width}x{height}.png`.
+
+Export restores the live viewport and camera projection after success or failure. Oversized output, encoding failures, and denied clipboard permission display an error beside the controls. Clipboard copying requires browser permission.
 
 ## Reset
 

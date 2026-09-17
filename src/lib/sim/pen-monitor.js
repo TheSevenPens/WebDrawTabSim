@@ -1,6 +1,5 @@
 import * as THREE from 'three';
 import { MaterialsFactory } from './materials.js';
-import { TexturesFactory } from './textures.js';
 import { Pen3DSim } from './Pen3DSim.js';
 import { createCursorArrowMesh, createCrosshairCursorMesh } from './cursor-geometry.js';
 import { CURSOR, MONITOR } from './config.js';
@@ -34,16 +33,16 @@ Object.assign(Pen3DSim.prototype, {
         const neckCenterY  = baseHeight + neckHeight / 2;
         const bodyCenterY  = baseHeight + neckHeight + bezelHeight / 2;
 
-        const bezelMaterial  = MaterialsFactory.createMonitorBezelMaterial();
-        this.desktopTexture = TexturesFactory.getSharedDesktopTexture();
-        const screenMaterial = MaterialsFactory.createMonitorScreenMaterial(
+        const bezelMaterial  = this.own(MaterialsFactory.createMonitorBezelMaterial());
+        this.desktopTexture = this.getDesktopTexture();
+        const screenMaterial = this.own(MaterialsFactory.createMonitorScreenMaterial(
             this.desktopTexture
-        );
+        ));
 
         this.monitorGroup = new THREE.Group();
 
         const bodyMesh = new THREE.Mesh(
-            new THREE.BoxGeometry(bezelWidth, bezelHeight, bodyDepth),
+            this.own(new THREE.BoxGeometry(bezelWidth, bezelHeight, bodyDepth)),
             bezelMaterial
         );
         bodyMesh.position.set(0, bodyCenterY, monitorZ);
@@ -52,14 +51,14 @@ Object.assign(Pen3DSim.prototype, {
         this.monitorGroup.add(bodyMesh);
 
         const screenMesh = new THREE.Mesh(
-            new THREE.BoxGeometry(screenWidth, screenHeight, MONITOR.screenThickness),
+            this.own(new THREE.BoxGeometry(screenWidth, screenHeight, MONITOR.screenThickness)),
             screenMaterial
         );
         screenMesh.position.set(0, bodyCenterY, monitorZ + bodyDepth / 2 + MONITOR.screenOffset);
         this.monitorGroup.add(screenMesh);
 
         const neckMesh = new THREE.Mesh(
-            new THREE.BoxGeometry(neckWidth, neckHeight, neckDepth),
+            this.own(new THREE.BoxGeometry(neckWidth, neckHeight, neckDepth)),
             bezelMaterial
         );
         neckMesh.position.set(0, neckCenterY, monitorZ);
@@ -67,7 +66,7 @@ Object.assign(Pen3DSim.prototype, {
         this.monitorGroup.add(neckMesh);
 
         const baseMesh = new THREE.Mesh(
-            new THREE.BoxGeometry(baseWidth, baseHeight, baseDepth),
+            this.own(new THREE.BoxGeometry(baseWidth, baseHeight, baseDepth)),
             bezelMaterial
         );
         baseMesh.position.set(0, baseCenterY, monitorZ);
@@ -91,6 +90,7 @@ Object.assign(Pen3DSim.prototype, {
 
     createMonitorCursor() {
         const { mesh } = createCursorArrowMesh(CURSOR.monitorSize);
+        this.own(mesh);
         // ShapeGeometry is in the XY plane (facing +Z). Rotate so tip points northwest.
         mesh.rotation.z = -3 * Math.PI / 4;
         return mesh;
@@ -99,6 +99,7 @@ Object.assign(Pen3DSim.prototype, {
     createMonitorCrosshair() {
         // Already in the XY plane facing the viewer; symmetric, so no rotation.
         const { mesh } = createCrosshairCursorMesh(CURSOR.monitorSize);
+        this.own(mesh);
         mesh.visible = false;
         return mesh;
     },

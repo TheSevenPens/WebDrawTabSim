@@ -40,19 +40,19 @@ Object.assign(Pen3DSim.prototype, {
     },
 
     disposeMouseControl() {
-        this.resetPenInteraction();
         this.inputEvents?.abort();
+        this.resetPenInteraction();
     },
 
     resetPenInteraction() {
-        const canvas = this.renderer.domElement;
+        const canvas = this.renderer?.domElement;
         const pointerId = this.penPointerId;
         this.penPointerId = null;
         this.spaceBarPressed = false;
         this.isDraggingPen = false;
-        canvas.style.cursor = '';
-        this.controls.enabled = true;
-        if (pointerId != null && canvas.hasPointerCapture(pointerId)) {
+        if (canvas) canvas.style.cursor = '';
+        if (this.controls) this.controls.enabled = true;
+        if (pointerId != null && canvas?.hasPointerCapture(pointerId)) {
             canvas.releasePointerCapture(pointerId);
         }
     },

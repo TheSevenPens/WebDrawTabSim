@@ -100,6 +100,7 @@
   let exportStatusTimer = null;
 
   function flashExportStatus(msg) {
+    if (sim?.disposed) return;
     exportStatus = msg;
     if (exportStatusTimer) clearTimeout(exportStatusTimer);
     exportStatusTimer = setTimeout(() => { exportStatus = ''; }, 2500);
@@ -133,7 +134,7 @@
       else if (action === 'copy-hd')  { await sim.copyPNGToClipboard(...exportDims(hd.height)); flashExportStatus('Copied 1080p to clipboard'); }
       else if (action === 'copy-uhd') { await sim.copyPNGToClipboard(...exportDims(uhd.height)); flashExportStatus('Copied 4K to clipboard'); }
     } catch (err) {
-      flashExportStatus(`Copy failed: ${err.message}`);
+      flashExportStatus(`${action.startsWith('copy-') ? 'Copy' : 'Export'} failed: ${err.message}`);
     }
   }
 
@@ -221,11 +222,11 @@
       playback.dispose();
       clearTimeout(exportStatusTimer);
       sim.onPenInteraction = null;
-      sim.disposeMouseControl();
       viewer.removeEventListener('tabletPositionChanged', onTabletPosition);
       appElement.removeEventListener('input', cancelOnEdit, true);
       appElement.removeEventListener('change', cancelOnEdit, true);
       document.removeEventListener('click', onDocClick);
+      sim.dispose();
     };
   });
 
@@ -558,4 +559,3 @@
     pointer-events: none;
   }
 </style>
-

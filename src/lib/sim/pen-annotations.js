@@ -16,123 +16,123 @@ Object.assign(Pen3DSim.prototype, {
     initAnnotations() {
         // Azimuth arc annotation group
         this.arcAnnotationGroup = new THREE.Group();
-        const arcMaterial = MaterialsFactory.createArcMaterial(this.azimuthColor);
+        const arcMaterial = this.own(MaterialsFactory.createArcMaterial(this.azimuthColor));
 
-        const arcGeometry = new THREE.BufferGeometry();
+        const arcGeometry = this.own(new THREE.BufferGeometry());
         this.arcLine = new THREE.Mesh(arcGeometry, arcMaterial);
         this.arcAnnotationGroup.add(this.arcLine);
 
-        const dottedArcMaterial = MaterialsFactory.createDottedCircleMaterial(this.azimuthColor);
-        const dottedArcGeometry = new THREE.BufferGeometry();
+        const dottedArcMaterial = this.own(MaterialsFactory.createDottedCircleMaterial(this.azimuthColor));
+        const dottedArcGeometry = this.own(new THREE.BufferGeometry());
         this.dottedArcLine = new THREE.Line(dottedArcGeometry, dottedArcMaterial);
         this.arcAnnotationGroup.add(this.dottedArcLine);
 
-        this.arcPieMaterial = MaterialsFactory.createPieMaterial(this.azimuthColor);
-        this.arcPieMesh = new THREE.Mesh(new THREE.BufferGeometry(), this.arcPieMaterial);
+        this.arcPieMaterial = this.own(MaterialsFactory.createPieMaterial(this.azimuthColor));
+        this.arcPieMesh = new THREE.Mesh(this.own(new THREE.BufferGeometry()), this.arcPieMaterial);
         this.arcPieMesh.visible = false;
         this.arcAnnotationGroup.add(this.arcPieMesh);
 
         this.scene.add(this.arcAnnotationGroup);
 
         // Surface line
-        this.surfaceLineGeometry = new THREE.BufferGeometry();
-        const surfaceLineMaterial = MaterialsFactory.createSurfaceLineMaterial(this.azimuthColor);
+        this.surfaceLineGeometry = this.own(new THREE.BufferGeometry());
+        const surfaceLineMaterial = this.own(MaterialsFactory.createSurfaceLineMaterial(this.azimuthColor));
         this.surfaceLine = new THREE.Line(this.surfaceLineGeometry, surfaceLineMaterial);
         this.scene.add(this.surfaceLine);
 
         // Barrel rotation annotation group
         this.barrelAnnotationGroup = new THREE.Group();
-        const barrelAnnotationMaterial = MaterialsFactory.createArcMaterial(ANNOTATION.barrelColor);
-        const barrelArrowMaterial = MaterialsFactory.createArrowMaterial(ANNOTATION.barrelColor);
+        const barrelAnnotationMaterial = this.own(MaterialsFactory.createArcMaterial(ANNOTATION.barrelColor));
+        const barrelArrowMaterial = this.own(MaterialsFactory.createArrowMaterial(ANNOTATION.barrelColor));
 
-        const barrelArcGeometry = new THREE.BufferGeometry();
+        const barrelArcGeometry = this.own(new THREE.BufferGeometry());
         this.barrelArcLine = new THREE.Mesh(barrelArcGeometry, barrelAnnotationMaterial);
         this.barrelAnnotationGroup.add(this.barrelArcLine);
 
-        const barrelSurfaceLineGeometry = new THREE.BufferGeometry();
+        const barrelSurfaceLineGeometry = this.own(new THREE.BufferGeometry());
         this.barrelSurfaceLine = new THREE.Line(barrelSurfaceLineGeometry, barrelArrowMaterial);
         this.barrelAnnotationGroup.add(this.barrelSurfaceLine);
 
-        const barrelDottedCircleMaterial = MaterialsFactory.createDottedCircleMaterial(ANNOTATION.barrelColor);
-        const barrelDottedCircleGeometry = new THREE.BufferGeometry();
+        const barrelDottedCircleMaterial = this.own(MaterialsFactory.createDottedCircleMaterial(ANNOTATION.barrelColor));
+        const barrelDottedCircleGeometry = this.own(new THREE.BufferGeometry());
         this.barrelDottedCircleLine = new THREE.Line(barrelDottedCircleGeometry, barrelDottedCircleMaterial);
         this.barrelAnnotationGroup.add(this.barrelDottedCircleLine);
 
-        this.barrelPieMaterial = MaterialsFactory.createPieMaterial(ANNOTATION.barrelColor);
-        this.barrelPieMesh = new THREE.Mesh(new THREE.BufferGeometry(), this.barrelPieMaterial);
+        this.barrelPieMaterial = this.own(MaterialsFactory.createPieMaterial(ANNOTATION.barrelColor));
+        this.barrelPieMesh = new THREE.Mesh(this.own(new THREE.BufferGeometry()), this.barrelPieMaterial);
         this.barrelPieMesh.visible = false;
         this.barrelAnnotationGroup.add(this.barrelPieMesh);
 
         this.scene.add(this.barrelAnnotationGroup);
 
         // Tilt altitude arc annotation
-        const tiltAltitudeArcMaterial = MaterialsFactory.createArcMaterial(this.tiltAltitudeColor);
-        const tiltAltitudeArcGeometry = new THREE.BufferGeometry();
+        const tiltAltitudeArcMaterial = this.own(MaterialsFactory.createArcMaterial(this.tiltAltitudeColor));
+        const tiltAltitudeArcGeometry = this.own(new THREE.BufferGeometry());
         this.tiltAltitudeArcLine = new THREE.Mesh(tiltAltitudeArcGeometry, tiltAltitudeArcMaterial);
         this.scene.add(this.tiltAltitudeArcLine);
 
-        this.tiltAltitudePieMaterial = MaterialsFactory.createPieMaterial(this.tiltAltitudeColor);
-        this.tiltAltitudePieMesh = new THREE.Mesh(new THREE.BufferGeometry(), this.tiltAltitudePieMaterial);
+        this.tiltAltitudePieMaterial = this.own(MaterialsFactory.createPieMaterial(this.tiltAltitudeColor));
+        this.tiltAltitudePieMesh = new THREE.Mesh(this.own(new THREE.BufferGeometry()), this.tiltAltitudePieMaterial);
         this.tiltAltitudePieMesh.visible = false;
         this.scene.add(this.tiltAltitudePieMesh);
 
-        const tiltAltitudeVerticalLineMaterial = MaterialsFactory.createVerticalLineMaterial(this.tiltAltitudeColor);
-        const tiltAltitudeVerticalLineGeometry = new THREE.BufferGeometry();
+        const tiltAltitudeVerticalLineMaterial = this.own(MaterialsFactory.createVerticalLineMaterial(this.tiltAltitudeColor));
+        const tiltAltitudeVerticalLineGeometry = this.own(new THREE.BufferGeometry());
         this.tiltAltitudeVerticalLine = new THREE.Line(tiltAltitudeVerticalLineGeometry, tiltAltitudeVerticalLineMaterial);
         this.scene.add(this.tiltAltitudeVerticalLine);
 
-        const tiltAltitudeSemicircleMaterial = MaterialsFactory.createDottedCircleMaterial(this.tiltAltitudeColor);
-        const tiltAltitudeSemicircleGeometry = new THREE.BufferGeometry();
+        const tiltAltitudeSemicircleMaterial = this.own(MaterialsFactory.createDottedCircleMaterial(this.tiltAltitudeColor));
+        const tiltAltitudeSemicircleGeometry = this.own(new THREE.BufferGeometry());
         this.tiltAltitudeSemicircleLine = new THREE.Line(tiltAltitudeSemicircleGeometry, tiltAltitudeSemicircleMaterial);
         this.scene.add(this.tiltAltitudeSemicircleLine);
 
         // Tilt X annotation
-        const tiltXArcMaterial = MaterialsFactory.createArcMaterial(ANNOTATION.tiltXColor);
-        const tiltXArcGeometry = new THREE.BufferGeometry();
+        const tiltXArcMaterial = this.own(MaterialsFactory.createArcMaterial(ANNOTATION.tiltXColor));
+        const tiltXArcGeometry = this.own(new THREE.BufferGeometry());
         this.tiltXArcLine = new THREE.Mesh(tiltXArcGeometry, tiltXArcMaterial);
         this.scene.add(this.tiltXArcLine);
 
-        this.tiltXPieMaterial = MaterialsFactory.createPieMaterial(ANNOTATION.tiltXColor);
-        this.tiltXPieMesh = new THREE.Mesh(new THREE.BufferGeometry(), this.tiltXPieMaterial);
+        this.tiltXPieMaterial = this.own(MaterialsFactory.createPieMaterial(ANNOTATION.tiltXColor));
+        this.tiltXPieMesh = new THREE.Mesh(this.own(new THREE.BufferGeometry()), this.tiltXPieMaterial);
         this.tiltXPieMesh.visible = false;
         this.scene.add(this.tiltXPieMesh);
 
-        const tiltXVerticalLineMaterial = MaterialsFactory.createVerticalLineMaterial(ANNOTATION.tiltXColor);
-        const tiltXVerticalLineGeometry = new THREE.BufferGeometry();
+        const tiltXVerticalLineMaterial = this.own(MaterialsFactory.createVerticalLineMaterial(ANNOTATION.tiltXColor));
+        const tiltXVerticalLineGeometry = this.own(new THREE.BufferGeometry());
         this.tiltXVerticalLine = new THREE.Line(tiltXVerticalLineGeometry, tiltXVerticalLineMaterial);
         this.scene.add(this.tiltXVerticalLine);
 
-        const tiltXDottedCircleMaterial = MaterialsFactory.createDottedCircleMaterial(ANNOTATION.tiltXColor);
-        const tiltXDottedCircleGeometry = new THREE.BufferGeometry();
+        const tiltXDottedCircleMaterial = this.own(MaterialsFactory.createDottedCircleMaterial(ANNOTATION.tiltXColor));
+        const tiltXDottedCircleGeometry = this.own(new THREE.BufferGeometry());
         this.tiltXDottedCircleLine = new THREE.Line(tiltXDottedCircleGeometry, tiltXDottedCircleMaterial);
         this.scene.add(this.tiltXDottedCircleLine);
 
         // Tilt Y annotation
-        const tiltYArcMaterial = MaterialsFactory.createArcMaterial(ANNOTATION.tiltYColor);
-        const tiltYArcGeometry = new THREE.BufferGeometry();
+        const tiltYArcMaterial = this.own(MaterialsFactory.createArcMaterial(ANNOTATION.tiltYColor));
+        const tiltYArcGeometry = this.own(new THREE.BufferGeometry());
         this.tiltYArcLine = new THREE.Mesh(tiltYArcGeometry, tiltYArcMaterial);
         this.scene.add(this.tiltYArcLine);
 
-        this.tiltYPieMaterial = MaterialsFactory.createPieMaterial(ANNOTATION.tiltYColor);
-        this.tiltYPieMesh = new THREE.Mesh(new THREE.BufferGeometry(), this.tiltYPieMaterial);
+        this.tiltYPieMaterial = this.own(MaterialsFactory.createPieMaterial(ANNOTATION.tiltYColor));
+        this.tiltYPieMesh = new THREE.Mesh(this.own(new THREE.BufferGeometry()), this.tiltYPieMaterial);
         this.tiltYPieMesh.visible = false;
         this.scene.add(this.tiltYPieMesh);
 
-        const tiltYVerticalLineMaterial = MaterialsFactory.createVerticalLineMaterial(ANNOTATION.tiltYColor);
-        const tiltYVerticalLineGeometry = new THREE.BufferGeometry();
+        const tiltYVerticalLineMaterial = this.own(MaterialsFactory.createVerticalLineMaterial(ANNOTATION.tiltYColor));
+        const tiltYVerticalLineGeometry = this.own(new THREE.BufferGeometry());
         this.tiltYVerticalLine = new THREE.Line(tiltYVerticalLineGeometry, tiltYVerticalLineMaterial);
         this.scene.add(this.tiltYVerticalLine);
 
-        const tiltYDottedCircleMaterial = MaterialsFactory.createDottedCircleMaterial(ANNOTATION.tiltYColor);
-        const tiltYDottedCircleGeometry = new THREE.BufferGeometry();
+        const tiltYDottedCircleMaterial = this.own(MaterialsFactory.createDottedCircleMaterial(ANNOTATION.tiltYColor));
+        const tiltYDottedCircleGeometry = this.own(new THREE.BufferGeometry());
         this.tiltYDottedCircleLine = new THREE.Line(tiltYDottedCircleGeometry, tiltYDottedCircleMaterial);
         this.scene.add(this.tiltYDottedCircleLine);
     },
 
     initAxisMarkers() {
         const createTextLabel = (text, color, position) => {
-            const texture = TexturesFactory.createTextLabelTexture(text, color);
-            const spriteMaterial = MaterialsFactory.createSpriteMaterial(texture);
+            const texture = this.own(TexturesFactory.createTextLabelTexture(text, color));
+            const spriteMaterial = this.own(MaterialsFactory.createSpriteMaterial(texture));
             const sprite = new THREE.Sprite(spriteMaterial);
             sprite.position.copy(position);
             sprite.scale.set(2 * SCALE, 2 * SCALE, 1);
@@ -165,6 +165,12 @@ Object.assign(Pen3DSim.prototype, {
         this.xArrow = new THREE.ArrowHelper(new THREE.Vector3(1, 0, 0), arrowPos, labelDistance - arrowGap, xAxisColor);
         this.yArrow = new THREE.ArrowHelper(new THREE.Vector3(0, 1, 0), arrowPos, labelDistance - arrowGap, yAxisColor);
         this.zArrow = new THREE.ArrowHelper(new THREE.Vector3(0, 0, 1), arrowPos, labelDistance - arrowGap, zAxisColor);
+        // ArrowHelper uses global geometries. Give each simulator its own copies.
+        for (const arrow of [this.xArrow, this.yArrow, this.zArrow]) {
+            arrow.line.geometry = arrow.line.geometry.clone();
+            arrow.cone.geometry = arrow.cone.geometry.clone();
+            this.own(arrow);
+        }
 
         this.scene.add(this.xArrow);
         this.scene.add(this.yArrow);
@@ -213,7 +219,7 @@ Object.assign(Pen3DSim.prototype, {
         }
         shape.lineTo(0, 0);
 
-        pieMesh.geometry = new THREE.ShapeGeometry(shape);
+        pieMesh.geometry = this.own(new THREE.ShapeGeometry(shape));
         pieMesh.material = material;
         pieMesh.position.copy(center);
         pieMesh.setRotationFromQuaternion(this.calculatePieRotationQuaternion(u, v));
@@ -236,7 +242,7 @@ Object.assign(Pen3DSim.prototype, {
         }
         shape.lineTo(0, 0);
 
-        pieMesh.geometry = new THREE.ShapeGeometry(shape);
+        pieMesh.geometry = this.own(new THREE.ShapeGeometry(shape));
         pieMesh.material = material;
         pieMesh.position.copy(position);
         pieMesh.setRotationFromQuaternion(quaternion);
@@ -292,7 +298,7 @@ Object.assign(Pen3DSim.prototype, {
     updateArcWithTube(arcLine, center, u, v, radius, startAngle, endAngle, segments = 32) {
         const points = this.createCircularArcInPlane(center, u, v, radius, startAngle, endAngle, segments);
         const curve  = this.createCurveFromPoints(points);
-        const tubeGeometry = new THREE.TubeGeometry(curve, segments, ANNOTATION.tubeRadius, 8, false);
+        const tubeGeometry = this.own(new THREE.TubeGeometry(curve, segments, ANNOTATION.tubeRadius, 8, false));
         if (arcLine.geometry) arcLine.geometry.dispose();
         arcLine.geometry = tubeGeometry;
         arcLine.visible  = true;
@@ -451,7 +457,7 @@ Object.assign(Pen3DSim.prototype, {
                 arcPoints.push(localPoint.applyQuaternion(xzPlaneQuat).add(azimuthArcCenter));
             }
             const arcCurve = this.createCurveFromPoints(arcPoints);
-            const tubeGeometry = new THREE.TubeGeometry(arcCurve, arcSegments, ANNOTATION.tubeRadius, 8, false);
+            const tubeGeometry = this.own(new THREE.TubeGeometry(arcCurve, arcSegments, ANNOTATION.tubeRadius, 8, false));
             if (this.arcLine.geometry) this.arcLine.geometry.dispose();
             this.arcLine.geometry = tubeGeometry;
             this.arcLine.visible  = true;
@@ -486,7 +492,7 @@ Object.assign(Pen3DSim.prototype, {
             if (barrelArcLength > 0.1) {
                 const barrelArcPoints = this.createBarrelArcPoints(barrelCenter, penAxis, u, v, this.barrelArcRadius, barrelStartAngle, barrelEndAngle, barrelArcSegments);
                 const barrelArcCurve  = this.createCurveFromPoints(barrelArcPoints);
-                const barrelTubeGeometry = new THREE.TubeGeometry(barrelArcCurve, barrelArcSegments, ANNOTATION.tubeRadius, 8, false);
+                const barrelTubeGeometry = this.own(new THREE.TubeGeometry(barrelArcCurve, barrelArcSegments, ANNOTATION.tubeRadius, 8, false));
                 if (this.barrelArcLine.geometry) this.barrelArcLine.geometry.dispose();
                 this.barrelArcLine.geometry = barrelTubeGeometry;
                 this.barrelArcLine.visible  = true;

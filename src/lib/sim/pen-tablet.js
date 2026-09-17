@@ -1,6 +1,5 @@
 import * as THREE from 'three';
 import { MaterialsFactory } from './materials.js';
-import { TexturesFactory } from './textures.js';
 import { Pen3DSim } from './Pen3DSim.js';
 import { TABLET, SCENE, SCALE } from './config.js';
 
@@ -11,8 +10,8 @@ Object.assign(Pen3DSim.prototype, {
 
     initTablet() {
         const bodyMargin = TABLET.bodyMargin;
-        const geometry = new THREE.BoxGeometry(this.tabletWidth + bodyMargin * 2, this.tabletThickness, this.tabletDepth + bodyMargin * 2);
-        const material = MaterialsFactory.createTabletMaterial();
+        const geometry = this.own(new THREE.BoxGeometry(this.tabletWidth + bodyMargin * 2, this.tabletThickness, this.tabletDepth + bodyMargin * 2));
+        const material = this.own(MaterialsFactory.createTabletMaterial());
         const tablet = new THREE.Mesh(geometry, material);
         tablet.castShadow = true;
         tablet.receiveShadow = true;
@@ -25,7 +24,7 @@ Object.assign(Pen3DSim.prototype, {
         this.tabletCheckerboardTexture = null;
 
         const gridGroup = new THREE.Group();
-        const gridMaterial = MaterialsFactory.createGridMaterial();
+        const gridMaterial = this.own(MaterialsFactory.createGridMaterial());
         const gridSpacing = 0.5 * SCALE;
 
         for (let x = -this.tabletWidth / 2; x <= this.tabletWidth / 2; x += gridSpacing) {
@@ -33,7 +32,7 @@ Object.assign(Pen3DSim.prototype, {
                 new THREE.Vector3(x, this.yOffset + 0.001 * SCALE, -this.tabletDepth / 2),
                 new THREE.Vector3(x, this.yOffset + 0.001 * SCALE,  this.tabletDepth / 2)
             ];
-            gridGroup.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints(points), gridMaterial));
+            gridGroup.add(new THREE.Line(this.own(new THREE.BufferGeometry()).setFromPoints(points), gridMaterial));
         }
 
         for (let z = -this.tabletDepth / 2; z <= this.tabletDepth / 2; z += gridSpacing) {
@@ -41,7 +40,7 @@ Object.assign(Pen3DSim.prototype, {
                 new THREE.Vector3(-this.tabletWidth / 2, this.yOffset + 0.001 * SCALE, z),
                 new THREE.Vector3( this.tabletWidth / 2, this.yOffset + 0.001 * SCALE, z)
             ];
-            gridGroup.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints(points), gridMaterial));
+            gridGroup.add(new THREE.Line(this.own(new THREE.BufferGeometry()).setFromPoints(points), gridMaterial));
         }
 
         this.digitizerGrid = gridGroup;
@@ -51,10 +50,10 @@ Object.assign(Pen3DSim.prototype, {
         this.tabletCheckerboardVisible = false;
 
         // ── Pen display mode: embedded screen on tablet surface ──────────────
-        const tabletScreenMaterial = MaterialsFactory.createMonitorScreenMaterial(
-            TexturesFactory.getSharedDesktopTexture()
-        );
-        const tabletScreenGeometry = new THREE.PlaneGeometry(this.tabletWidth, this.tabletDepth);
+        const tabletScreenMaterial = this.own(MaterialsFactory.createMonitorScreenMaterial(
+            this.getDesktopTexture()
+        ));
+        const tabletScreenGeometry = this.own(new THREE.PlaneGeometry(this.tabletWidth, this.tabletDepth));
         this.tabletScreen = new THREE.Mesh(tabletScreenGeometry, tabletScreenMaterial);
         this.tabletScreen.rotation.x = -Math.PI / 2;
         this.tabletScreen.position.y = this.yOffset + 0.005 * SCALE;
