@@ -12,3 +12,7 @@ Demo, dark tablet, axonometric projection, and one 20 mm zoom-in step. Load it
 using Other → Load scene. `test/scene-document.test.js` checks its pose, zoom,
 and serialization round trip. It is a numeric fixture; no pixel baseline is
 claimed. See `docs/SCENE_DOCUMENT.md` for the version 1 contract.
+
+`scenes/reference/` contains four complete scenes paired with numeric expectations
+and Windows image baselines. See [reference checks](../../docs/REFERENCE_SCENES.md)
+for regeneration, tolerances, environment requirements, and port acceptance.

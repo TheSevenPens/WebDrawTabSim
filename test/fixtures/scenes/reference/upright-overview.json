@@ -1,0 +1,61 @@
+{
+  "version": 1,
+  "pose": {
+    "distance": 0,
+    "tiltAltitude": 0,
+    "tiltAzimuth": 0,
+    "barrelRotation": 0,
+    "tabletX": 192,
+    "tabletY": 108
+  },
+  "mapping": {
+    "cursorOffsetX": 0,
+    "cursorOffsetY": 0,
+    "compPosTiltX": 0,
+    "compNegTiltX": 0,
+    "compPosTiltY": 0,
+    "compNegTiltY": 0,
+    "scalingFactor": 1,
+    "edgeAttraction": 0,
+    "edgeAttractionRange": 24,
+    "mouseSensitivity": 0.24
+  },
+  "annotations": {
+    "showAltitude": false,
+    "showAzimuth": false,
+    "showTiltX": false,
+    "showTiltY": false,
+    "showBarrel": false,
+    "showPenTopLine": true,
+    "showPenAxisLine": true,
+    "showPenTipLine": true
+  },
+  "presentation": {
+    "showAxis": true,
+    "cursorMode": "mouse",
+    "showPenShadow": true,
+    "showCheckerboard": false,
+    "showGrid": true,
+    "showMonitor": true,
+    "axonometric": false,
+    "penDisplayMode": false,
+    "darkTablet": false,
+    "sharpNib": false,
+    "penBodyFormat": "checkerboard",
+    "aspectRatio": "16 / 9"
+  },
+  "camera": {
+    "position": {
+      "x": 0,
+      "y": 760,
+      "z": 1039.2304845413264
+    },
+    "target": {
+      "x": 0,
+      "y": 160,
+      "z": 0
+    },
+    "perspectiveZoom": 1,
+    "orthographicZoom": 1
+  }
+}

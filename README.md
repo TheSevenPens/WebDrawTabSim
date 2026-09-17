@@ -21,12 +21,15 @@ npm run build    # production build → dist/
 npm run preview  # preview the production build
 npm test         # portable math, editing, playback, input, export, and lifecycle regressions
 npm run check:math # strict JSDoc checks for math, input adapters, and scene documents
+npm run test:visual # Windows reference images; install Playwright Chromium first
 npm audit --audit-level=moderate # include development/build dependencies
 ```
 
 `package-lock.json` is the sole dependency lockfile; Bun is no longer a supported install path. CI runs the same frozen install, math type check, tests, audit, and build on pull requests and `master`. Only a verified `master` build can deploy to Pages. See [build and verification](docs/BUILD.md) and the [dated dependency audit](docs/DEPENDENCIES-2026-09-17.md).
 
 ## What it does
+
+For renderer refactors and desktop ports, see the [reference scenes and visual checks](docs/REFERENCE_SCENES.md).
 
 - Visualise **tilt altitude**, **tilt azimuth**, and **barrel rotation** in 3D
 - Map **tablet coordinates** to a screen cursor (external monitor or pen-display mode)

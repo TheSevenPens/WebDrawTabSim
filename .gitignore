@@ -1,5 +1,8 @@
 node_modules/
 dist/
+.visual-dist/
+test-results/
+playwright-report/
 .DS_Store
 *.local
 .claude/settings.local.json
