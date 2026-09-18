@@ -8,7 +8,10 @@ test('live rendering settles, wakes for edits, preserves damping and restores ex
     await page.waitForFunction(() => !!window.referenceScene);
     await page.evaluate(() => window.referenceScene.enableLive());
     const state = () => page.evaluate(() => window.referenceScene.liveState());
-    const settled = () => expect.poll(async () => (await state()).pending).toBe(false);
+    // OrbitControls damping decays per frame. Hosted SwiftShader can render far
+    // fewer frames per second than a workstation; this checks eventual idle,
+    // not a GPU-speed target. Keep the zero-idle-render assertions below.
+    const settled = () => expect.poll(async () => (await state()).pending, { timeout: 60_000 }).toBe(false);
     await settled();
     const idle = await state();
     await page.waitForTimeout(250);
