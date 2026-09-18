@@ -8,8 +8,7 @@
   import { createPlaybackController } from './lib/sim/playback.js';
   import PlaybackControls from './lib/PlaybackControls.svelte';
   import SampleRecording from './lib/SampleRecording.svelte';
-  import sampleSource from './lib/samples/approach-confirmed-stroke-1.json';
-  import { createSampleRecording } from './lib/sim/sample-recording.js';
+  import { sampleRecordings } from './lib/samples/catalog.js';
   import { createClip } from './lib/sim/timeline.js';
   import { createTransport } from './lib/sim/transport.js';
   import { DEFAULT_PEN, DEMO_POSE, ANIMATION, EXPORT, SCALE } from './lib/sim/config.js';
@@ -157,7 +156,9 @@
 
   // ── Playback ownership ───────────────────────────────────────────────
   const playback = createPlaybackController();
-  const sampleRecording = createSampleRecording(sampleSource);
+  let selectedSample = $state('approach');
+  const sampleEntry = $derived(sampleRecordings.find(sample => sample.id === selectedSample));
+  const sampleRecording = $derived(sampleEntry.recording);
   let sampleActive = $state(false);
   let sampleFrame = $state(null);
   let playbackStatus = $state({ loaded: false, playing: false, time: 0, duration: 0,
@@ -171,6 +172,12 @@
     onChange: status => { playbackStatus = status; },
   });
   const currentPose = () => ({ ...scene.pose });
+  function selectSample(id) {
+    if (!sampleRecordings.some(sample => sample.id === id)) return;
+    finishEdit();
+    playback.cancel();
+    selectedSample = id;
+  }
   function playSample() {
     finishEdit();
     openFlyout = null;
@@ -354,7 +361,7 @@
   <button class="action-btn" onclick={runAnimAltitude}>Anim Tilt Altitude</button>
   <button class="action-btn" onclick={runAnimAzimuth}>Anim Tilt Azimuth</button>
   <button class="action-btn" onclick={runAnimBarrel}>Anim Barrel</button>
-  <SampleRecording onPlay={playSample} active={sampleActive} frame={sampleFrame} count={sampleRecording.rows.length} />
+  <SampleRecording onPlay={playSample} onSelect={selectSample} options={sampleRecordings} selected={selectedSample} note={sampleEntry.note} active={sampleActive} frame={sampleFrame} count={sampleRecording.rows.length} />
   <PlaybackControls {transport} status={playbackStatus} sampleMode={sampleActive} />
 {/snippet}
 

@@ -1,5 +1,35 @@
 import { test, expect } from '@playwright/test';
 
+test('loop sample switches safely, plays and preserves exact contact samples', async ({ page }) => {
+    const errors = [];
+    page.on('pageerror', e => errors.push(e.message));
+    await page.goto('http://127.0.0.1:4174/WebDrawTabSim/');
+    await page.getByRole('button', { name: 'Play sample stroke', exact: true }).click();
+    await expect(page.getByRole('button', { name: 'Pause', exact: true })).toBeVisible();
+    await page.getByRole('combobox', { name: 'Sample recording', exact: true }).selectOption('loop');
+    await expect(page.getByTestId('sample-reading')).toHaveCount(0);
+    await expect(page.getByRole('button', { name: 'Play', exact: true })).toBeDisabled();
+    await page.getByRole('button', { name: 'Play sample stroke', exact: true }).click();
+    await expect(page.getByRole('button', { name: 'Pause', exact: true })).toBeVisible();
+    await page.getByRole('button', { name: 'Stop', exact: true }).click();
+    await expect(page.getByTestId('sample-reading')).toContainText('Sample 1 of 146');
+    await page.getByRole('button', { name: 'Next sample', exact: true }).click();
+    await expect(page.getByTestId('sample-reading')).toContainText('Sample 2 of 146');
+    await page.getByRole('slider', { name: 'Playback time' }).fill('1000');
+    await expect(page.getByTestId('sample-reading')).toContainText('Contact');
+    const canvas = page.locator('#viewer canvas');
+    const middle = await canvas.screenshot();
+    await page.screenshot({ path: 'test-results/loop-sample.png' });
+    await page.getByRole('slider', { name: 'Playback time' }).fill('2000');
+    await expect(page.getByTestId('sample-reading')).toContainText('Sample 146 of 146');
+    expect((await canvas.screenshot()).equals(middle)).toBe(false);
+    await page.getByRole('combobox', { name: 'Sample recording', exact: true }).selectOption('approach');
+    await page.getByRole('button', { name: 'Play sample stroke', exact: true }).click();
+    await page.getByRole('button', { name: 'Stop', exact: true }).click();
+    await expect(page.getByTestId('sample-reading')).toContainText('of 418');
+    expect(errors).toEqual([]);
+});
+
 test('bundled sample plays, steps through source samples, seeks and cancels on reset', async ({ page }) => {
     const errors = [];
     page.on('pageerror', e => errors.push(e.message));

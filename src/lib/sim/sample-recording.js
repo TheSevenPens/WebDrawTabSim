@@ -2,14 +2,19 @@ import { createClip } from './timeline.js';
 
 // A deliberately illustrative mapping for the bundled sample, not device calibration.
 // Uniform XY scaling preserves the recorded shape within a 120 x 70 mm region.
-export function createSampleRecording(source) {
+export function createSampleRecording(source, { contactOnly = false, illustrativeDurationMs = null } = {}) {
+    if (illustrativeDurationMs !== null && (!contactOnly || !Number.isFinite(illustrativeDurationMs) || illustrativeDurationMs <= 0))
+        throw new Error('Illustrative timing requires contact-only samples and a positive duration');
     const column = name => {
         const index = source.columns.indexOf(name);
         if (index < 0) throw new Error(`Sample recording is missing ${name}`);
         return index;
     };
-    const slots = Object.fromEntries(['arrived', 'x', 'y', 'height', 'lean', 'azimuth', 'twist', 'pressure'].map(name => [name, column(name)]));
-    const rows = ['approach', 'readings', 'departure'].flatMap(list => source.stroke[list].map((row, index) => ({
+    const required = ['x', 'y', 'lean', 'azimuth', 'twist', 'pressure'];
+    if (illustrativeDurationMs === null) required.push('arrived');
+    if (!contactOnly) required.push('height');
+    const slots = Object.fromEntries(required.map(name => [name, column(name)]));
+    const rows = (contactOnly ? ['readings'] : ['approach', 'readings', 'departure']).flatMap(list => source.stroke[list].map((row, index) => ({
         id: `stroke-0/${list}/${index}`, row, phase: list === 'readings' ? 'Contact' : list === 'approach' ? 'Approach' : 'Departure',
     })));
     if (rows.length < 2) throw new Error('Sample recording needs at least two readings');
@@ -19,11 +24,11 @@ export function createSampleRecording(source) {
     const xs = rows.map(({ row }) => row[slots.x]), ys = rows.map(({ row }) => row[slots.y]);
     const minX = Math.min(...xs), maxX = Math.max(...xs), minY = Math.min(...ys), maxY = Math.max(...ys);
     const scale = Math.min(120 / Math.max(maxX - minX, 1), 70 / Math.max(maxY - minY, 1));
-    const maxHeight = Math.max(1, ...rows.map(({ row }) => row[slots.height]));
-    const origin = rows[0].row[slots.arrived];
+    const maxHeight = contactOnly ? null : Math.max(1, ...rows.map(({ row }) => row[slots.height]));
+    const origin = illustrativeDurationMs === null ? rows[0].row[slots.arrived] : null;
     const wrap = angle => ((angle % 360) + 360) % 360;
-    const clip = createClip(rows.map(({ id, row, phase }) => ({
-        id, time: (row[slots.arrived] - origin) / 1000,
+    const clip = createClip(rows.map(({ id, row, phase }, index) => ({
+        id, time: illustrativeDurationMs === null ? (row[slots.arrived] - origin) / 1000 : index / (rows.length - 1) * illustrativeDurationMs,
         values: {
             tabletX: 192 + (row[slots.x] - (minX + maxX) / 2) * scale,
             tabletY: 108 + (row[slots.y] - (minY + maxY) / 2) * scale,

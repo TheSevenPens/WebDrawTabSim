@@ -2,6 +2,14 @@
 
 Under **Animations**, choose **Play sample stroke**. The bundled “approach confirmed” stroke starts playing immediately. Use the existing Play/Pause, Stop, time slider, speed, loop, and in/out controls. Previous/Next sample steps through exact original readings, including readings delivered in the same batch. Manual pen edits, Reset, loading a scene, or starting another animation cancel the sample.
 
+The **Sample recording** selector also offers **Four loops, four orientations · loop 1**. Changing the selection stops and unloads the current clip; press **Play sample stroke** to play the selected recording.
+
+## Four loops sample
+
+The first loop's 146 contact readings come from [four-loops-four-orientations-wacom-cintiq-24-20260916-105846.json](https://thesevenpens.github.io/StrokeCorpus/traces/four-loops-four-orientations-wacom-cintiq-24-20260916-105846.json), under the same Stroke Corpus / TheSevenPens CC BY 4.0 attribution. The extracted JSON preserves stroke 1's approach/contact/departure lists and the source's editing note. Playback uses only contact readings because this version 2 recording has no host-arrival clock or measured height, and its older approach capture is not considered trustworthy.
+
+For this sample, contact readings are displayed at evenly spaced times across an **illustrative two-second duration**. Original device timestamps remain in the source rows and are not interpreted as elapsed wall time. Missing height and host-clock columns remain absent. Contact membership places the pen on the surface; no airborne height is invented. The uniform XY fit and orientation assumptions below apply unchanged. The UI explicitly labels these limitations.
+
 The sample panel shows approach/contact/departure, normalized pressure, and either the selected source sample number or “Interpolated pose.” Pressure is displayed, not used to infer height or render brush marks. Scene saving captures the current pose and camera; it does not save the recording or playback position.
 
 ## Source and attribution

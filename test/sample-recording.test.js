@@ -7,6 +7,31 @@ import { createTransport } from '../src/lib/sim/transport.js';
 import { PEN_RANGES } from '../src/lib/sim/config.js';
 
 const source = JSON.parse(readFileSync(new URL('../src/lib/samples/approach-confirmed-stroke-1.json', import.meta.url)));
+const loops = JSON.parse(readFileSync(new URL('../src/lib/samples/four-loops-stroke-1.json', import.meta.url)));
+
+test('older loop sample uses explicit illustrative timing without fabricating measured channels', () => {
+    const original = JSON.stringify(loops);
+    assert.throws(() => createSampleRecording(loops), /missing arrived/);
+    const { clip, rows, timeOriginMicroseconds } = createSampleRecording(loops, { contactOnly: true, illustrativeDurationMs: 2000 });
+    assert.equal(rows.length, 146);
+    assert.equal(clip.duration, 2000);
+    assert.equal(timeOriginMicroseconds, null);
+    assert.equal(loops.columns.includes('height'), false);
+    assert.equal(loops.columns.includes('arrived'), false);
+    for (const [index, sample] of clip.samples.entries()) {
+        assert.equal(sample.id, `stroke-0/readings/${index}`);
+        assert.deepEqual(rows[index].row, loops.stroke.readings[index]);
+        assert.equal(sample.values.phase, 'Contact');
+        assert.equal(sample.values.distance, 0);
+        assert.equal(sample.time, index / 145 * 2000);
+        assert.ok(sample.values.tabletX >= 132 - 1e-10 && sample.values.tabletX <= 252 + 1e-10);
+        assert.ok(sample.values.tabletY >= 73 - 1e-10 && sample.values.tabletY <= 143 + 1e-10);
+        for (const [key, range] of Object.entries(PEN_RANGES)) if (key in sample.values)
+            assert.ok(sample.values[key] >= range.min && sample.values[key] <= range.max, key);
+    }
+    assert.equal(JSON.stringify(loops), original);
+    assert.throws(() => createSampleRecording(loops, { illustrativeDurationMs: 2000 }), /contact-only/);
+});
 
 test('sample preserves all source rows and host-clock ties while fitting inside the tablet', () => {
     const original = JSON.stringify(source);
