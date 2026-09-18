@@ -30,6 +30,7 @@ snapshot. Evaluation does not depend on frame cadence or prior seeks:
 
 - Numeric channels interpolate linearly, with optional cubic easing.
 - `angle` channels follow the existing positive wrapped-degree convention.
+- `angle-shortest` channels interpolate the nearest angular path for recorded orientations, including decreases and crossings of zero. Exact 180° ties use the negative direction. Authored full-turn demos retain `angle`.
   Full turns require intermediate samples or an unwrapped linear channel.
 - `hold` channels, booleans, and strings keep the preceding value until the next
   timestamp. These represent state transitions, not side-effect callbacks.

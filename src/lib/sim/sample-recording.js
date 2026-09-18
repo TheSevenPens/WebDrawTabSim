@@ -39,7 +39,7 @@ export function createSampleRecording(source, { contactOnly = false, illustrativ
             barrelRotation: wrap(-row[slots.twist]),
             phase, pressure: row[slots.pressure] / source.device.fullScalePressure,
         },
-    })), { channels: { tiltAzimuth: 'angle', barrelRotation: 'angle', phase: 'hold', distance: 'hold', pressure: 'hold' } });
+    })), { channels: { tiltAzimuth: 'angle-shortest', barrelRotation: 'angle-shortest', phase: 'hold', distance: 'hold', pressure: 'hold' } });
     // Hold measured height/pressure at batch boundaries: don't blend contact into hover.
     // XY and angles interpolate for display; exact stepping retains every original row.
     return { clip, rows, scale, timeOriginMicroseconds: origin };

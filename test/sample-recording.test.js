@@ -9,6 +9,25 @@ import { PEN_RANGES } from '../src/lib/sim/config.js';
 const source = JSON.parse(readFileSync(new URL('../src/lib/samples/approach-confirmed-stroke-1.json', import.meta.url)));
 const loops = JSON.parse(readFileSync(new URL('../src/lib/samples/four-loops-stroke-1.json', import.meta.url)));
 
+test('both recordings interpolate every angular interval without spurious full turns', () => {
+    const clips = [createSampleRecording(source).clip,
+        createSampleRecording(loops, { contactOnly: true, illustrativeDurationMs: 2000 }).clip];
+    const delta = (a, b) => ((b - a + 540) % 360) - 180;
+    let decreasingIntervals = 0;
+    for (const clip of clips) for (let i = 0; i < clip.samples.length - 1; i++) {
+        const a = clip.samples[i], b = clip.samples[i + 1];
+        if (a.time === b.time) continue;
+        const mid = evaluateClip(clip, (a.time + b.time) / 2);
+        for (const key of ['tiltAzimuth', 'barrelRotation']) {
+            const change = delta(a.values[key], b.values[key]);
+            if (change < 0) decreasingIntervals++;
+            assert.ok(Math.abs(delta(a.values[key], mid.values[key]) - change / 2) < 1e-8,
+                `${a.id} ${key} should follow the short path`);
+        }
+    }
+    assert.ok(decreasingIntervals > 0, 'exercise the decreases that previously caused spins');
+});
+
 test('older loop sample uses explicit illustrative timing without fabricating measured channels', () => {
     const original = JSON.stringify(loops);
     assert.throws(() => createSampleRecording(loops), /missing arrived/);

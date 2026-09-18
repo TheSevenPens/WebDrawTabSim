@@ -7,6 +7,19 @@ import { Pen3DSim } from '../src/lib/sim/index.js';
 const simple = () => createClip([
     { id: 'a', time: 0, values: { x: 0 } }, { id: 'b', time: 1000, values: { x: 100 } },
 ]);
+
+test('recorded angles use the shortest path while authored forward sweeps remain unchanged', () => {
+    for (const [a, b, expected] of [[55, 54, 54.5], [54, 55, 54.5], [359, 1, 0], [1, 359, 0], [20, 20, 20]]) {
+        const samples = [{ id: 'a', time: 0, values: { angle: a } }, { id: 'b', time: 100, values: { angle: b } }];
+        const clip = createClip(samples, { channels: { angle: 'angle-shortest' } });
+        assert.equal(evaluateClip(clip, 50).values.angle, expected);
+        assert.equal(evaluateClip(clip, 0).values.angle, a);
+        assert.equal(evaluateClip(clip, 100).values.angle, b);
+    }
+    const sweep = createClip([{ id: 'a', time: 0, values: { angle: 0 } },
+        { id: 'b', time: 100, values: { angle: 359 } }], { channels: { angle: 'angle' } });
+    assert.equal(evaluateClip(sweep, 50).values.angle, 179.5);
+});
 function clock(clip = simple(), callback = () => {}) {
     let time = 0, id = 0;
     const queued = new Map(), history = [], frames = [];

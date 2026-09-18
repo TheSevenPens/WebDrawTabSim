@@ -8,7 +8,7 @@ export function createClip(samples, { channels = {}, easing = 'linear', maxGapMs
     const keys = Object.keys(samples[0].values);
     if (!keys.length) throw new RangeError('Samples must contain values');
     for (const [key, mode] of Object.entries(channels)) {
-        if (!keys.includes(key) || !['linear', 'angle', 'hold'].includes(mode)) throw new RangeError('Invalid channel');
+        if (!keys.includes(key) || !['linear', 'angle', 'angle-shortest', 'hold'].includes(mode)) throw new RangeError('Invalid channel');
     }
     const ids = new Set();
     let previous = -Infinity;
@@ -50,7 +50,14 @@ export function evaluateClip(clip, time) {
         const a = left.values[key], b = right.values[key];
         const mode = clip.channels[key];
         const hold = mode === 'hold' || typeof a !== 'number' || right.time - left.time > clip.maxGapMs;
-        return [key, hold ? a : mode === 'angle' ? interpolateAngle(a, b, t) : a + (b - a) * t];
+        // Authored sweeps retain forward rotation; recorded orientations take
+        // the nearest path so a small decrease does not become a full revolution.
+        const shortest = () => {
+            const delta = ((b - a + 180) % 360 + 360) % 360 - 180;
+            return ((a + delta * t) % 360 + 360) % 360;
+        };
+        return [key, hold ? a : mode === 'angle' ? interpolateAngle(a, b, t) :
+            mode === 'angle-shortest' ? shortest() : a + (b - a) * t];
     }));
     return { time, index: null, sampleId: null, values };
 }
