@@ -7,6 +7,9 @@
   import CheckboxControl from './lib/CheckboxControl.svelte';
   import { createPlaybackController } from './lib/sim/playback.js';
   import PlaybackControls from './lib/PlaybackControls.svelte';
+  import SampleRecording from './lib/SampleRecording.svelte';
+  import sampleSource from './lib/samples/approach-confirmed-stroke-1.json';
+  import { createSampleRecording } from './lib/sim/sample-recording.js';
   import { createClip } from './lib/sim/timeline.js';
   import { createTransport } from './lib/sim/transport.js';
   import { DEFAULT_PEN, DEMO_POSE, ANIMATION, EXPORT, SCALE } from './lib/sim/config.js';
@@ -154,13 +157,39 @@
 
   // ── Playback ownership ───────────────────────────────────────────────
   const playback = createPlaybackController();
+  const sampleRecording = createSampleRecording(sampleSource);
+  let sampleActive = $state(false);
+  let sampleFrame = $state(null);
   let playbackStatus = $state({ loaded: false, playing: false, time: 0, duration: 0,
     inPoint: 0, outPoint: 0, speed: 1, loop: false, index: null });
   const transport = createTransport({
-    onFrame: ({ values }) => commitPose(values, { record: false }),
+    onFrame: frame => {
+      const { phase, pressure, ...pose } = frame.values;
+      commitPose(pose, { record: false });
+      if (sampleActive) sampleFrame = frame;
+    },
     onChange: status => { playbackStatus = status; },
   });
   const currentPose = () => ({ ...scene.pose });
+  function playSample() {
+    finishEdit();
+    openFlyout = null;
+    playback.start(() => {
+      if (!sim || sim.disposed) return () => {};
+      sampleActive = true;
+      const defaults = createSceneDocument();
+      commitScene({ ...scene, mapping: defaults.mapping,
+        camera: { ...defaults.camera, position: { x: 200, y: 300, z: 450 }, target: { x: 0, y: sim.yOffset, z: 0 } },
+        presentation: { ...scene.presentation, axonometric: false, cursorMode: 'crosshairs' } }, { label: 'Sample recording' });
+      const cancel = () => {
+        transport.clear(); sampleActive = false; sampleFrame = null; sim.animations?.delete(cancel);
+      };
+      sim.trackAnimation(cancel);
+      transport.load(sampleRecording.clip);
+      transport.play();
+      return cancel;
+    });
+  }
   function startClip(start, end, showAnnotations = false) {
     finishEdit();
     openFlyout = null;
@@ -325,7 +354,8 @@
   <button class="action-btn" onclick={runAnimAltitude}>Anim Tilt Altitude</button>
   <button class="action-btn" onclick={runAnimAzimuth}>Anim Tilt Azimuth</button>
   <button class="action-btn" onclick={runAnimBarrel}>Anim Barrel</button>
-  <PlaybackControls {transport} status={playbackStatus} />
+  <SampleRecording onPlay={playSample} active={sampleActive} frame={sampleFrame} count={sampleRecording.rows.length} />
+  <PlaybackControls {transport} status={playbackStatus} sampleMode={sampleActive} />
 {/snippet}
 
 {#snippet penAnnTab()}

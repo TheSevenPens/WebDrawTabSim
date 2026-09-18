@@ -37,6 +37,7 @@ The viewport [renders on changes and settles at idle](docs/PERFORMANCE.md); the 
 - Explore **pointer-tracking** behaviours: offset, tilt compensation, scaling, edge attraction
 - Export crisp **1080p / 4K** PNGs for docs and teaching
 - Pause, seek, step, and loop demonstrations with [deterministic playback](docs/PLAYBACK.md)
+- Play a [bundled real pen recording](docs/SAMPLE_RECORDING.md), including approach, contact, and departure
 - Save and restore [complete scenes as JSON](docs/SCENE_DOCUMENT.md), including camera framing
 - [Undo and redo](docs/HISTORY.md) complete scene edits, with grouped slider and pen drags
 

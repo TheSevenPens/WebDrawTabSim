@@ -1,5 +1,5 @@
 <script>
-  let { transport, status } = $props();
+  let { transport, status, sampleMode = false } = $props();
   function rangeChange(event, start) {
     const value = event.currentTarget.valueAsNumber * 1000;
     const low = start ? value : status.inPoint;
@@ -14,8 +14,8 @@
   <div class="buttons">
     <button type="button" onclick={() => status.playing ? transport.pause() : transport.play()}>{status.playing ? 'Pause' : 'Play'}</button>
     <button type="button" onclick={() => transport.stop()}>Stop</button>
-    <button type="button" aria-label="Previous keyframe" onclick={() => transport.step(-1)}>◀ Key</button>
-    <button type="button" aria-label="Next keyframe" onclick={() => transport.step(1)}>Key ▶</button>
+    <button type="button" aria-label={sampleMode ? 'Previous sample' : 'Previous keyframe'} onclick={() => transport.step(-1)}>◀ {sampleMode ? 'Sample' : 'Key'}</button>
+    <button type="button" aria-label={sampleMode ? 'Next sample' : 'Next keyframe'} onclick={() => transport.step(1)}>{sampleMode ? 'Sample' : 'Key'} ▶</button>
   </div>
   <label>Time: {(status.time / 1000).toFixed(3)} s / {(status.duration / 1000).toFixed(3)} s
     <input aria-label="Playback time" type="range" min={status.inPoint} max={status.outPoint || 1} step="1" value={status.time} oninput={event => transport.seek(Number(event.currentTarget.value))} />
@@ -30,11 +30,11 @@
     <label>In (s) <input aria-label="Playback in point" type="number" min="0" max={status.outPoint / 1000} step="0.001" value={status.inPoint / 1000} onchange={event => rangeChange(event, true)} /></label>
     <label>Out (s) <input aria-label="Playback out point" type="number" min={status.inPoint / 1000} max={status.duration / 1000} step="0.001" value={status.outPoint / 1000} onchange={event => rangeChange(event, false)} /></label>
   </div>
-  <small>{!status.loaded ? 'Choose an animation to load a clip.' : status.index === null ? 'Between keyframes' : `Keyframe ${status.index + 1}`}</small>
+  <small>{!status.loaded ? 'Choose an animation or sample stroke.' : status.index === null ? (sampleMode ? 'Between recorded samples' : 'Between keyframes') : `${sampleMode ? 'Sample' : 'Keyframe'} ${status.index + 1}`}</small>
 </fieldset>
 
 <style>
-  fieldset { margin: 10px 0; padding: 10px; border: 1px solid #666; border-radius: 5px; }
+  fieldset { color: #eee; margin: 10px 0; padding: 10px; border: 1px solid #666; border-radius: 5px; }
   legend { padding: 0 4px; }
   .buttons, .settings { display: flex; gap: 8px; margin-bottom: 8px; align-items: center; }
   .buttons button { flex: 1; padding: 5px 2px; }
